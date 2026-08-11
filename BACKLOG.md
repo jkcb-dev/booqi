@@ -1,8 +1,8 @@
-# Booqi Backlog
+# Booqi Backlog (historical)
 
-No external ticket system yet — this file is the backlog of record until one exists (see
-`docs/adr` — not yet written — for that decision if/when it happens). It's versioned, so its
-history *is* the project's task history.
+**Superseded by GitHub Issues** (github.com/jkcb-dev/booqi/issues) as of 2026-08-11 — every
+unchecked item below was converted to an issue with `role:*`/`feature:*` labels. New tickets go to
+Issues, not this file. Kept as-is for the historical record of what got scaffolded and why.
 
 **How to use this:**
 - One feature = one section. One role = one checklist item within it.
