@@ -17,3 +17,8 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# graphify: regenerable local index (includes a machine-local interpreter path) — the
+# post-commit hook (graphify hook install) rebuilds it after every commit, so it doesn't
+# need to be versioned. Re-run `graphify .` after a fresh clone to bootstrap it.
+graphify-out/
