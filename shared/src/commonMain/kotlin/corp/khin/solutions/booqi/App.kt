@@ -1,49 +1,36 @@
 package corp.khin.solutions.booqi
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import corp.khin.solutions.booqi.core.designsystem.theme.BooqiTheme
+import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
+import corp.khin.solutions.booqi.core.navigation.Destination
+import corp.khin.solutions.booqi.feature.browse.BrowseScreen
 
-import booqi.shared.generated.resources.Res
-import booqi.shared.generated.resources.compose_multiplatform
-
+/**
+ * App root: theme + the single [DefaultNavigator] instance for the whole app. Only one
+ * destination (Browse) is wired for real so far — this is intentionally the smallest possible
+ * proof that the module graph (domain -> data -> feature:browse, all through Koin, all under one
+ * Navigator) works end to end, per the Architect role's definition of done.
+ */
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
-            }
+    BooqiTheme {
+        val navigator = remember { DefaultNavigator() }
+        val backStack by navigator.backStack.collectAsState()
+
+        when (backStack.last()) {
+            is Destination.Browse -> BrowseScreen(
+                onProviderSelected = { providerId ->
+                    navigator.navigateTo(Destination.ProviderDetail(providerId))
+                },
+            )
+            // Remaining destinations (ProviderDetail, Booking, BookingConfirmation, MyBookings)
+            // land with their own feature modules — Navigator/Destination already account for
+            // them so wiring a new one is additive here, not a rewrite.
+            else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
         }
     }
 }

@@ -1,0 +1,11 @@
+naming:
+  FunctionNaming:
+    # Compose (BrowseScreen, BooqiTheme, ...) and KMP's iOS entry-point convention
+    # (MainViewController) both capitalize function names — a deliberate, ecosystem-wide
+    # convention clash with detekt's plain-Kotlin default, not a real issue.
+    functionPattern: '([a-z][a-zA-Z0-9]*)|([A-Z][a-zA-Z0-9]*)'
+
+style:
+  MagicNumber:
+    # Design-token hex literals aren't "magic" — they're the one place raw numbers belong.
+    excludes: ['**/theme/Color.kt']
