@@ -21,8 +21,9 @@ enough to justify the ceremony.
 | **Modality** | Whether a Service is delivered at the Provider's location (**Local**) or the Customer's (**Domicilio**), or both. |
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
 | **Availability** | A Provider's recurring weekly schedule, plus specific blocked dates/times, plus an optional "paused" date range (vacation mode). TimeSlots are generated from this. |
-| **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` for the full state machine. |
-| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider`. No other transitions are valid. |
+| **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` and `docs/domain/customer-flow.md` for the full state machine. |
+| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. |
+| **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). |
 
 ## Bounded contexts
 
@@ -58,6 +59,7 @@ Booking (aggregate root)
 ├─ timeSlot: TimeSlot       ← value object, embedded
 ├─ status: BookingStatus
 ├─ rejectionReason / cancellationReason: Reason?  ← predefined options + optional free text
+├─ deliveryAddress: Address?  ← snapshot copied at request time, only if Service modality = Domicilio; never a live reference to User.direccion
 └─ rating: Rating?          ← stars + optional comment, set only once status = Completed
 ```
 
@@ -94,4 +96,5 @@ ratings), not a stored field that gets manually updated.
 
 - `docs/domain/provider-flow.md` — full event list, command/actor/aggregate breakdown, and BDD
   scenarios for the Provider Management + Scheduling contexts (the Provider's side of the app)
-- `docs/domain/customer-flow.md` — not written yet (Customer-side flow, next up)
+- `docs/domain/customer-flow.md` — same, for the Customer side (search, discovery, address, the
+  Customer's half of the Booking lifecycle)
