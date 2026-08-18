@@ -1,69 +1,97 @@
 # Booqi Domain Model (DDD)
 
-Written before the Booking domain model exists in code, on purpose — so `Booking` gets designed
-correctly the first time instead of refactored later. This is the ubiquitous language: use these
-exact terms in code, tickets, and conversation. If a term drifts from this doc, fix the doc, not
-the other way around.
+**Corrected 2026-08-11** — the original version of this document conflated Provider and Service
+into one entity. A product discovery session (see `docs/domain/provider-flow.md`) clarified that
+they're separate concepts with separate lifecycles. This version replaces that one; nothing below
+should be assumed to match the initial scaffold's `ServiceProvider` type, which is now known to be
+wrong and needs splitting (tracked as follow-up work, not yet done).
 
-Scope note: this is **tactical DDD** (ubiquitous language, aggregates, value objects, invariants),
-not full strategic DDD. Bounded contexts below stay as clearly-named packages inside the existing
-`domain`/`data`/`feature:*` modules for now, not separate Gradle modules — that split is only
-worth the ceremony once a context's team/release cadence actually diverges from the others, which
-hasn't happened for a project this size. Revisit if that changes.
+Scope note, unchanged from before: this is **tactical DDD** (ubiquitous language, aggregates,
+value objects, invariants), not full strategic DDD. Bounded contexts stay as packages inside the
+existing modules, not separate Gradle modules, unless a context's pace of change actually diverges
+enough to justify the ceremony.
 
 ## Ubiquitous language
 
 | Term | Meaning |
 |---|---|
-| **Customer** | The app user browsing and booking services. Not modeled yet — no auth built. |
-| **Provider** | A business/individual offering bookable services (nails, barber, technician, ...). Code: `ServiceProvider`. |
-| **Service** | A specific offering a Provider provides, with its own price. Currently folded into `ServiceProvider.category`/`priceFromCents` — a known simplification, see Open Questions. |
-| **TimeSlot** | A specific bookable unit of time for a Provider. Value object, not an entity — equality is by value (`providerId` + date + start time), it has no identity of its own. |
-| **Availability** | The set of TimeSlots a Provider currently offers as bookable. |
-| **Booking** | A Customer's reservation of a Provider's TimeSlot. Aggregate root for the Scheduling context. |
-| **Booking Status** | Lifecycle state of a Booking: `Requested → Confirmed → Completed`, or `→ Cancelled` from either of the first two. No other transitions are valid. |
+| **User** | An account. Authenticates via Google, Facebook, Apple ID, or email/password. Any User can book services (customer capability is implicit); a User optionally also has a **ProviderProfile** if they choose to offer services. Being a customer and a provider is not an exclusive choice — one account can be both. |
+| **ProviderProfile** | The identity of *who* offers services: display name, photo, description, location, aggregate rating, weekly availability. One optional ProviderProfile per User. |
+| **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, and modality (Local / Domicilio / both). A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
+| **Modality** | Whether a Service is delivered at the Provider's location (**Local**) or the Customer's (**Domicilio**), or both. |
+| **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
+| **Availability** | A Provider's recurring weekly schedule, plus specific blocked dates/times, plus an optional "paused" date range (vacation mode). TimeSlots are generated from this. |
+| **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` for the full state machine. |
+| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider`. No other transitions are valid. |
 
 ## Bounded contexts
 
-**Catalog** — browsing and discovery. Owns `ServiceProvider`. Maps to `feature:browse` +
-`domain`'s current `ServiceProvider`/`ServiceCatalogRepository`. Already built.
+**Identity** — the `User` account itself: authentication, whether a ProviderProfile exists for
+this user. Not built yet.
 
-**Scheduling** — the booking lifecycle. Owns `Booking`, `TimeSlot`, `Availability`, status
-transitions. Not built yet — this is the Booking flow ticket (Issues #1, #2).
+**Provider Management** — a Provider's own "back office": profile, Services (create/edit/disable),
+Availability (define/modify schedule, block dates, pause profile). Fully specified in
+`docs/domain/provider-flow.md`. Not built in code yet.
 
-**Identity** and **Notifications** — not needed yet (no auth, no push/email). Named here so future
-work has a home to land in without inventing new vocabulary later.
+**Catalog** — browsing/discovery, read-heavy. Searches across Services (not Providers directly),
+filterable by type, zone/distance (GPS-based, simple radius — no polygon zones). Partially built:
+`feature:browse` + `domain`'s `ServiceProvider` exist but use the pre-correction model and need
+reworking to the Service/ProviderProfile split above.
+
+**Scheduling** — the Booking lifecycle: request, accept/reject/expire, complete, cancel, rate.
+Fully specified in `docs/domain/provider-flow.md`'s "Gestión de Reservas y Calificaciones" group.
+Not built in code yet.
 
 ## Aggregate boundaries — the rule that matters
 
-**`Booking` references `Provider` by ID (`providerId: String`), never by embedding a
-`ServiceProvider` object.** This is the one DDD rule most worth enforcing here: Catalog and
-Scheduling are different aggregates with different lifecycles (a Provider's rating changes
-independently of any Booking referencing it), so Booking must not hold a live/stale copy of
-Provider data. If a screen needs both, it fetches each through its own repository and composes
-them at the presentation layer — never by denormalizing Provider fields onto Booking.
+Unchanged from the original version of this doc: **`Booking` references `Service` and
+`ProviderProfile` by ID, never by embedding them.** Different aggregates, different lifecycles — a
+Service's price changing shouldn't retroactively change what a past Booking says the customer
+agreed to pay.
 
 ```
 Booking (aggregate root)
 ├─ id: String
-├─ providerId: String          ← reference, not embedded ServiceProvider
-├─ timeSlot: TimeSlot          ← value object, embedded (owned by this aggregate)
+├─ providerId: String      ← reference
+├─ serviceId: String       ← reference
+├─ customerId: String
+├─ timeSlot: TimeSlot       ← value object, embedded
 ├─ status: BookingStatus
-└─ customerId: String?         ← nullable until Identity exists
+├─ rejectionReason / cancellationReason: Reason?  ← predefined options + optional free text
+└─ rating: Rating?          ← stars + optional comment, set only once status = Completed
 ```
 
-`BookingStatus` values (`Requested`, `Confirmed`, `Completed`, `Cancelled`) are also the vocabulary
-already baked into the design system's status-badge colors
-(`BooqiStatusConfirmed`/`Pending`/`Cancelled`/`Completed` in `core:designsystem/theme/Color.kt`) —
-that predates this doc but happens to already agree with it, which is a good sign, not a
-coincidence to paper over.
+`Rating` is modeled as an optional field on `Booking` itself, not a separate aggregate — a rating
+is 1:1 with a completed Booking and has no independent lifecycle of its own. A Provider's overall
+rating shown on their profile is a *computed aggregate* (average across all their Bookings'
+ratings), not a stored field that gets manually updated.
 
-## Open questions (deliberately deferred, not forgotten)
+## Deliberate scope decisions for V1 (recorded so they don't get silently re-litigated)
 
-- **Service vs. ServiceProvider**: a Provider likely offers multiple Services at different prices
-  (e.g. "gel manicure" vs "acrylic fill"), which the current single-category-single-price model
-  can't express. Resolve this when the Provider Detail ticket is picked up — its issue already
-  says "expose full provider profile... service list," which is where this gets modeled properly.
-- **Identity**: `Booking.customerId` is nullable until auth exists. Don't backfill a fake customer
-  concept just to make it non-nullable — the nullability is honest about what's actually known
-  right now.
+- **Rating and Availability live on `ProviderProfile`, not per-`Service`.** Splitting them per
+  service would fragment review/rating signal too thin early on, and most providers are one person
+  with one schedule regardless of which service is being performed. Revisit only if
+  multi-staff-per-provider becomes a real need.
+- **Replying to reviews is deferred (V2)** — not essential to the core loop (search → book →
+  complete → rate), and depends on Provider Management UI that doesn't exist yet.
+- **Suggesting a Provider update their schedule after a rejection is deferred (V2)** — a nice
+  nudge, not core functionality.
+- **Service deletion is soft (disable), not hard delete** — a hard delete would orphan any
+  `Booking.serviceId` referencing it, including completed bookings that are part of a Customer's
+  and Provider's history. Disabling just hides it from Catalog search going forward.
+- **Changing a Provider's schedule or disabling a Service does not retroactively cancel already-
+  accepted Bookings** — a customer's confirmed appointment stays honored even if the Provider's
+  general availability changes afterward.
+- **Payments are out of scope for V1** — Bookings reach `Confirmed` without any payment step.
+  Revisit when payments are designed; it will likely insert a state between `Requested` and
+  `Confirmed`, or attach to `Confirmed`, not replace the flow above.
+- **Cancellation reason options are assumed to reuse the same predefined list as rejection**
+  ("No disponible en este horario" / "Fuera de mi zona de servicio" / "Servicio no disponible
+  temporalmente" / "Otro" + free text) — this was proposed but not explicitly re-confirmed after
+  the rejection-reason discussion; flagged here so it's easy to correct if wrong.
+
+## See also
+
+- `docs/domain/provider-flow.md` — full event list, command/actor/aggregate breakdown, and BDD
+  scenarios for the Provider Management + Scheduling contexts (the Provider's side of the app)
+- `docs/domain/customer-flow.md` — not written yet (Customer-side flow, next up)
