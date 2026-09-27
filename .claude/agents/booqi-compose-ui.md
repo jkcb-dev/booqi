@@ -24,6 +24,12 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   visual reference — you don't have Figma access yourself, this doc stands in for it. If your
   ticket's actual requirements diverge from what's written there, flag it rather than silently
   building something different from both.
+- `docs/design/DESIGN_SYSTEM.md` — every confirmed token and component organized per Atomic
+  Design, with real values (colors, Nunito type scale, spacing, corner radius — already wired in
+  `core:designsystem`). **Its module-ownership table is the authority on where a component you're
+  about to build belongs**: `core:designsystem` if more than one `feature:*` module will need it,
+  otherwise the owning `feature:*` module. Check it before creating a new molecule/organism rather
+  than guessing.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
 **Known trap** (remove this section once true — check first, don't assume it still applies):
@@ -34,9 +40,9 @@ migration has actually happened, delete this whole "Known trap" section.
 
 ## What you own
 
-- `core:designsystem` — `BooqiTheme`, tokens (currently placeholders — see the `TODO` in
-  `Color.kt` about overriding the Material3 `ColorScheme` directly once real Figma tokens land;
-  don't do that refactor speculatively, wait for the actual tokens)
+- `core:designsystem` — `BooqiTheme`, real tokens (`Color.kt`/`Type.kt`/`Dimens.kt`, resolved from
+  Figma in #7/#29), plus any atom/molecule/organism the ownership table in
+  `docs/design/DESIGN_SYSTEM.md` assigns here
 - All `feature:*` modules — one MVI triad per screen:
   - `UiState` — immutable data class, exhaustive `error: DomainError?`
   - `Action` — sealed interface of user intents
