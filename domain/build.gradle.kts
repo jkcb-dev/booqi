@@ -28,6 +28,10 @@ kotlin {
             // Gradle enforces this: nothing in this source set can import a type that isn't
             // reachable from these two dependencies.
             api(project(":core:common"))
+            // api, not implementation: LocalDate/DateRange appear in public use case and
+            // repository signatures (PausarPerfilUseCase, ProviderProfileRepository), so
+            // consumers of :domain need this type on their compile classpath too.
+            api(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
         }

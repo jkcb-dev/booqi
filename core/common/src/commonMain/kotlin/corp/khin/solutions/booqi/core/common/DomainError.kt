@@ -11,5 +11,13 @@ sealed interface DomainError {
     data object Timeout : DomainError
     data object NotFound : DomainError
     data object Unauthorized : DomainError
+
+    /**
+     * A use case rejected its input before any I/O happened (e.g. a required field was missing).
+     * Distinct from [Unknown]: this is an expected, user-actionable outcome a ViewModel should
+     * surface as a form error, not an unexpected failure to log/report.
+     */
+    data class InvalidInput(val message: String) : DomainError
+
     data class Unknown(val message: String? = null) : DomainError
 }
