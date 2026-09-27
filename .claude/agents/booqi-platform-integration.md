@@ -14,6 +14,9 @@ verify with real builds, never a self-report.
 
 - `docs/DOMAIN.md` and the relevant flow doc for context on *why* a platform capability is
   needed (e.g. the address picker in `docs/domain/customer-flow.md` § Grupo 2 needs a map SDK).
+- `docs/design/SCREENS.md` — if your ticket's platform capability backs a specific screen (e.g.
+  the map picker behind the Cliente · Dirección screen), check there for the confirmed UI so what
+  you wire up actually matches what the Compose UI ticket is building against.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:platform-integration`.
 
 ## What you own

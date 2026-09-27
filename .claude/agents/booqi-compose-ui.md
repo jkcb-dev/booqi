@@ -19,6 +19,11 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   modules (`feature:browse`, `feature:booking`, `feature:provider`), grouped by which user session
   they serve, not one module per screen or per ticket. Figure out which of the three your ticket's
   screen belongs to before creating anything — don't invent a fourth module.
+- `docs/design/SCREENS.md` — maps your ticket to its Figma screen(s) and the confirmed UI
+  structure (what fields, what components, what states) from the full design review. This is your
+  visual reference — you don't have Figma access yourself, this doc stands in for it. If your
+  ticket's actual requirements diverge from what's written there, flag it rather than silently
+  building something different from both.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
 **Known trap** (remove this section once true — check first, don't assume it still applies):
