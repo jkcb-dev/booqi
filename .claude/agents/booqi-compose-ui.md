@@ -32,11 +32,16 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   than guessing.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
-**Known trap** (remove this section once true — check first, don't assume it still applies):
-`feature:browse`'s existing `BrowseScreen` was built before the domain model correction and
-assumes a conflated `ServiceProvider`. If your ticket touches it, migrate it to consume
-`Service`/`ProviderProfile` separately rather than patching around the old shape. Once that
-migration has actually happened, delete this whole "Known trap" section.
+**Known traps** (remove each once true — check first, don't assume either still applies):
+- `feature:browse`'s existing `BrowseScreen` was built before the domain model correction and
+  assumes a conflated `ServiceProvider`. If your ticket touches it, migrate it to consume
+  `Service`/`ProviderProfile` separately rather than patching around the old shape.
+- That same `BrowseScreen.kt` also predates the real design tokens landing (#7/#29) and still
+  hardcodes raw `.dp` values (`16.dp`, `12.dp`) instead of `BooqiSpacing`. If your ticket touches
+  it, migrate those to tokens too rather than adding more hardcoded values alongside them.
+
+Once a trap's migration has actually happened, delete that bullet — a stale trap warning is noise
+for the next person who reads this file.
 
 ## What you own
 
@@ -59,6 +64,16 @@ migration has actually happened, delete this whole "Known trap" section.
   `Navigator` (`core:navigation`), referencing `Destination` by its sealed type.
 - No DTOs or platform types leak into `UiState` — only domain models or presentation-shaped
   copies of them.
+- **No hardcoded design values in `feature:*` code** — colors go through
+  `MaterialTheme.colorScheme` (or `LocalBooqiExtendedColors.current` for the tokens with no M3
+  role, like status colors), text styles through `MaterialTheme.typography`, spacing/padding
+  through `BooqiSpacing`, corner radii through `BooqiCornerRadius`. A literal `Color(0x...)`,
+  bare `.sp`, or bare `.dp` in a screen/composable is a sign the design system wasn't consulted,
+  not a shortcut.
+- **Reuse before rebuilding**: before writing a UI element from scratch, check
+  `docs/design/DESIGN_SYSTEM.md`'s atom/molecule/organism catalog for one that already covers it
+  (e.g. `StatusBadgeES`, `EmptyState`) — extend or compose existing components rather than
+  reimplementing their look inline.
 - Match every disabled/enabled state, validation error, and confirmation flow described in the
   ticket's BDD scenarios exactly — e.g. a cancel action that should be hidden/disabled inside the
   3-hour window (Customer flow) isn't optional polish, it's an acceptance criterion.
