@@ -30,6 +30,10 @@ kotlin {
             implementation(project(":core:database"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
+            // ProviderProfileMapper parses kotlinx.datetime.LocalDate directly; :domain's `api`
+            // dependency on it isn't picked up on data's own KMP metadata compile classpath, so
+            // declare it explicitly here too rather than rely on that transitivity.
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

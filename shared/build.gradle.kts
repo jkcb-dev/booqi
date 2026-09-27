@@ -55,6 +55,7 @@ kotlin {
             implementation(project(":domain"))
             implementation(project(":data"))
             implementation(project(":feature:browse"))
+            implementation(project(":feature:provider"))
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
