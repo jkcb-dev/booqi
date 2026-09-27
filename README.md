@@ -1,31 +1,68 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Booqi
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+A Kotlin Multiplatform (Android + iOS, Compose Multiplatform UI) two-sided marketplace app: any
+User can book services (customer) and optionally also offer them (Provider) — see
+[`docs/DOMAIN.md`](docs/DOMAIN.md) for the full ubiquitous-language glossary and domain model.
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+## Start here
 
-### Running the apps
+- [`docs/DOMAIN.md`](docs/DOMAIN.md) — the product model (DDD): entities, aggregate rules, bounded
+  contexts. Read this before touching `domain`/`data`.
+- [`docs/domain/provider-flow.md`](docs/domain/provider-flow.md) /
+  [`docs/domain/customer-flow.md`](docs/domain/customer-flow.md) — the event list + Gherkin BDD
+  scenarios per feature group.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the module graph, the `feature:*` consolidation
+  policy, and cross-cutting file ownership.
+- [`docs/DATABASE.md`](docs/DATABASE.md) — the Supabase/Postgres schema (3NF ER diagram).
+- [`docs/design/SCREENS.md`](docs/design/SCREENS.md) /
+  [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — the Figma screen-to-ticket
+  mapping and the Atomic Design token/component catalog.
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+Work is tracked as [GitHub Issues](https://github.com/jkcb-dev/booqi/issues), labeled by role
+(`role:architect`/`role:domain-data`/`role:compose-ui`/`role:platform-integration`) and context
+(`context:provider`/`context:customer`/`cross-cutting`). Each role's responsibilities, ownership,
+and workflow are defined in [`.claude/agents/`](.claude/agents/). Branching follows GitHub Flow:
+one `feature/<issue-number>-<slug>` branch per ticket, PR into `main`, no direct commits to `main`
+except for meta/process files (docs, `.claude/agents/`).
+
+## Module structure
+
+```
+feature:browse                                      ← Compose UI: Catalog/discovery (Customer)
+              ↓
+            domain                                   ← Shared Domain & Data: entities, use cases
+              ↓
+             data                                    ← Shared Domain & Data: repositories, datasources
+              ↓
+core:common, core:network, core:database,
+core:designsystem, core:navigation                   ← Architect
+```
+
+`feature:booking` and `feature:provider` are planned modules (not yet created — see
+`docs/ARCHITECTURE.md`'s feature-module policy) that land once their first ticket needs them.
+`androidApp`/`iosApp`/`shared` are the platform entry points (Platform Integration).
+
+## Setup for a fresh clone
+
+This repo uses graphify for an auto-rebuilding knowledge graph on every commit. Git hooks aren't
+versioned by git itself, so run once after cloning:
+
+```bash
+graphify hook install
+```
+
+## Running the apps
 
 - Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+- iOS app: open [`/iosApp`](./iosApp) in Xcode and run it from there, or use the IDE run widget.
 
-### Running tests
-
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+## Running tests
 
 - Android tests: `./gradlew :shared:testAndroidHostTest`
 - iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+- Static analysis: `./gradlew detekt`
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+Built with [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
+and [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/).

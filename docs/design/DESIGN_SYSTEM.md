@@ -48,8 +48,8 @@ derivation of the same hues, flagged in code, not a second Figma-sourced set.
 | Label | 13px · 700 (Bold) |
 | Caption | 11px · 500 (Medium) |
 
-Font family is Compose's default pending a follow-up ticket to add Nunito's `.ttf` files as a
-`composeResources` font — sizes/weights are already Figma-accurate.
+Font family is Compose's default pending #31 (adding Nunito's `.ttf` files as a
+`composeResources` font) — sizes/weights are already Figma-accurate.
 
 ### Spacing — 8pt scale
 
@@ -141,6 +141,6 @@ that's the trigger to promote it into `core:designsystem` — don't duplicate it
 
 - Dark color palette: not defined in Figma yet; current dark scheme is a placeholder derivation
   (see `BooqiTheme.kt` comments).
-- Nunito font files: sizes/weights are wired, actual `.ttf` resources are a follow-up ticket.
+- Nunito font files: sizes/weights are wired, actual `.ttf` resources are tracked in #31.
 - Templates: intentionally not built ahead of the screens that need them (no speculative
   building, per every role file's rules).
