@@ -7,8 +7,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 // Real type scale from the Booqi Figma file (Foundations page, Type Scale · Nunito section) —
-// resolves issue #7. Font family stays Compose's default until Nunito's .ttf files are added as
-// a composeResources font in a follow-up ticket; sizes/weights below already match Figma exactly.
+// resolves issue #7. Font family stays Compose's default until #31 (wiring Nunito's .ttf files
+// in as a composeResources font) lands; sizes/weights below already match Figma exactly.
 //
 // Figma's 6-step scale (Display/Title/Heading/Body/Label/Caption) is coarser than Material3's 15
 // roles, so each step covers the M3 roles closest to it rather than inventing extra sizes.
