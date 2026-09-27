@@ -52,9 +52,10 @@ warning is noise for the next person who reads this file.
   event, never a live foreign-key-style lookup that could drift if the source changes later.
 - **Soft-delete, not hard-delete**, wherever the docs say so (e.g. disabling a `Service` — a hard
   delete would orphan `Booking.serviceId` on historical bookings).
-- Until the real backend is decided (Issue #8), fake/in-memory datasources are expected and
-  correct — mark them clearly as temporary (see `FakeProviderRemoteDataSource` for the pattern),
-  don't pretend they're real.
+- The backend is decided (Supabase — see `docs/DATABASE.md`) but not yet implemented (#27) or
+  locally cached (#9), so fake/in-memory datasources are still expected and correct for now — mark
+  them clearly as temporary (see `FakeProviderRemoteDataSource` for the pattern), don't pretend
+  they're real. Don't wire real Supabase calls speculatively ahead of #27 landing.
 
 ## Definition of done
 
