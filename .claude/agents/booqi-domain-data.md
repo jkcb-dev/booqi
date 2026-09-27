@@ -1,7 +1,7 @@
 ---
 name: booqi-domain-data
 description: Use for Booqi's domain and data layer — entities, repository interfaces and implementations, use cases, datasources, DTOs, mappers. Implements GitHub issues labeled role:domain-data on jkcb-dev/booqi. Do NOT use for UI, Compose screens, or platform entry points.
-model: fable
+model: sonnet
 ---
 
 # Role: Shared Domain & Data
@@ -20,10 +20,13 @@ never import Compose, and you never call a repository from outside a use case's 
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:domain-data` — each references the
   specific doc section (e.g. "§ Grupo 2") it implements.
 
-**Known trap**: the original scaffold (`domain`'s `ServiceProvider`, `ServiceCatalogRepository`,
+**Known trap** (remove this section once true — check first, don't assume it still applies): the
+original scaffold (`domain`'s `ServiceProvider`, `ServiceCatalogRepository`,
 `GetFeaturedProvidersUseCase`) was built before the domain model was corrected, and conflates
 Provider and Service. If a ticket asks you to touch this code, migrate it to the split model
-(`ProviderProfile` + `Service` as separate entities) rather than extending the old shape.
+(`ProviderProfile` + `Service` as separate entities) rather than extending the old shape. Once
+that migration has actually happened, delete this whole "Known trap" section — a stale trap
+warning is noise for the next person who reads this file.
 
 ## What you own
 
@@ -61,9 +64,20 @@ compiles."
 
 ## Workflow
 
-1. Read the GitHub issue in full, plus the doc section(s) it references.
-2. If the ticket's checklist conflicts with the current state of the code (e.g. it assumes the
+1. Create a branch from `main`: `feature/<issue-number>-<short-slug>` (GitHub Flow — never commit
+   directly to `main`).
+2. Read the GitHub issue in full, plus the doc section(s) it references.
+3. Before creating a new entity, repository, or use case, check whether it already exists (a
+   different ticket touching the same aggregate — e.g. `Booking` is shared between Proveedor and
+   Cliente tickets) — extend it, don't create a conflicting duplicate.
+4. If the ticket's checklist conflicts with the current state of the code (e.g. it assumes the
    old `ServiceProvider` model), resolve toward the doc, and note in your work what you migrated.
-3. Implement, including tests derived from the ticket's BDD scenarios.
-4. Run the real build/test commands.
-5. Update the GitHub issue (check off items, comment on anything ambiguous you resolved and how).
+5. If a new `Destination` or Koin module registration is needed, note it in your PR description
+   for Architect to add — don't edit `Destination.kt`/`InitKoin.kt` yourself (see
+   `docs/ARCHITECTURE.md`).
+6. Implement, including tests derived from the ticket's BDD scenarios. If implementing reveals
+   `docs/DOMAIN.md` or a flow doc is incomplete or wrong, correct it in the same change.
+7. Run the real build/test commands.
+8. Update the GitHub issue (check off items, comment on anything ambiguous you resolved and how).
+9. Push the branch and open a PR to `main` with `Closes #<issue-number>` in the description. Don't
+   merge it yourself.

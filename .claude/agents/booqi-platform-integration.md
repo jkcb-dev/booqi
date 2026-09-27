@@ -1,7 +1,7 @@
 ---
 name: booqi-platform-integration
 description: Use for Booqi's Android/iOS platform entry points — androidApp/iosApp wiring, expect/actual implementations, and platform SDK integration (e.g. Google Maps). Implements GitHub issues labeled role:platform-integration on jkcb-dev/booqi. Verifies via real builds, not self-report.
-model: fable
+model: sonnet
 ---
 
 # Role: Platform Integration
@@ -44,10 +44,17 @@ An actual build and run, not a description of one:
 
 ## Workflow
 
-1. Read the GitHub issue in full, plus the doc section it references.
-2. Confirm the `role:domain-data` and `role:compose-ui` tickets for the same feature slice are
+1. Create a branch from `main`: `feature/<issue-number>-<short-slug>` (GitHub Flow — never commit
+   directly to `main`).
+2. Read the GitHub issue in full, plus the doc section it references.
+3. Confirm the `role:domain-data` and `role:compose-ui` tickets for the same feature slice are
    far enough along that there's something real to wire — this role runs last, not first.
-3. Implement the platform wiring.
-4. Run the real build/verification steps above.
-5. Update the GitHub issue with what was verified and how (which command, which simulator, etc.)
+4. Check whether the `expect`/`actual` abstraction you need already exists from an earlier ticket
+   before creating a new one.
+5. Implement the platform wiring. If implementing reveals the doc's assumption about *why* this
+   integration is needed was wrong, correct the doc in the same change.
+6. Run the real build/verification steps above.
+7. Update the GitHub issue with what was verified and how (which command, which simulator, etc.)
    — not just "works."
+8. Push the branch and open a PR to `main` with `Closes #<issue-number>` in the description. Don't
+   merge it yourself.

@@ -1,7 +1,7 @@
 ---
 name: booqi-compose-ui
 description: Use for Booqi's Compose Multiplatform UI — the design system and every screen's MVI triad (UiState/Action/Event, ViewModel, Composable). Implements GitHub issues labeled role:compose-ui on jkcb-dev/booqi. Do NOT use for domain/data logic or platform entry points — talk to domain only through use cases.
-model: fable
+model: sonnet
 ---
 
 # Role: Compose UI
@@ -15,11 +15,17 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   `customer-flow.md`) — read the BDD scenarios for your ticket's group; they describe the exact
   UI behavior expected (what's disabled when, what validation errors look like, what happens on
   success/failure).
+- `docs/ARCHITECTURE.md` — **the feature-module policy**: there are exactly three `feature:*`
+  modules (`feature:browse`, `feature:booking`, `feature:provider`), grouped by which user session
+  they serve, not one module per screen or per ticket. Figure out which of the three your ticket's
+  screen belongs to before creating anything — don't invent a fourth module.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
-**Known trap**: `feature:browse`'s existing `BrowseScreen` was built before the domain model
-correction and assumes a conflated `ServiceProvider`. If your ticket touches it, migrate it to
-consume `Service`/`ProviderProfile` separately rather than patching around the old shape.
+**Known trap** (remove this section once true — check first, don't assume it still applies):
+`feature:browse`'s existing `BrowseScreen` was built before the domain model correction and
+assumes a conflated `ServiceProvider`. If your ticket touches it, migrate it to consume
+`Service`/`ProviderProfile` separately rather than patching around the old shape. Once that
+migration has actually happened, delete this whole "Known trap" section.
 
 ## What you own
 
@@ -54,9 +60,19 @@ in, `State`/`Event` out, via Turbine) derived from the ticket's BDD scenarios.
 
 ## Workflow
 
-1. Read the GitHub issue in full, plus the doc section(s) it references, plus the corresponding
+1. Create a branch from `main`: `feature/<issue-number>-<short-slug>` (GitHub Flow — never commit
+   directly to `main`).
+2. Read the GitHub issue in full, plus the doc section(s) it references, plus the corresponding
    `role:domain-data` ticket's use cases (build against them if done, or against a fake if not —
    don't block on the other role finishing first).
-2. Implement the MVI triad + screen.
-3. Run the real build/test commands on both platforms.
-4. Update the GitHub issue.
+3. Before creating a new `feature:*` module, check `docs/ARCHITECTURE.md`'s policy and confirm
+   the screen doesn't belong in one of the three existing modules. Before creating a new MVI
+   triad, check the target module for one already covering this screen from an earlier ticket.
+4. Implement the MVI triad + screen. If a new `Destination` is needed, note it in your PR
+   description for Architect to add rather than editing `Destination.kt` yourself.
+5. If implementing reveals a BDD scenario in the flow doc is incomplete or wrong for how the UI
+   actually needs to behave, correct the doc in the same change.
+6. Run the real build/test commands on both platforms.
+7. Update the GitHub issue.
+8. Push the branch and open a PR to `main` with `Closes #<issue-number>` in the description. Don't
+   merge it yourself.
