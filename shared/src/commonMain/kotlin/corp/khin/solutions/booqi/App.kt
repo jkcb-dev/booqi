@@ -27,9 +27,12 @@ fun App() {
                     navigator.navigateTo(Destination.ProviderDetail(providerId))
                 },
             )
-            // Remaining destinations (ProviderDetail, Booking, BookingConfirmation, MyBookings)
-            // land with their own feature modules — Navigator/Destination already account for
-            // them so wiring a new one is additive here, not a rewrite.
+            // Remaining destinations land with their own feature modules as those tickets ship:
+            // ProviderDetail, ProviderProfileView (feature:browse); Booking, BookingConfirmation,
+            // MyBookings, AddressSelection (feature:booking); ProviderProfileSetup, ServiceList,
+            // ServiceEditor, ScheduleManagement, BookingRequestInbox (feature:provider, not yet a
+            // Gradle module). Navigator/Destination already account for all of them so wiring a
+            // new one in is additive here, not a rewrite.
             else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
         }
     }
