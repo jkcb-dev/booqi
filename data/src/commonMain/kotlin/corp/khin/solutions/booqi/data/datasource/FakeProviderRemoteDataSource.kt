@@ -3,10 +3,10 @@ package corp.khin.solutions.booqi.data.datasource
 import corp.khin.solutions.booqi.data.dto.ProviderDto
 
 /**
- * TEMPORARY. Stands in for a real Ktor-backed [ProviderRemoteDataSource] until there's an actual
- * backend API to call — see [corp.khin.solutions.booqi.core.network.createHttpClient]. This
- * exists purely so the module graph and MVI wiring can be proven end-to-end (Architect's
- * definition of done) without waiting on a backend decision. Replace, don't extend.
+ * TEMPORARY. Stands in for a real Supabase-backed [ProviderRemoteDataSource] until #27 (Supabase
+ * schema + `supabase-kt` wiring) lands — see `docs/DATABASE.md`. This exists purely so the module
+ * graph and MVI wiring can be proven end-to-end (Architect's definition of done) without blocking
+ * on backend implementation work. Replace, don't extend.
  */
 class FakeProviderRemoteDataSource : ProviderRemoteDataSource {
     override suspend fun fetchFeaturedProviders(): List<ProviderDto> = listOf(

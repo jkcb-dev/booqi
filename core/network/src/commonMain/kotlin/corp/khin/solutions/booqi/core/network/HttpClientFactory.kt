@@ -12,8 +12,9 @@ import kotlinx.serialization.json.Json
  * (OkHttp on Android, Darwin on iOS) from whichever single engine artifact is on that target's
  * classpath — no expect/actual needed here.
  *
- * Real endpoints/DTOs are added by the Shared Domain & Data role once the backend API is defined;
- * this factory is the one place client-wide concerns (serialization, logging, timeouts) live.
+ * Real endpoints/DTOs are added by the Shared Domain & Data role once #27 (Supabase schema +
+ * `supabase-kt` wiring — see `docs/DATABASE.md`) lands; this factory is the one place
+ * client-wide concerns (serialization, logging, timeouts) live.
  */
 fun createHttpClient(): HttpClient = HttpClient {
     install(ContentNegotiation) {
