@@ -153,9 +153,36 @@ Escenario: El Proveedor habilita un Servicio que ya estaba activo
 
 | Evento | Comando | Actor | Agregado |
 |---|---|---|---|
-| Se definió el horario semanal | `DefinirHorarioSemanal` | Proveedor | `ProviderProfile` |
-| Se modificó el horario semanal | `ModificarHorarioSemanal` | Proveedor | `ProviderProfile` |
-| Se bloqueó un día/hora específico | `BloquearFechaHora` | Proveedor | `ProviderProfile` |
+| Se definió el horario semanal | `DefinirHorarioSemanal` | Proveedor | `Availability` (por `providerId`) |
+| Se modificó el horario semanal | `ModificarHorarioSemanal` | Proveedor | `Availability` |
+| Se bloqueó un día/hora específico | `BloquearFechaHora` | Proveedor | `Availability` |
+| Se desbloqueó un día/hora *(inverso de bloquear, añadido en #16)* | `DesbloquearFechaHora` | Proveedor | `Availability` |
+| *(consulta, sin evento)* Ver mi horario y fechas bloqueadas | `ObtenerHorario` | Proveedor | `Availability` (lectura) |
+| *(consulta, sin evento)* Calcular los TimeSlots reservables | `GenerarTimeSlots` | Cliente / sistema | `Availability` + duración del Servicio (cálculo puro) |
+
+Notas de modelado (#16):
+
+- `Availability` es un value object **separado** de `ProviderProfile`, referenciado solo por
+  `providerId` (mismo principio que `Service`). Contiene el horario semanal (como máximo una franja
+  por día de la semana, con interruptor activo/inactivo — Figma P6) y los periodos bloqueados (un
+  día completo o un rango de horas dentro de un día — Figma P7). El **rango de pausa** (Grupo 1)
+  sigue viviendo en `ProviderProfile.pausedRange`; la generación de TimeSlots lo recibe como
+  entrada explícita en vez de duplicarlo.
+- `DefinirHorarioSemanal` fija la semana completa (reemplaza lo que hubiera); `ModificarHorarioSemanal`
+  cambia solo los días indicados de un horario **ya existente** y falla con "no encontrado" si el
+  Proveedor aún no definió ninguno.
+- Validación (ambos comandos y `BloquearFechaHora`), siempre antes de cualquier persistencia: la hora
+  de fin de un día activo —o de un rango bloqueado— debe ser posterior a la de inicio, y un día de la
+  semana no puede repetirse en un mismo horario. Un día inactivo conserva su rango sin validarse.
+- Generación de TimeSlots: por cada fecha del rango pedido, solo los días **activos** y no pausados;
+  los TimeSlots van consecutivos desde la hora de inicio del día mientras el slot **completo** quepa
+  antes de la hora de fin; se omiten los que se solapan con un rango bloqueado (el solape es
+  semiabierto: un slot que termina justo cuando empieza el bloqueo sigue disponible) y todo el día si
+  está bloqueado completo.
+- **Pendiente para #18/#25 (`Booking`):** descontar los TimeSlots ya ocupados por una `Booking`
+  pendiente o confirmada. `Booking` aún no existe, así que `GenerarTimeSlots` solo refleja la
+  disponibilidad del horario; nada de eso está simulado aquí. Ese cálculo también deberá seguir
+  respetando una cita aceptada aunque su hora quede después fuera del horario semanal.
 
 ```gherkin
 Escenario: El Proveedor define su horario semanal
@@ -174,6 +201,62 @@ Escenario: El Proveedor bloquea un día específico
   Cuando bloquea el 25 de diciembre
   Entonces ese día no aparece como disponible para nuevas reservas
   Y las citas ya aceptadas ese día no se ven afectadas
+
+Escenario: El Proveedor bloquea solo un rango de horas de un día
+  Dado que el Proveedor tiene un horario semanal activo
+  Cuando bloquea de 12:00 a 14:00 de un día concreto
+  Entonces los TimeSlots que se solapan con ese rango no aparecen como disponibles
+  Y el resto de horas de ese día siguen disponibles
+
+Escenario: El Proveedor desbloquea una fecha
+  Dado que el Proveedor tiene una fecha o rango de horas bloqueado
+  Cuando lo desbloquea
+  Entonces ese día/rango vuelve a aparecer como disponible para nuevas reservas
+  Y desbloquear algo que no estaba bloqueado no produce ningún error
+
+Escenario: El Proveedor consulta su horario
+  Dado que el Proveedor tiene un horario semanal y fechas bloqueadas
+  Cuando abre el editor de horario o el calendario de bloqueo
+  Entonces ve sus horas por día de la semana, en orden de lunes a domingo
+  Y sus fechas bloqueadas en orden cronológico
+  Y un Proveedor sin horario definido ve un horario vacío, no un error
+
+Escenario: El Proveedor define o modifica un horario con horas inválidas
+  Dado que el Proveedor está definiendo o modificando su horario semanal
+  Cuando un día activo tiene una hora de fin igual o anterior a la de inicio
+  O el mismo día de la semana aparece dos veces
+  Entonces el sistema rechaza el guardado
+  Y el horario guardado no cambia
+
+Escenario: El Proveedor bloquea un rango de horas inválido
+  Dado que el Proveedor está bloqueando un rango de horas
+  Cuando la hora de fin es igual o anterior a la de inicio
+  Entonces el sistema rechaza el bloqueo
+  Y no se bloquea nada
+
+Escenario: El Proveedor modifica un horario que aún no definió
+  Dado que el Proveedor no tiene horario semanal definido
+  Cuando intenta modificar las horas de un día
+  Entonces el sistema responde que no hay horario que modificar
+  Y no se guarda ningún horario
+
+Escenario: Se generan los TimeSlots según el horario y la duración del Servicio
+  Dado que el Proveedor trabaja los lunes de 09:00 a 12:00
+  Y un Servicio dura 60 minutos
+  Cuando se generan los TimeSlots de un lunes
+  Entonces hay TimeSlots a las 09:00, 10:00 y 11:00
+  Y un tramo final más corto que la duración del Servicio no genera TimeSlot
+
+Escenario: Los días inactivos y los días sin horario no generan TimeSlots
+  Dado que el Proveedor tiene el miércoles desactivado y no definió el domingo
+  Cuando se generan los TimeSlots de un rango de fechas
+  Entonces no hay ningún TimeSlot en miércoles ni en domingo
+
+Escenario: Un perfil pausado no genera TimeSlots durante la pausa
+  Dado que el Proveedor pausó su perfil del 10 al 20 de agosto
+  Cuando se generan los TimeSlots de un rango que incluye esas fechas
+  Entonces no hay TimeSlots del 10 al 20 de agosto, ambos incluidos
+  Y los días fuera de la pausa generan TimeSlots con normalidad
 ```
 
 ---
