@@ -63,9 +63,9 @@ Issues, not this file. Kept as-is for the historical record of what got scaffold
 domain/data/UI work has started.
 
 - [x] Domain & Data — expose full provider profile (bio, service list) vs. the summary shape
-      `ServiceProvider` currently has: `VerPerfilProveedorUseCase` (#20); the old `ServiceProvider`
-      stays `@Deprecated` until #21 migrates `feature:browse`
-- [ ] Compose UI — provider profile screen
+      `ServiceProvider` had: `VerPerfilProveedorUseCase` (#20); the old `ServiceProvider`
+      cluster was deleted by #21
+- [x] Compose UI — provider profile screen (`ProviderPublicProfileScreen`, #21)
 
 ---
 

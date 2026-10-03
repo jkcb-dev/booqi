@@ -22,18 +22,6 @@ never import Compose, and you never call a repository from outside a use case's 
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:domain-data` — each references the
   specific doc section (e.g. "§ Grupo 2") it implements.
 
-**Known trap** (remove this section once true — check first, don't assume it still applies): the
-original scaffold's conflated model (`ServiceProvider`, `LegacyServiceCategory`,
-`ServiceCatalogRepository`, `GetFeaturedProvidersUseCase` and the data-layer
-`ProviderDto`/`ProviderRemoteDataSource`/`FakeProviderRemoteDataSource`/`ProviderMapper`/
-`ServiceCatalogRepositoryImpl`) is **`@Deprecated` and replaced** by the split model — Catalog reads
-go through `CatalogRepository` and `BuscarServiciosUseCase`/`VerDetalleServicioUseCase`/
-`VerPerfilProveedorUseCase` (#20). It is kept only because `feature:browse` still compiles against
-it until #21 migrates `BrowseScreen`. Never extend it or use it in new code; once #21 has landed
-(the checklist item "remove the deprecated ServiceProvider model" on #21), delete that whole
-cluster and then this "Known trap" section — a stale trap warning is noise for the next person
-who reads this file.
-
 ## What you own
 
 - `domain/*` — entities (plain data classes, no serialization annotations), `Repository`

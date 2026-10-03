@@ -4,8 +4,8 @@
 into one entity. A product discovery session (see `docs/domain/provider-flow.md`) clarified that
 they're separate concepts with separate lifecycles. This version replaces that one; nothing below
 should be assumed to match the initial scaffold's `ServiceProvider` type, which was wrong. The
-Catalog now runs on the split model (#20); the old type, repository and use case survive only as
-`@Deprecated` code for `feature:browse` until #21 migrates it.
+Catalog runs on the split model (#20) and `feature:browse` is built on it (#21); the old
+`ServiceProvider` cluster has been deleted.
 
 Scope note, unchanged from before: this is **tactical DDD** (ubiquitous language, aggregates,
 value objects, invariants), not full strategic DDD. Bounded contexts stay as packages inside the
@@ -19,7 +19,7 @@ enough to justify the ceremony.
 | **User** | An account. Authenticates via Google, Facebook, Apple ID, or email/password. Any User can book services (customer capability is implicit); a User optionally also has a **ProviderProfile** if they choose to offer services. Being a customer and a provider is not an exclusive choice — one account can be both. |
 | **ProviderProfile** | The identity of *who* offers services: display name, photo, description, location (a text line plus optional `coordinates`), aggregate rating, weekly availability. One optional ProviderProfile per User. |
 | **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, modality (Local / Domicilio / both) and **category**. A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
-| **ServiceCategory** | What kind of Service it is — the C1 chips: `BARBERIA`, `UNAS`, `LIMPIEZA`, `MASAJES`, `TECNICO`, plus `OTRO` (default when the Provider hasn't chosen one; no chip, only found under "Todos"). Lives on the `Service`, not the Provider. The old `ServiceCategory` of the deprecated `ServiceProvider` is now `LegacyServiceCategory`. |
+| **ServiceCategory** | What kind of Service it is — the C1 chips: `BARBERIA`, `UNAS`, `LIMPIEZA`, `MASAJES`, `TECNICO`, plus `OTRO` (default when the Provider hasn't chosen one; no chip, only found under "Todos"). Lives on the `Service`, not the Provider. |
 | **GeoPoint** | A latitude/longitude pair (value object) — the lat/lng half of `Address`. `ProviderProfile.coordinates` (optional, `provider_profiles.location_lat/lng`) and the Customer's GPS fix are compared with a simple great-circle distance. |
 | **Modality** | Whether a Service is delivered at the Provider's location (**Local**) or the Customer's (**Domicilio**), or both. |
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
@@ -53,9 +53,9 @@ then title, then id), `VerDetalleServicioUseCase` (C3), `VerPerfilProveedorUseCa
 active Services + rating aggregate + reviews, reusing `ObtenerCalificacionesDelProveedor`), and the
 chip list (`ServiceCategory.filterable`). They return read models (`ServiceSearchResult`,
 `ServiceDetail`, `ProviderPublicProfile`, ...) and read through `CatalogRepository`, which joins
-`Service.providerId == ProviderProfile.id` — see "providerId contract" below. **Not built:** the
-Customer's UI (#21; `feature:browse` still shows the deprecated `ServiceProvider` model), a
-category picker in the Servicios editor and a way for a Provider to set `coordinates` (follow-ups
+`Service.providerId == ProviderProfile.id` — see "providerId contract" below. The Customer's
+search/detail/profile UI is #21 (`feature:browse`; it searches from a TEMPORARY fixed location until
+platform location exists, #24). **Not built:** a category picker in the Servicios editor and a way for a Provider to set `coordinates` (follow-ups
 of #20 — until then every Service is `OTRO` and every profile has no coordinates, so category and
 distance filters only find sample data).
 
