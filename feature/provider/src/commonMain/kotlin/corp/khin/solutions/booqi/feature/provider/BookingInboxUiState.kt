@@ -3,7 +3,7 @@ package corp.khin.solutions.booqi.feature.provider
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 
 /** The two lists of the screen: "Solicitudes" (Figma P8) and "Confirmadas" (the P10 list). */

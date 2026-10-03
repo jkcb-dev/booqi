@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 
 /**
@@ -38,7 +38,7 @@ import kotlinx.datetime.TimeZone
 class BookingInboxViewModel(
     private val queries: BookingInboxQueries,
     private val commands: BookingInboxCommands,
-    private val clock: Clock = SystemClock,
+    private val clock: Clock = Clock.System,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
     private val providerId: String = TEMPORARY_PROVIDER_ID,
 ) : ViewModel() {
