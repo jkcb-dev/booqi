@@ -30,7 +30,9 @@ enough to justify the ceremony.
 ## Bounded contexts
 
 **Identity** — the `User` account itself: authentication, whether a ProviderProfile exists for
-this user. Not built yet.
+this user. Not built in code yet; the product rules (browse without an account, sign-in only to
+book or become a Provider, email verification, account deletion with anonymized history) are
+specified in `docs/domain/identity-flow.md` (issue #50).
 
 **Provider Management** — a Provider's own "back office": profile, Services (create/edit/disable),
 Availability (define/modify schedule, block dates, pause profile). Fully specified in
