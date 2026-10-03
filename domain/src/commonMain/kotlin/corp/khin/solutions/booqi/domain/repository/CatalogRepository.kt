@@ -4,9 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.CatalogEntry
 
 /**
- * Domain-owned contract for the Catalog's read side (docs/domain/customer-flow.md § Grupo 1). It
- * replaces the deprecated `ServiceCatalogRepository`, which served the pre-correction
- * `ServiceProvider` model.
+ * Domain-owned contract for the Catalog's read side (docs/domain/customer-flow.md § Grupo 1).
  *
  * The Catalog searches *Services*, so the one thing it needs from storage is every [CatalogEntry]:
  * a Service joined to its owning profile by `Service.providerId == ProviderProfile.id` (the

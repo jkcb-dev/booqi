@@ -8,9 +8,6 @@ package corp.khin.solutions.booqi.domain.model
  * [OTRO] is the default for a Service whose Provider hasn't picked one (the Servicios editor has no
  * category picker yet, see the follow-up on #20) and for unknown stored values. It still shows up
  * under "Todos" but has no chip of its own — see [filterable].
- *
- * Not to be confused with the pre-correction [LegacyServiceCategory] of the deprecated
- * `ServiceProvider` model, which this replaces.
  */
 enum class ServiceCategory {
     BARBERIA,

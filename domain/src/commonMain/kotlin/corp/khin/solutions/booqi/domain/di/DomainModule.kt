@@ -15,7 +15,6 @@ import corp.khin.solutions.booqi.domain.usecase.DeshabilitarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.EditarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.ExpirarSolicitudesVencidasUseCase
 import corp.khin.solutions.booqi.domain.usecase.GenerarTimeSlotsUseCase
-import corp.khin.solutions.booqi.domain.usecase.GetFeaturedProvidersUseCase
 import corp.khin.solutions.booqi.domain.usecase.HabilitarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.ModificarHorarioSemanalUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
@@ -35,8 +34,6 @@ import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import org.koin.dsl.module
 
 val domainModule = module {
-    // Deprecated pre-correction model, only for feature:browse until #21 migrates it.
-    factory { GetFeaturedProvidersUseCase(get()) }
     factory { ActivarModoProveedorUseCase(get()) }
     factory { CompletarPerfilDeProveedorUseCase(get()) }
     factory { PausarPerfilUseCase(get()) }

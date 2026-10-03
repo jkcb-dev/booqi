@@ -34,21 +34,6 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   verification, and environment traps (detekt limits on Composables, no auth yet, etc.).
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
-**Known traps** (remove each once true — check first, don't assume either still applies):
-- `feature:browse`'s existing `BrowseScreen` was built before the domain model correction and
-  assumes a conflated `ServiceProvider` (now `@Deprecated`, along with `GetFeaturedProvidersUseCase`).
-  The replacement domain exists (#20): `BuscarServiciosUseCase`, `VerDetalleServicioUseCase`,
-  `VerPerfilProveedorUseCase` and `ServiceCategory.filterable` for the chips. When #21 migrates the
-  screen, move it to those and remove the deprecated model in the same flow (checklist item on #21).
-  Heads-up: until #50 aligns provider ids, the in-app sample Services of the Provider screens don't
-  join to a profile; the catalog sample data (`SampleData.providerProfiles()`) does.
-- That same `BrowseScreen.kt` also predates the real design tokens landing (#7/#29) and still
-  hardcodes raw `.dp` values (`16.dp`, `12.dp`) instead of `BooqiSpacing`. If your ticket touches
-  it, migrate those to tokens too rather than adding more hardcoded values alongside them.
-
-Once a trap's migration has actually happened, delete that bullet — a stale trap warning is noise
-for the next person who reads this file.
-
 ## What you own
 
 - `core:designsystem` — `BooqiTheme`, real tokens (`Color.kt`/`Type.kt`/`Dimens.kt`, resolved from

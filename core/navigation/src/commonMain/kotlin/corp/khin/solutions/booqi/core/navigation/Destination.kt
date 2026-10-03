@@ -17,19 +17,14 @@ sealed interface Destination {
 
     data object Browse : Destination
 
-    /**
-     * NOTE: despite the name, this currently renders a *Service*'s detail (see
-     * `feature:browse`'s `BrowseScreen`/`ServiceProvider`), a holdover from the pre-correction
-     * domain model described in `docs/DOMAIN.md` (`ServiceProvider` conflated Provider and
-     * Service; not yet split in code). Left unrenamed here — that split is tracked separately in
-     * `docs/DOMAIN.md` and is not this ticket's scope. [ProviderProfileView] below is the
-     * *actually* distinct "full Provider profile" screen the domain docs call for.
-     */
-    data class ProviderDetail(val providerId: String) : Destination
+    /** Detalle de un Servicio (C3, `VerDetalleServicio`, customer-flow.md Grupo 1). Renamed from
+     * `ProviderDetail` once the Provider/Service split landed (#20/#21) — it always rendered a
+     * Service. [ProviderProfileView] below is the Provider's public profile (C4). */
+    data class ServiceDetail(val serviceId: String) : Destination
 
     /** Perfil completo de Proveedor (`VerPerfilProveedor`, customer-flow.md Grupo 1) — every
      * Service the Provider offers plus their aggregate rating, distinct from a single Service's
-     * detail ([ProviderDetail]). Reached by tapping the Provider's name/photo from there. */
+     * detail ([ServiceDetail]). Reached by tapping the Provider's name/photo from there. */
     data class ProviderProfileView(val providerId: String) : Destination
 
     // --- feature:booking — Scheduling + address (Customer) ------------------------------------

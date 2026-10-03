@@ -18,7 +18,7 @@ class ProviderProfileRepositoryImpl(
     @Suppress("TooGenericExceptionCaught") // deliberate: this boundary is where every real
     // exception (network, serialization, ...) gets translated into a DomainError — see
     // core:common's DomainResult docs. Narrowing this catch would just leak raw exceptions into
-    // domain/presentation instead of preventing them. Same pattern as ServiceCatalogRepositoryImpl.
+    // domain/presentation instead of preventing them. Same pattern as the other repository implementations.
     override suspend fun activateProviderMode(userId: String): DomainResult<ProviderProfile> = try {
         val profile = remoteDataSource.findByUserId(userId)
             ?: remoteDataSource.createEmptyProfile(userId)
