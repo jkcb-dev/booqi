@@ -64,3 +64,11 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   its ticket.
 - **Validation failures** are `DomainError.InvalidInput(message)`, returned by the use case before
   any I/O. ViewModels surface them as form errors, never as a crash or a generic error event.
+- **ViewModels are not destination-scoped.** Our simple `DefaultNavigator` + `when(backStack.last())`
+  swaps composables without giving each destination its own `ViewModelStoreOwner`, so
+  `koinViewModel()` hands the same instance back every time a screen re-enters composition (and
+  Koin does not key it by `parametersOf(...)`; pass `key = ...` if you need separate instances).
+  A screen must therefore **(re)load or reset on entry** — e.g. `LaunchedEffect(Unit) { onAction(Refresh) }`
+  for a list, `LaunchedEffect(id) { onAction(Start(id)) }` for a form — and must not assume
+  init-time loading is enough: "save in the editor, pop back to the list" otherwise shows the
+  stale list, and "add → add again" shows the previous form. (Found on #15.)

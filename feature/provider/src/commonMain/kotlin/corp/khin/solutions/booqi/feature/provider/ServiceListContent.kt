@@ -1,6 +1,7 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,18 +24,29 @@ import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColor
 
 private const val LOAD_ERROR_MESSAGE = "No pudimos cargar tus servicios"
 
-/** P4 body: loading spinner, load-failure retry, empty state, or the list (disabled services
- * included) with the "Agregar servicio" action. */
+/** P4: the "Mis servicios" heading (always visible) over a body that is a loading spinner, a
+ * load-failure retry, the empty state, or the list (disabled services included). */
 @Composable
 internal fun ServiceListContent(
     state: ServiceListUiState,
     onAction: (ServiceListAction) -> Unit,
 ) {
-    when {
-        state.isLoading -> CenteredColumn { CircularProgressIndicator() }
-        state.error != null && state.services.isEmpty() -> LoadErrorContent(state.error, onAction)
-        state.services.isEmpty() -> EmptyServicesContent(onAction)
-        else -> ServicesColumn(state, onAction)
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = "Mis servicios",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = BooqiSpacing.md, top = BooqiSpacing.md, end = BooqiSpacing.md),
+        )
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                // A refresh over an already-shown list keeps the list on screen instead of
+                // blanking it with a spinner.
+                state.isLoading && state.services.isEmpty() -> CenteredColumn { CircularProgressIndicator() }
+                state.error != null && state.services.isEmpty() -> LoadErrorContent(state.error, onAction)
+                state.services.isEmpty() -> EmptyServicesContent(onAction)
+                else -> ServicesColumn(state, onAction)
+            }
+        }
     }
 }
 
@@ -45,7 +57,6 @@ private fun ServicesColumn(state: ServiceListUiState, onAction: (ServiceListActi
         contentPadding = PaddingValues(BooqiSpacing.md),
         verticalArrangement = Arrangement.spacedBy(BooqiSpacing.md),
     ) {
-        item { Text("Mis servicios", style = MaterialTheme.typography.titleLarge) }
         state.error?.let { error ->
             item {
                 Text(

@@ -36,6 +36,11 @@ fun ServiceEditorScreen(
     val state by viewModel.state.collectAsState()
     val currentOnFinished by rememberUpdatedState(onFinished)
 
+    // Reset/reload on every entry and whenever serviceId changes: the ViewModel instance can be
+    // reused across visits (see ServiceEditorViewModel), so add -> edit -> add and edit A -> edit B
+    // must never show the previous visit's form.
+    LaunchedEffect(serviceId) { viewModel.onAction(ServiceEditorAction.Start(serviceId)) }
+
     // Effects are collected once, separately from state — see ServiceEditorEvent for why.
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->

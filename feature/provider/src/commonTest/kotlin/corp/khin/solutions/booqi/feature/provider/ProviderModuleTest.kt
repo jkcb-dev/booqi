@@ -63,6 +63,16 @@ class ProviderModuleTest {
     }
 
     @Test
+    fun `a ViewModel that Koin hands out again can be re-initialised to another service id`() {
+        val viewModel = koin.get<ServiceEditorViewModel> { parametersOf(null) }
+
+        viewModel.onAction(ServiceEditorAction.Start("service-9"))
+
+        assertEquals("service-9", viewModel.state.value.serviceId)
+        assertTrue(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun `editor view model resolves in edit mode with a service id`() {
         val viewModel = koin.get<ServiceEditorViewModel> { parametersOf("service-1") }
 

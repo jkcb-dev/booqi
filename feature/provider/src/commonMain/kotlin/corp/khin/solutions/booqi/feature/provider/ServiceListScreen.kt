@@ -24,6 +24,10 @@ fun ServiceListScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    // Reload on every entry: the ViewModel instance outlives this composition (see
+    // ServiceListViewModel), so a service added/edited in the editor must be picked up here.
+    LaunchedEffect(Unit) { viewModel.onAction(ServiceListAction.Refresh) }
+
     // Effects are collected once, separately from state — see ServiceListEvent for why.
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->

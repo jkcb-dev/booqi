@@ -9,6 +9,7 @@ import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.EditarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerServicioUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,28 +23,33 @@ import kotlinx.coroutines.launch
  * `Destination.ServiceEditor(serviceId)`. Talks to the domain only through
  * [AgregarServicioUseCase]/[EditarServicioUseCase]/[ObtenerServicioUseCase].
  *
+ * **No init-time load.** The instance can outlive a visit to the editor (not destination-scoped,
+ * see docs/DEVELOPMENT.md), so the screen sends [ServiceEditorAction.Start] on every entry; that
+ * resets all form state and (re)loads for the given id. [initialServiceId] only shapes the very
+ * first frame before `Start` arrives.
+ *
  * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]).
  */
 class ServiceEditorViewModel(
-    private val serviceId: String?,
+    initialServiceId: String?,
     private val agregarServicio: AgregarServicioUseCase,
     private val editarServicio: EditarServicioUseCase,
     private val obtenerServicio: ObtenerServicioUseCase,
     private val providerId: String = TEMPORARY_PROVIDER_ID,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ServiceEditorUiState(serviceId = serviceId, isLoading = serviceId != null))
+    private var serviceId: String? = initialServiceId
+    private var loadJob: Job? = null
+
+    private val _state = MutableStateFlow(initialStateFor(initialServiceId))
     val state: StateFlow<ServiceEditorUiState> = _state.asStateFlow()
 
     private val _events = Channel<ServiceEditorEvent>()
     val events = _events.receiveAsFlow()
 
-    init {
-        if (serviceId != null) loadService(serviceId)
-    }
-
     fun onAction(action: ServiceEditorAction) {
         when (action) {
+            is ServiceEditorAction.Start -> start(action.serviceId)
             is ServiceEditorAction.PhotoUrlChanged ->
                 _state.update { it.copy(photoUrlInput = action.value, photoError = null) }
             is ServiceEditorAction.TitleChanged -> _state.update { it.copy(titleInput = action.value) }
@@ -57,11 +63,21 @@ class ServiceEditorViewModel(
         }
     }
 
+    private fun initialStateFor(id: String?) = ServiceEditorUiState(serviceId = id, isLoading = id != null)
+
+    /** Clean slate for [id]: drops any previous visit's inputs/errors and cancels a stale load. */
+    private fun start(id: String?) {
+        loadJob?.cancel()
+        serviceId = id
+        _state.value = initialStateFor(id)
+        if (id != null) loadService(id)
+    }
+
     /** Escenario: "El Proveedor consulta un Servicio para editarlo" (and its "no existe" twin —
      * `NotFound` lands in [ServiceEditorUiState.error], which the screen renders as a
      * "servicio no encontrado" state with nothing to save). */
     private fun loadService(id: String) {
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             when (val result = obtenerServicio(id)) {
                 is DomainResult.Success -> _state.update { it.preloadedFrom(result.value) }
                 is DomainResult.Failure -> {
@@ -94,6 +110,11 @@ class ServiceEditorViewModel(
         if (priceCents == null || durationMinutes == null) {
             _state.update {
                 it.copy(
+                    // The use case never runs while the numbers are invalid, so to show every
+                    // error at once the photo-required rule it enforces is mirrored here for this
+                    // path only. The use case stays the authority: its InvalidInput is still what
+                    // is rendered when a valid-number submit reaches it (see onSaveFailed).
+                    photoError = if (current.photoUrlInput.isBlank()) PHOTO_REQUIRED_ERROR else null,
                     priceError = if (priceCents == null) PRICE_ERROR else null,
                     durationError = if (durationMinutes == null) DURATION_ERROR else null,
                 )
@@ -108,12 +129,13 @@ class ServiceEditorViewModel(
             durationMinutes = durationMinutes,
             modality = current.modality,
         )
+        val targetId = serviceId
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, photoError = null, priceError = null, durationError = null) }
-            val result = if (serviceId == null) {
+            val result = if (targetId == null) {
                 agregarServicio(providerId, details)
             } else {
-                editarServicio(serviceId, details)
+                editarServicio(targetId, details)
             }
             when (result) {
                 is DomainResult.Success -> {
@@ -137,6 +159,7 @@ class ServiceEditorViewModel(
 
     private companion object {
         const val NOT_FOUND_MESSAGE = "No se encontró el servicio"
+        const val PHOTO_REQUIRED_ERROR = "La foto es obligatoria"
         const val PRICE_ERROR = "Ingresá un precio válido, por ejemplo 12.50"
         const val DURATION_ERROR = "Ingresá la duración en minutos, por ejemplo 45"
     }

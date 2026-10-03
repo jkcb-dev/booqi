@@ -20,6 +20,11 @@ import kotlinx.coroutines.launch
  * [ObtenerServiciosDelProveedorUseCase]/[DeshabilitarServicioUseCase]/[HabilitarServicioUseCase].
  * Single [onAction] entry point, same shape as [ProviderProfileViewModel].
  *
+ * **No init-time load.** ViewModels are not destination-scoped by our simple navigator (see
+ * docs/DEVELOPMENT.md), so the same instance is reused each time the list re-enters composition,
+ * e.g. when coming back from the editor. [ServiceListScreen] therefore sends
+ * [ServiceListAction.Refresh] every time it enters composition.
+ *
  * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]); wiring can
  * pass the real one once Identity exists.
  */
@@ -30,15 +35,13 @@ class ServiceListViewModel(
     private val providerId: String = TEMPORARY_PROVIDER_ID,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ServiceListUiState())
+    // Starts in the loading state so the first frame before ServiceListScreen's Refresh never
+    // flashes the "no tenés servicios" empty state.
+    private val _state = MutableStateFlow(ServiceListUiState(isLoading = true))
     val state: StateFlow<ServiceListUiState> = _state.asStateFlow()
 
     private val _events = Channel<ServiceListEvent>()
     val events = _events.receiveAsFlow()
-
-    init {
-        load()
-    }
 
     fun onAction(action: ServiceListAction) {
         when (action) {

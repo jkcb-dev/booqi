@@ -45,12 +45,13 @@ class ServiceEditorViewModelTest {
         Dispatchers.resetMain()
     }
 
+    /** Builds the ViewModel and sends the Start [ServiceEditorScreen] sends on every entry. */
     private fun newViewModel(serviceId: String? = null) = ServiceEditorViewModel(
-        serviceId = serviceId,
+        initialServiceId = serviceId,
         agregarServicio = AgregarServicioUseCase(repository),
         editarServicio = EditarServicioUseCase(repository),
         obtenerServicio = ObtenerServicioUseCase(repository),
-    )
+    ).also { it.onAction(ServiceEditorAction.Start(serviceId)) }
 
     /** Dispatches [action] and suspends until the single event it emits is collected. */
     private suspend fun TestScope.performAndAwaitEvent(
@@ -149,6 +150,21 @@ class ServiceEditorViewModelTest {
             assertEquals(ServiceEditorEvent.Saved, event)
             assertEquals(1, repository.stored.size)
         }
+
+    @Test
+    fun `invalid numbers and a missing photo show all three field errors at once`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+        fillForm(viewModel, photoUrl = "", price = "doce", duration = "45 min")
+
+        viewModel.onAction(ServiceEditorAction.Save)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals("La foto es obligatoria", state.photoError)
+        assertTrue(state.priceError != null)
+        assertTrue(state.durationError != null)
+        assertTrue(repository.stored.isEmpty())
+    }
 
     @Test
     fun `a non numeric price or duration is a field error and never reaches the use case`() =
@@ -254,5 +270,93 @@ class ServiceEditorViewModelTest {
         assertFalse(viewModel.state.value.isLoading)
         assertEquals(ServiceEditorEvent.ShowError("No se encontró el servicio"), event)
         assertTrue(repository.stored.isEmpty())
+    }
+
+    /** Regression: add -> save -> add again reuses the same ViewModel instance. */
+    @Test
+    fun `entering add again after a saved add starts from a clean form`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+        fillForm(viewModel)
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+        assertEquals("Corte clásico", viewModel.state.value.titleInput)
+
+        viewModel.onAction(ServiceEditorAction.Start(null))
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertNull(state.serviceId)
+        assertFalse(state.isEditing)
+        assertFalse(state.isLoading)
+        assertEquals(ServiceEditorUiState(), state)
+    }
+
+    /** Regression: add -> edit service-1 reuses the instance and must preload and target it. */
+    @Test
+    fun `entering edit after an add shows the stored service and saves to it`() = runTest(testDispatcher) {
+        seedService()
+        val viewModel = newViewModel()
+        fillForm(viewModel, photoUrl = "", price = "x") // half-filled add form with errors
+        viewModel.onAction(ServiceEditorAction.Save)
+        advanceUntilIdle()
+
+        viewModel.onAction(ServiceEditorAction.Start("service-1"))
+        assertTrue(viewModel.state.value.isLoading)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals("service-1", state.serviceId)
+        assertEquals("Corte", state.titleInput)
+        assertEquals("10.00", state.priceInput)
+        assertNull(state.photoError)
+        assertNull(state.priceError)
+        viewModel.onAction(ServiceEditorAction.PriceChanged("11"))
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+        assertEquals(1, repository.stored.size)
+        assertEquals(1100, repository.stored.single().priceCents)
+    }
+
+    /** Regression: edit A -> edit B on one instance must show B, and saving must update B only. */
+    @Test
+    fun `switching from editing one service to another shows and saves the second`() = runTest(testDispatcher) {
+        seedService()
+        repository.addService(
+            TEMPORARY_PROVIDER_ID,
+            ServiceDetails("Barba", "https://example.com/barba.jpg", "Barba", 500, 15, ServiceModality.LOCAL),
+        )
+        val viewModel = newViewModel(serviceId = "service-1")
+        advanceUntilIdle()
+        assertEquals("Corte", viewModel.state.value.titleInput)
+        viewModel.onAction(ServiceEditorAction.TitleChanged("Corte editado sin guardar"))
+
+        viewModel.onAction(ServiceEditorAction.Start("service-2"))
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals("service-2", state.serviceId)
+        assertEquals("Barba", state.titleInput)
+        assertEquals("5.00", state.priceInput)
+        assertEquals("15", state.durationInput)
+        viewModel.onAction(ServiceEditorAction.DurationChanged("20"))
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+        assertEquals(30, repository.stored.first { it.id == "service-1" }.durationMinutes)
+        assertEquals("Corte", repository.stored.first { it.id == "service-1" }.title)
+        assertEquals(20, repository.stored.first { it.id == "service-2" }.durationMinutes)
+    }
+
+    @Test
+    fun `a not found error from a previous visit does not leak into the next one`() = runTest(testDispatcher) {
+        seedService()
+        val viewModel = newViewModel(serviceId = "no-existe")
+        var event: ServiceEditorEvent? = null
+        val collectorJob = launch { event = viewModel.events.first() }
+        advanceUntilIdle()
+        collectorJob.join()
+        assertEquals(DomainError.NotFound, viewModel.state.value.error)
+
+        viewModel.onAction(ServiceEditorAction.Start("service-1"))
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.error)
+        assertEquals("Corte", viewModel.state.value.titleInput)
     }
 }

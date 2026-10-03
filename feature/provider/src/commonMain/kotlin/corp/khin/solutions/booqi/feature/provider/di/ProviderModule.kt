@@ -26,7 +26,7 @@ val providerModule = module {
     }
     viewModel { params ->
         ServiceEditorViewModel(
-            serviceId = params.getOrNull<String>(),
+            initialServiceId = params.getOrNull<String>(),
             agregarServicio = get(),
             editarServicio = get(),
             obtenerServicio = get(),

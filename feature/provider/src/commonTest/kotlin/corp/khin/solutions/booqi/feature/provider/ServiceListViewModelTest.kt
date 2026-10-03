@@ -45,12 +45,13 @@ class ServiceListViewModelTest {
         Dispatchers.resetMain()
     }
 
+    /** Builds the ViewModel and sends the Refresh [ServiceListScreen] sends on every entry. */
     private fun newViewModel(providerId: String = TEMPORARY_PROVIDER_ID) = ServiceListViewModel(
         obtenerServicios = ObtenerServiciosDelProveedorUseCase(repository),
         deshabilitarServicio = DeshabilitarServicioUseCase(repository),
         habilitarServicio = HabilitarServicioUseCase(repository),
         providerId = providerId,
-    )
+    ).also { it.onAction(ServiceListAction.Refresh) }
 
     private fun details(title: String) = ServiceDetails(
         title = title,
@@ -225,5 +226,47 @@ class ServiceListViewModelTest {
             ServiceListEvent.NavigateToEditService("service-1"),
             performAndAwaitEvent(viewModel, ServiceListAction.EditServiceClicked("service-1")),
         )
+    }
+
+    /** Regression: the ViewModel instance is reused across visits (navigator isn't destination
+     * scoped), so a service added in the editor must show up once the list re-enters. */
+    @Test
+    fun `a service added elsewhere shows up when the list re-enters and refreshes`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.services.isEmpty())
+
+        seed(TEMPORARY_PROVIDER_ID, "corte") // what the editor does between two list visits
+        viewModel.onAction(ServiceListAction.Refresh) // what ServiceListScreen sends on entry
+        advanceUntilIdle()
+
+        assertEquals(listOf("corte"), viewModel.state.value.services.map { it.title })
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun `a refresh picks up edits made elsewhere to an already listed service`() = runTest(testDispatcher) {
+        seed(TEMPORARY_PROVIDER_ID, "corte")
+        val viewModel = newViewModel()
+        advanceUntilIdle()
+
+        repository.updateService("service-1", details("corte largo").copy(priceCents = 2000))
+        viewModel.onAction(ServiceListAction.Refresh)
+        advanceUntilIdle()
+
+        val service = viewModel.state.value.services.single()
+        assertEquals("corte largo", service.title)
+        assertEquals(2000, service.priceCents)
+    }
+
+    @Test
+    fun `the first frame before the entry refresh is loading and not empty`() {
+        val viewModel = ServiceListViewModel(
+            obtenerServicios = ObtenerServiciosDelProveedorUseCase(repository),
+            deshabilitarServicio = DeshabilitarServicioUseCase(repository),
+            habilitarServicio = HabilitarServicioUseCase(repository),
+        )
+
+        assertTrue(viewModel.state.value.isLoading)
     }
 }
