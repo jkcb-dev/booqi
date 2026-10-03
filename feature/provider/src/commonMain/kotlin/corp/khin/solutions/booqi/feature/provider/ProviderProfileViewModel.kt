@@ -203,6 +203,6 @@ class ProviderProfileViewModel(
         // screen/ViewModel/Koin wiring can be proven end-to-end, same spirit as the fake
         // datasources used elsewhere before a real backend/session existed. Replace with the real
         // signed-in User's id once Identity exists.
-        const val CURRENT_USER_ID_PLACEHOLDER = "user-placeholder-temp"
+        const val CURRENT_USER_ID_PLACEHOLDER = TEMPORARY_PROVIDER_ID
     }
 }
