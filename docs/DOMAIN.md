@@ -32,7 +32,10 @@ this user. Not built yet.
 
 **Provider Management** — a Provider's own "back office": profile, Services (create/edit/disable),
 Availability (define/modify schedule, block dates, pause profile). Fully specified in
-`docs/domain/provider-flow.md`. Not built in code yet.
+`docs/domain/provider-flow.md`. **Partially built:** Grupo 1 (perfil: activar/completar/pausar —
+domain, data and `feature:provider` UI) and Grupo 2's domain/data (`Service`, add/edit/disable use
+cases; its UI is #15). Horario (Grupo 3) and the Provider side of Bookings (Grupo 4) are not built.
+All datasources are still in-memory fakes until #27.
 
 **Catalog** — browsing/discovery, read-heavy. Searches across Services (not Providers directly),
 filterable by type, zone/distance (GPS-based, simple radius — no polygon zones). Partially built:
