@@ -20,6 +20,10 @@ interface ServiceRemoteDataSource {
      * if the provider has none. */
     suspend fun findByProviderId(providerId: String): List<ServiceDto>
 
+    /** Every service of every provider, active or not, in creation order — the Catalog's source
+     * (it applies the visibility rules; see [corp.khin.solutions.booqi.domain.repository.CatalogRepository]). */
+    suspend fun findAll(): List<ServiceDto>
+
     /** Upserts by [ServiceDto.id]. */
     suspend fun save(service: ServiceDto): ServiceDto
 }

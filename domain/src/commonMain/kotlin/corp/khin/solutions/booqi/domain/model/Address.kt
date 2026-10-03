@@ -16,4 +16,7 @@ data class Address(
     val line: String,
     val latitude: Double,
     val longitude: Double,
-)
+) {
+    /** The map pin of this address as a [GeoPoint] (same lat/lng, no copy of meaning). */
+    val point: GeoPoint get() = GeoPoint(latitude, longitude)
+}

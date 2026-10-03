@@ -1,6 +1,7 @@
 package corp.khin.solutions.booqi.data.datasource
 
 import corp.khin.solutions.booqi.data.dto.BookingDto
+import corp.khin.solutions.booqi.data.dto.ProviderProfileDto
 import corp.khin.solutions.booqi.data.dto.ServiceDto
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -21,15 +22,50 @@ import kotlin.time.Instant
  * [PROVIDER_ID] must match `feature:provider`'s `TEMPORARY_PROVIDER_ID` (a user id — whether
  * `Booking.providerId` should be a user id or a ProviderProfile id is open in #50). Dates are
  * relative to [now] so "future"/"past" appointments stay meaningful whenever the app runs.
+ *
+ * Two kinds of sample services, deliberately:
+ * - the two **provider-side** ones ([GEL_ID], [CUT_ID]) keep `providerId = PROVIDER_ID` (the user
+ *   id placeholder) so the Provider's own Servicios list and booking inbox keep working;
+ * - the **catalog** ones belong to the complete sample [providerProfiles] (`providerId` = the
+ *   profile id, the documented contract) so the Customer's search (#20/#21) has data with
+ *   coordinates, categories and ratings. Until #50 settles which id the app uses, the provider-side
+ *   services do **not** join to a profile and therefore don't appear in the Catalog.
  */
 object SampleData {
 
     const val PROVIDER_ID = "user-placeholder-temp"
 
+    const val SAMPLE_PROFILE_ID = "sample-provider-profile-1"
+    const val SAMPLE_PROFILE_2_ID = "sample-provider-profile-2"
+
     private const val GEL_ID = "sample-service-gel"
     private const val CUT_ID = "sample-service-cut"
 
-    fun services(): List<ServiceDto> = listOf(
+    /**
+     * Complete, coordinate-bearing profiles for the Catalog. Their `userId`s are distinct from the
+     * placeholder user id on purpose: activating Provider mode as the placeholder user must still
+     * create a fresh, incomplete profile rather than return one of these.
+     */
+    fun providerProfiles(): List<ProviderProfileDto> = listOf(
+        sampleProfile(
+            id = SAMPLE_PROFILE_ID,
+            name = "Studio Booqi",
+            location = "Av. Corrientes 1234, CABA",
+            coordinates = -34.6037 to -58.3816,
+            rating = 4.5 to 2,
+        ),
+        sampleProfile(
+            id = SAMPLE_PROFILE_2_ID,
+            name = "Casa Brillante",
+            location = "Av. Santa Fe 3200, Palermo, CABA",
+            coordinates = -34.5880 to -58.4100,
+            rating = 4.8 to 12,
+        ),
+    )
+
+    fun services(): List<ServiceDto> = providerSideServices() + catalogServices()
+
+    private fun providerSideServices(): List<ServiceDto> = listOf(
         ServiceDto(
             id = GEL_ID,
             providerId = PROVIDER_ID,
@@ -40,6 +76,7 @@ object SampleData {
             durationMinutes = 45,
             modality = "local",
             isActive = true,
+            category = "unas",
         ),
         ServiceDto(
             id = CUT_ID,
@@ -51,7 +88,57 @@ object SampleData {
             durationMinutes = 60,
             modality = "domicilio",
             isActive = true,
+            category = "barberia",
         ),
+    )
+
+    private fun catalogServices(): List<ServiceDto> = listOf(
+        catalogService("sample-catalog-1", SAMPLE_PROFILE_ID, "Corte y barba", "barberia", "local"),
+        catalogService("sample-catalog-2", SAMPLE_PROFILE_ID, "Masaje descontracturante", "masajes", "local"),
+        catalogService("sample-catalog-3", SAMPLE_PROFILE_2_ID, "Limpieza de hogar", "limpieza", "domicilio"),
+        catalogService("sample-catalog-4", SAMPLE_PROFILE_2_ID, "Reparación de heladeras", "tecnico", "domicilio"),
+        catalogService("sample-catalog-5", SAMPLE_PROFILE_2_ID, "Uñas esculpidas", "unas", "ambos"),
+    )
+
+    private fun catalogService(
+        id: String,
+        providerId: String,
+        title: String,
+        category: String,
+        modality: String,
+    ) = ServiceDto(
+        id = id,
+        providerId = providerId,
+        title = title,
+        photoUrl = "https://example.test/$id.jpg",
+        description = "$title, a cargo de un profesional de confianza.",
+        priceCents = 4000,
+        durationMinutes = 60,
+        modality = modality,
+        isActive = true,
+        category = category,
+    )
+
+    private fun sampleProfile(
+        id: String,
+        name: String,
+        location: String,
+        coordinates: Pair<Double, Double>,
+        rating: Pair<Double, Int>,
+    ) = ProviderProfileDto(
+        id = id,
+        userId = "user-of-$id",
+        name = name,
+        photoUrl = "https://example.test/$id.jpg",
+        description = "$name: atención profesional con reserva previa.",
+        location = location,
+        isComplete = true,
+        pausedRangeStart = null,
+        pausedRangeEnd = null,
+        ratingAverage = rating.first,
+        ratingCount = rating.second,
+        locationLat = coordinates.first,
+        locationLng = coordinates.second,
     )
 
     fun bookings(

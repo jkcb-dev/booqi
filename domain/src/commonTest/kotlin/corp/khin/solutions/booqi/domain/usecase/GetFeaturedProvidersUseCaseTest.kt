@@ -1,10 +1,12 @@
+@file:Suppress("DEPRECATION") // tests the deprecated pre-correction use case until #21 removes it
+
 package corp.khin.solutions.booqi.domain.usecase
 
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
-import corp.khin.solutions.booqi.domain.model.ServiceCategory
+import corp.khin.solutions.booqi.domain.model.LegacyServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceProvider
 import corp.khin.solutions.booqi.domain.repository.ServiceCatalogRepository
 import kotlinx.coroutines.test.runTest
@@ -21,7 +23,7 @@ class GetFeaturedProvidersUseCaseTest {
     private val sampleProvider = ServiceProvider(
         id = "1",
         name = "Jane's Nails",
-        category = ServiceCategory.NAILS,
+        category = LegacyServiceCategory.NAILS,
         ratingOutOf5 = 4.8,
         priceFromCents = 3500,
         shortTagline = "Gel & acrylic specialist",

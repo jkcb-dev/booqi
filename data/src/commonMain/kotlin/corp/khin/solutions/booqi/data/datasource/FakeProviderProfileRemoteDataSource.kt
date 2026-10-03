@@ -12,9 +12,13 @@ import corp.khin.solutions.booqi.data.dto.ProviderProfileDto
  * Not thread-safe by design — a single fake, single-process instance has no concurrent-writer
  * scenario worth guarding against; a real datasource will get that from the backend instead.
  */
-class FakeProviderProfileRemoteDataSource : ProviderProfileRemoteDataSource {
+class FakeProviderProfileRemoteDataSource(
+    seed: List<ProviderProfileDto> = emptyList(),
+) : ProviderProfileRemoteDataSource {
 
-    private val profilesById = mutableMapOf<String, ProviderProfileDto>()
+    private val profilesById = mutableMapOf<String, ProviderProfileDto>().apply {
+        seed.forEach { put(it.id, it) }
+    }
     private var nextId = 1
 
     override suspend fun createEmptyProfile(userId: String): ProviderProfileDto {
@@ -30,6 +34,8 @@ class FakeProviderProfileRemoteDataSource : ProviderProfileRemoteDataSource {
             pausedRangeEnd = null,
             ratingAverage = null,
             ratingCount = 0,
+            locationLat = null,
+            locationLng = null,
         )
         profilesById[profile.id] = profile
         return profile
@@ -39,6 +45,9 @@ class FakeProviderProfileRemoteDataSource : ProviderProfileRemoteDataSource {
         profilesById.values.firstOrNull { it.userId == userId }
 
     override suspend fun findById(profileId: String): ProviderProfileDto? = profilesById[profileId]
+
+    override suspend fun findByIds(ids: Set<String>): List<ProviderProfileDto> =
+        ids.mapNotNull { profilesById[it] }
 
     override suspend fun save(profile: ProviderProfileDto): ProviderProfileDto {
         profilesById[profile.id] = profile

@@ -2,6 +2,7 @@ package corp.khin.solutions.booqi.data.mapper
 
 import corp.khin.solutions.booqi.data.dto.ProviderProfileDto
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.GeoPoint
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import kotlinx.datetime.LocalDate
 
@@ -16,7 +17,14 @@ fun ProviderProfileDto.toDomain(): ProviderProfile = ProviderProfile(
     pausedRange = toDomainPausedRange(),
     ratingAverage = ratingAverage,
     ratingCount = ratingCount,
+    coordinates = toDomainCoordinates(),
 )
+
+private fun ProviderProfileDto.toDomainCoordinates(): GeoPoint? {
+    val lat = locationLat
+    val lng = locationLng
+    return if (lat != null && lng != null) GeoPoint(lat, lng) else null
+}
 
 private fun ProviderProfileDto.toDomainPausedRange(): DateRange? {
     val start = pausedRangeStart
@@ -40,4 +48,6 @@ fun ProviderProfile.toDto(): ProviderProfileDto = ProviderProfileDto(
     pausedRangeEnd = pausedRange?.end?.toString(),
     ratingAverage = ratingAverage,
     ratingCount = ratingCount,
+    locationLat = coordinates?.latitude,
+    locationLng = coordinates?.longitude,
 )

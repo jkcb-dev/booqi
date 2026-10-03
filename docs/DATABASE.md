@@ -74,6 +74,7 @@ erDiagram
     int price_cents
     int duration_minutes
     string modality "local | domicilio | ambos"
+    string category "barberia | unas | limpieza | masajes | tecnico | otro (default)"
     bool is_active "soft-delete flag, see docs/DOMAIN.md"
     timestamp created_at
   }
@@ -108,7 +109,7 @@ erDiagram
 | `provider_profiles` | Separate from `profiles` (not columns on it) because it's optional/sparse — most rows in `profiles` would have all-null provider columns otherwise. `profile_id` is `UNIQUE` to enforce the 1:0..1 relationship at the DB level, not just in application code. |
 | `provider_weekly_hours` | One row per day-of-week per provider. Modeling this as a JSON blob or 7 columns on `provider_profiles` would violate 1NF (repeating group) and make querying "who's open Tuesdays at 3pm" require unpacking JSON instead of a plain `WHERE`. |
 | `provider_blocked_dates` | Same reasoning — a provider can have any number of blocked dates, so it's a child table, not a list column. |
-| `services` | `is_active` is a soft-delete flag, not a row deletion — per `docs/DOMAIN.md`, hard-deleting a `Service` would orphan `bookings.service_id` on historical (including completed) bookings. |
+| `services` | `category` is the C1 chip (a Postgres `ENUM` later, like `modality`; unknown values read as `otro`). `provider_profiles.location_lat/lng` are nullable: the Catalog's distance filter skips providers without them. `is_active` is a soft-delete flag, not a row deletion — per `docs/DOMAIN.md`, hard-deleting a `Service` would orphan `bookings.service_id` on historical (including completed) bookings. |
 | `bookings` | The `_snapshot` fields exist because `docs/DOMAIN.md` requires a booking to freeze the price/duration/address at request time — if we instead read live from `services`/`profiles` every time, a price change would retroactively alter what a past customer agreed to pay. `rating_stars`/`rating_comment` are embedded here rather than a separate `ratings` table because a rating is 1:1 with a completed booking and has no independent lifecycle of its own (still valid 3NF: both columns depend on nothing but `bookings.id`). |
 
 ## Not yet done

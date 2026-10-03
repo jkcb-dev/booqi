@@ -13,25 +13,31 @@ import corp.khin.solutions.booqi.data.datasource.SampleData
 import corp.khin.solutions.booqi.data.datasource.ServiceRemoteDataSource
 import corp.khin.solutions.booqi.data.repository.AvailabilityRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.BookingRepositoryImpl
+import corp.khin.solutions.booqi.data.repository.CatalogRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.ProviderProfileRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.ServiceCatalogRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.ServiceRepositoryImpl
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
+import corp.khin.solutions.booqi.domain.repository.CatalogRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceCatalogRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import org.koin.dsl.module
 
 val dataModule = module {
+    // Deprecated pre-correction model, only for feature:browse until #21 migrates it.
     single<ProviderRemoteDataSource> { FakeProviderRemoteDataSource() }
     single<ServiceCatalogRepository> { ServiceCatalogRepositoryImpl(get()) }
-    single<ProviderProfileRemoteDataSource> { FakeProviderProfileRemoteDataSource() }
+    single<ProviderProfileRemoteDataSource> {
+        FakeProviderProfileRemoteDataSource(seed = SampleData.providerProfiles())
+    }
     single<ProviderProfileRepository> { ProviderProfileRepositoryImpl(get()) }
     single<ServiceRemoteDataSource> { FakeServiceRemoteDataSource(seed = SampleData.services()) }
     single<ServiceRepository> { ServiceRepositoryImpl(get()) }
     single<AvailabilityRemoteDataSource> { FakeAvailabilityRemoteDataSource() }
     single<AvailabilityRepository> { AvailabilityRepositoryImpl(get()) }
+    single<CatalogRepository> { CatalogRepositoryImpl(get(), get()) }
     single<BookingRemoteDataSource> { FakeBookingRemoteDataSource(seed = SampleData.bookings()) }
     single<BookingRepository> { BookingRepositoryImpl(get()) }
 }

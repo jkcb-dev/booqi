@@ -71,6 +71,85 @@ Escenario: El Cliente ve el perfil completo de un Proveedor
     comentarios individuales
 ```
 
+### Reglas de la búsqueda (implementadas en #20 — `BuscarServicios`/`FiltrarPorDistancia`)
+
+La búsqueda es **una sola consulta** sobre Servicios con filtros opcionales combinables (texto,
+categoría, ubicación + radio). Un Servicio solo es candidato si está activo, su Proveedor tiene el
+perfil completo y no está pausado hoy. **Orden**: distancia ascendente (si el Cliente dio su
+ubicación; los resultados sin distancia al final), luego título (sin distinguir mayúsculas ni
+acentos), luego id. Sin ubicación: título, luego id. La tarjeta del resultado lleva el Servicio, el
+nombre del Proveedor, su calificación (promedio/cantidad) y la distancia si hay ubicación. Las
+categorías de los chips: Barbería, Uñas, Limpieza, Masajes, Técnico ("Todos" = sin filtro; los
+Servicios sin categoría elegida son "Otro" y solo aparecen bajo "Todos").
+
+```gherkin
+Escenario: La búsqueda de texto ignora mayúsculas y acentos y exige todas las palabras
+  Dado que existe un Servicio activo "Uñas esculpidas" con descripción "A domicilio"
+  Cuando el Cliente escribe "UNAS domicilio" en el buscador
+  Entonces se muestra ese Servicio
+  Y no se muestra si escribe "unas yoga"
+
+Escenario: Texto y categoría se combinan
+  Dado que existen los Servicios "Corte clásico" (Barbería) y "Corte de uñas" (Uñas)
+  Cuando el Cliente escribe "corte" y selecciona el chip "Barbería"
+  Entonces solo se muestra "Corte clásico"
+
+Escenario: Sin coincidencias no es un error
+  Dado que ningún Servicio coincide con lo buscado
+  Cuando el Cliente busca
+  Entonces ve una lista vacía (contador en 0), no un error
+
+Escenario: Un Servicio deshabilitado no aparece
+  Dado que el Proveedor deshabilitó un Servicio
+  Cuando el Cliente busca algo que coincide con él
+  Entonces no se muestra
+
+Escenario: Un Proveedor con el perfil incompleto no aparece
+  Dado que un Proveedor activó el modo Proveedor pero no completó su perfil
+  Cuando el Cliente busca
+  Entonces no se muestran sus Servicios
+
+Escenario: Un Proveedor pausado hoy no aparece
+  Dado que un Proveedor pausó su perfil del 1 al 5 de octubre
+  Cuando el Cliente busca el 5 de octubre (el último día de la pausa, inclusive)
+  Entonces sus Servicios no se muestran
+  Y el 6 de octubre vuelven a aparecer (igual que el día antes del 1)
+
+Escenario: El radio incluye el borde y excluye a los Proveedores sin ubicación
+  Dado que el Cliente tiene su ubicación activada
+  Cuando aplica un filtro de 5 km
+  Entonces se muestran los Proveedores a 5 km o menos, ordenados del más cercano al más lejano
+  Y no se muestran los Proveedores cuya ubicación no tiene coordenadas
+
+Escenario: Sin filtro de distancia no se descarta a nadie por falta de coordenadas
+  Dado que el Cliente dio su ubicación pero no eligió radio
+  Cuando busca
+  Entonces ve todos los resultados, los que tienen distancia primero, ordenados por cercanía
+
+Escenario: El filtro de distancia necesita una ubicación y un radio válidos
+  Cuando el Cliente aplica un radio sin ubicación, un radio de 0 o negativo, o coordenadas imposibles
+  Entonces la búsqueda falla con un error de validación y no consulta el catálogo
+
+Escenario: El detalle de un Servicio deshabilitado o de un perfil incompleto no existe para el Cliente
+  Dado que el Servicio fue deshabilitado, o su Proveedor no tiene el perfil completo
+  Cuando el Cliente intenta abrir su detalle
+  Entonces recibe "no encontrado"
+  (un Proveedor pausado solo desaparece de la búsqueda: su detalle y su perfil siguen abiertos,
+  y reservar queda bloqueado porque no tiene horarios disponibles)
+
+Escenario: El perfil de un Proveedor solo lista sus Servicios activos
+  Dado que un Proveedor tiene un Servicio activo y uno deshabilitado
+  Cuando el Cliente abre su perfil
+  Entonces ve solo el activo, el promedio y la cantidad de calificaciones del Proveedor, y sus
+    reseñas de la más nueva a la más vieja (estrellas, comentario y fecha; sin el nombre de quien
+    reseña hasta que exista Identity, #50)
+```
+
+*Join Servicio → Proveedor:* `Service.providerId == ProviderProfile.id`, tal como documenta
+`DOMAIN.md`. Un Servicio cuyo `providerId` no es el id de un perfil (hoy: las pantallas del
+Proveedor usan el id de *usuario* como placeholder) **no se une** y no aparece en el catálogo hasta
+que #50 deje los ids consistentes; no hay un join alternativo por `userId`.
+
 ---
 
 ## Grupo 2: Dirección del Cliente

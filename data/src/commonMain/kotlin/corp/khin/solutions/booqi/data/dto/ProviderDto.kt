@@ -5,6 +5,7 @@ package corp.khin.solutions.booqi.data.dto
  * shape it against. Add `kotlinx.serialization` once [corp.khin.solutions.booqi.data.datasource.
  * ProviderRemoteDataSource] has a real Ktor-backed implementation.
  */
+@Deprecated("Pre-correction ServiceProvider shape; remove with the old catalog once feature:browse is migrated (#21).")
 data class ProviderDto(
     val id: String,
     val name: String,
