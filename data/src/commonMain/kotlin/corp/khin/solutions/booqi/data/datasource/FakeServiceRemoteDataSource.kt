@@ -35,6 +35,11 @@ class FakeServiceRemoteDataSource : ServiceRemoteDataSource {
 
     override suspend fun findById(serviceId: String): ServiceDto? = servicesById[serviceId]
 
+    // servicesById is a LinkedHashMap (mutableMapOf), so values iterate in insertion order, and
+    // save() on an existing key keeps its position — i.e. creation order, stable across edits.
+    override suspend fun findByProviderId(providerId: String): List<ServiceDto> =
+        servicesById.values.filter { it.providerId == providerId }
+
     override suspend fun save(service: ServiceDto): ServiceDto {
         servicesById[service.id] = service
         return service

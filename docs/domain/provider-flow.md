@@ -10,7 +10,7 @@ time. See `docs/DOMAIN.md` for the ubiquitous language this assumes (`User`, `Pr
 2. Se completó el perfil de Proveedor
 3. Se agregó un Servicio
 4. Se editó un Servicio
-5. Se deshabilitó un Servicio
+5. Se deshabilitó un Servicio *(y su inverso: se re-habilitó — mismo evento 5 en sentido contrario, añadido en #37)*
 6. Se definió el horario semanal
 7. Se modificó el horario semanal
 8. Se bloqueó un día/hora específico
@@ -77,9 +77,17 @@ Escenario: El Proveedor reactiva su perfil antes de tiempo
 | Se agregó un Servicio | `AgregarServicio` | Proveedor | `Service` (nuevo) |
 | Se editó un Servicio | `EditarServicio` | Proveedor | `Service` |
 | Se deshabilitó un Servicio | `DeshabilitarServicio` | Proveedor | `Service` |
+| Se re-habilitó un Servicio | `HabilitarServicio` | Proveedor | `Service` |
+| *(consulta, sin evento)* Ver mis Servicios | `ObtenerServiciosDelProveedor` | Proveedor | `Service` (lectura) |
+| *(consulta, sin evento)* Ver un Servicio | `ObtenerServicio` | Proveedor | `Service` (lectura) |
 
 Nota: solo existe "deshabilitar", no "eliminar" — ver `docs/DOMAIN.md` § Deliberate scope
 decisions para el razonamiento (evitar romper `Booking.serviceId` de citas históricas).
+`HabilitarServicio` es el inverso exacto de `DeshabilitarServicio` (solo cambia `isActive`).
+Las dos consultas alimentan la lista de Servicios (Figma P4) y el formulario de edición (P5):
+la lista del Proveedor incluye **todos** sus Servicios, también los deshabilitados, ordenados por
+creación (el más antiguo primero) — a diferencia de la búsqueda de Clientes, que solo ve los
+activos (ticket aparte, no implementado aquí).
 
 ```gherkin
 Escenario: El Proveedor agrega un nuevo Servicio
@@ -105,6 +113,37 @@ Escenario: El Proveedor deshabilita un Servicio
   Entonces el Servicio deja de aparecer en las búsquedas de Clientes
   Y las citas ya aceptadas para ese Servicio no se cancelan
   Y el historial de citas pasadas conserva la referencia al Servicio
+
+Escenario: El Proveedor ve todos sus Servicios, incluidos los deshabilitados
+  Dado que el Proveedor tiene un Servicio activo y otro deshabilitado
+  Y otro Proveedor tiene sus propios Servicios
+  Cuando abre su lista de Servicios
+  Entonces ve ambos Servicios, el activo y el deshabilitado, en orden de creación
+  Y no ve los Servicios del otro Proveedor
+
+Escenario: El Proveedor consulta un Servicio para editarlo
+  Dado que el Proveedor tiene un Servicio, activo o deshabilitado
+  Cuando abre ese Servicio en el formulario de edición
+  Entonces ve todos sus datos actuales: título, foto, descripción, precio, duración y modalidad
+
+Escenario: El Proveedor consulta o habilita un Servicio que no existe
+  Dado que no existe ningún Servicio con el identificador indicado
+  Cuando el Proveedor intenta abrirlo o habilitarlo
+  Entonces el sistema responde que el Servicio no fue encontrado
+  Y no se crea ni se modifica ningún Servicio
+
+Escenario: El Proveedor re-habilita un Servicio deshabilitado
+  Dado que el Proveedor tiene un Servicio deshabilitado
+  Cuando lo habilita
+  Entonces el Servicio vuelve a aparecer en las búsquedas de Clientes
+  Y conserva sin cambios su título, foto, descripción, precio, duración y modalidad
+  Y las citas ya existentes para ese Servicio no se ven afectadas
+
+Escenario: El Proveedor habilita un Servicio que ya estaba activo
+  Dado que el Proveedor tiene un Servicio activo
+  Cuando lo habilita de nuevo
+  Entonces el Servicio sigue activo y sin cambios
+  Y no se produce ningún error
 ```
 
 ---

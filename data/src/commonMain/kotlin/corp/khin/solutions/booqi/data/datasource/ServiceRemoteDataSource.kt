@@ -16,6 +16,10 @@ interface ServiceRemoteDataSource {
 
     suspend fun findById(serviceId: String): ServiceDto?
 
+    /** Every service owned by [providerId], active or not, oldest first (creation order). Empty
+     * if the provider has none. */
+    suspend fun findByProviderId(providerId: String): List<ServiceDto>
+
     /** Upserts by [ServiceDto.id]. */
     suspend fun save(service: ServiceDto): ServiceDto
 }
