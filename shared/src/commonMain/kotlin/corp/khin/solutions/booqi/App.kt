@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +32,9 @@ fun App() {
         val navigator = remember { DefaultNavigator() }
         val backStack by navigator.backStack.collectAsState()
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Insets are applied once here, for every screen, so no feature draws under the status
+        // bar/Dynamic Island, the home indicator, or the keyboard.
+        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             when (backStack.last()) {
                 is Destination.Browse -> BrowseScreen(
                     onProviderSelected = { providerId ->
