@@ -62,6 +62,14 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
 - **No auth/session yet** (Identity context isn't built). Where a use case needs a user id, use a
   constant clearly marked `TEMPORARY` (see `ProviderProfileViewModel`) — don't build auth ahead of
   its ticket.
+- **Date/time: use `kotlin.time.Clock` / `kotlin.time.Instant`, with `kotlinx-datetime` pinned to
+  the version Material3 resolves (currently 0.7.1).** Material3 drags its own `kotlinx-datetime`
+  onto the iOS classpath of `:shared` and every feature module, so a different pin in the catalog
+  silently gives `:domain` a klib compiled against classes that no longer exist at link time (in
+  0.7.x `kotlinx.datetime.Clock/Instant` are typealiases). `compileKotlinIosSimulatorArm64` and
+  `:domain`'s own iOS tests do **not** catch this — it only fails at runtime in the app and in
+  feature-module iOS tests. After touching date/time or bumping that version, run
+  `:feature:provider:iosSimulatorArm64Test`, not just the domain tests. (Found on #19.)
 - **Validation failures** are `DomainError.InvalidInput(message)`, returned by the use case before
   any I/O. ViewModels surface them as form errors, never as a crash or a generic error event.
 - **ViewModels are not destination-scoped.** Our simple `DefaultNavigator` + `when(backStack.last())`
