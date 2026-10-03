@@ -17,6 +17,7 @@ import corp.khin.solutions.booqi.core.designsystem.theme.BooqiTheme
 import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
 import corp.khin.solutions.booqi.feature.browse.BrowseScreen
+import corp.khin.solutions.booqi.feature.provider.BookingRequestInboxScreen
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileScreen
 import corp.khin.solutions.booqi.feature.provider.ScheduleManagementScreen
 import corp.khin.solutions.booqi.feature.provider.ServiceEditorScreen
@@ -47,10 +48,14 @@ fun App() {
                 is Destination.ProviderProfileSetup -> ProviderProfileScreen(
                     onManageServices = { navigator.navigateTo(Destination.ServiceList) },
                     onManageSchedule = { navigator.navigateTo(Destination.ScheduleManagement) },
+                    onManageBookings = { navigator.navigateTo(Destination.BookingRequestInbox) },
                 )
                 is Destination.ServiceList -> ServiceListScreen(
                     onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
                     onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
+                )
+                is Destination.BookingRequestInbox -> BookingRequestInboxScreen(
+                    onFinished = { navigator.navigateBack() },
                 )
                 is Destination.ScheduleManagement -> ScheduleManagementScreen(
                     onFinished = { navigator.navigateBack() },
@@ -61,8 +66,7 @@ fun App() {
                 )
                 // Remaining destinations land with their own feature modules as those tickets
                 // ship: ProviderDetail, ProviderProfileView (feature:browse); Booking,
-                // BookingConfirmation, MyBookings, AddressSelection (feature:booking);
-                // BookingRequestInbox (feature:provider).
+                // BookingConfirmation, MyBookings, AddressSelection (feature:booking).
                 else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
             }
 

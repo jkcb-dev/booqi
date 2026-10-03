@@ -12,9 +12,13 @@ import corp.khin.solutions.booqi.data.dto.ServiceDto
  * Not thread-safe by design — a single fake, single-process instance has no concurrent-writer
  * scenario worth guarding against; a real datasource will get that from the backend instead.
  */
-class FakeServiceRemoteDataSource : ServiceRemoteDataSource {
+class FakeServiceRemoteDataSource(
+    seed: List<ServiceDto> = emptyList(),
+) : ServiceRemoteDataSource {
 
-    private val servicesById = mutableMapOf<String, ServiceDto>()
+    private val servicesById = mutableMapOf<String, ServiceDto>().apply {
+        seed.forEach { put(it.id, it) }
+    }
     private var nextId = 1
 
     override suspend fun create(providerId: String, details: ServiceDetailsDto): ServiceDto {

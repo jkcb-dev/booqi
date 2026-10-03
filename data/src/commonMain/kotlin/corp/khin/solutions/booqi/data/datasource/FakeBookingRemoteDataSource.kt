@@ -13,9 +13,13 @@ import corp.khin.solutions.booqi.data.dto.BookingDto
  * scenario worth guarding against; a real datasource will get that from the backend instead (this
  * includes the double-booking race: see `BookingRepository.createBooking`).
  */
-class FakeBookingRemoteDataSource : BookingRemoteDataSource {
+class FakeBookingRemoteDataSource(
+    seed: List<BookingDto> = emptyList(),
+) : BookingRemoteDataSource {
 
-    private val bookingsById = mutableMapOf<String, BookingDto>()
+    private val bookingsById = mutableMapOf<String, BookingDto>().apply {
+        seed.forEach { put(it.id, it) }
+    }
     private var nextId = 1
 
     override suspend fun create(draft: BookingDraftDto): BookingDto {
