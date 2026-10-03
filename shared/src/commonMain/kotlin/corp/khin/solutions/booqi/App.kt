@@ -18,6 +18,8 @@ import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
 import corp.khin.solutions.booqi.feature.browse.BrowseScreen
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileScreen
+import corp.khin.solutions.booqi.feature.provider.ServiceEditorScreen
+import corp.khin.solutions.booqi.feature.provider.ServiceListScreen
 
 /**
  * App root: theme + the single [DefaultNavigator] instance for the whole app.
@@ -35,18 +37,27 @@ fun App() {
         // Insets are applied once here, for every screen, so no feature draws under the status
         // bar/Dynamic Island, the home indicator, or the keyboard.
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            when (backStack.last()) {
+            when (val destination = backStack.last()) {
                 is Destination.Browse -> BrowseScreen(
                     onProviderSelected = { providerId ->
                         navigator.navigateTo(Destination.ProviderDetail(providerId))
                     },
                 )
-                is Destination.ProviderProfileSetup -> ProviderProfileScreen()
+                is Destination.ProviderProfileSetup -> ProviderProfileScreen(
+                    onManageServices = { navigator.navigateTo(Destination.ServiceList) },
+                )
+                is Destination.ServiceList -> ServiceListScreen(
+                    onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
+                    onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
+                )
+                is Destination.ServiceEditor -> ServiceEditorScreen(
+                    serviceId = destination.serviceId,
+                    onFinished = { navigator.navigateBack() },
+                )
                 // Remaining destinations land with their own feature modules as those tickets
                 // ship: ProviderDetail, ProviderProfileView (feature:browse); Booking,
                 // BookingConfirmation, MyBookings, AddressSelection (feature:booking);
-                // ServiceList, ServiceEditor, ScheduleManagement, BookingRequestInbox
-                // (feature:provider).
+                // ScheduleManagement, BookingRequestInbox (feature:provider).
                 else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
             }
 
