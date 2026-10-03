@@ -12,7 +12,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.Rating
 import corp.khin.solutions.booqi.domain.model.Reason
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals

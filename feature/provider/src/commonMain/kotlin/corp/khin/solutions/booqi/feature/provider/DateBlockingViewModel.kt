@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -29,7 +29,7 @@ import kotlinx.datetime.todayIn
  * [BloquearFechaHoraUseCase]/[DesbloquearFechaHoraUseCase]; every one of them answers with the
  * Provider's whole [Availability], whose `blockedPeriods` replace the state's list as-is.
  *
- * "Today" is read from the injected [clock] (default [SystemClock]) in [timeZone], on construction
+ * "Today" is read from the injected [clock] (default `Clock.System`) in [timeZone], on construction
  * and on every `Start`, so the highlighted day is right after the app was left open past midnight.
  *
  * **No init-time load** — same reason as [WeeklyScheduleViewModel]: the screen sends
@@ -40,7 +40,7 @@ class DateBlockingViewModel(
     private val bloquearFechaHora: BloquearFechaHoraUseCase,
     private val desbloquearFechaHora: DesbloquearFechaHoraUseCase,
     private val providerId: String = TEMPORARY_PROVIDER_ID,
-    private val clock: Clock = SystemClock,
+    private val clock: Clock = Clock.System,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) : ViewModel() {
 

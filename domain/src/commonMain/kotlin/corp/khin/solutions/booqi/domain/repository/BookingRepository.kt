@@ -4,7 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Domain-owned contract for the `Booking` aggregate (docs/domain/provider-flow.md § Grupo 4 —

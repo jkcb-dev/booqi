@@ -5,8 +5,8 @@ import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Escenario: "Una solicitud expira sin respuesta" (docs/domain/provider-flow.md § Grupo 4):

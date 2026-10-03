@@ -10,7 +10,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.Rating
 import corp.khin.solutions.booqi.domain.model.Reason
 import corp.khin.solutions.booqi.domain.model.ReasonCode
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 
 fun BookingDto.toDomain(): Booking = Booking(

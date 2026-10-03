@@ -6,8 +6,8 @@ import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.Rating
 import corp.khin.solutions.booqi.domain.model.Reason
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

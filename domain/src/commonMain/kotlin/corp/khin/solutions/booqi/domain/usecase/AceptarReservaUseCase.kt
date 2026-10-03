@@ -4,7 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Escenario: "El Proveedor acepta una solicitud" (docs/domain/provider-flow.md § Grupo 4):

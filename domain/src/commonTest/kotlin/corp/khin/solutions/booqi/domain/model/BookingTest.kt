@@ -5,7 +5,7 @@ import corp.khin.solutions.booqi.domain.usecase.REQUESTED_AT
 import corp.khin.solutions.booqi.domain.usecase.booking
 import corp.khin.solutions.booqi.domain.usecase.invalidInput
 import corp.khin.solutions.booqi.domain.usecase.value
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

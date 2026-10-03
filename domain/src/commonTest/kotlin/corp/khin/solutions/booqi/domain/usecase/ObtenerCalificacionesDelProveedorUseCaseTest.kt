@@ -3,7 +3,7 @@ package corp.khin.solutions.booqi.domain.usecase
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.Rating
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
