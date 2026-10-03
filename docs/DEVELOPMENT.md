@@ -72,3 +72,13 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   for a list, `LaunchedEffect(id) { onAction(Start(id)) }` for a form — and must not assume
   init-time loading is enough: "save in the editor, pop back to the list" otherwise shows the
   stale list, and "add → add again" shows the previous form. (Found on #15.)
+- **kotlinx-datetime version skew (open, found on #19).** The repo declares `kotlinx-datetime` 0.6.2,
+  but Compose Material3 1.11.0-alpha07 drags 0.7.1 onto every iOS app/test classpath that includes it
+  (`:shared`, `feature:*`). In 0.7.x `Instant` and `Clock` are typealiases of `kotlin.time.*`, so
+  `domain`'s klib — compiled against 0.6.2 — no longer links on iOS wherever it uses them: **`Booking`
+  cannot be constructed** (`IrLinkageError: No constructor found for symbol 'Booking.<init>'`) and the
+  `Clock`-taking use cases (`Aceptar/Rechazar/CompletarCita`, `ObtenerSolicitudesPendientes`, ...) fail
+  when Koin resolves them. Android is unaffected. It only shows at runtime/in `iosSimulatorArm64Test`,
+  not in `compileKotlinIosSimulatorArm64`. Probe: bumping the catalog to 0.7.1 makes only the six
+  `Clock.System` defaults in `domain` fail to compile on iOS (see `SystemClock`; `data` was not
+  reached), so the likely fix is that bump plus a `kotlin.time.Clock.System`-based default there.

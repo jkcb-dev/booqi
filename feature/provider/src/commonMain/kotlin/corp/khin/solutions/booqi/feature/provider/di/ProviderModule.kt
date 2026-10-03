@@ -1,7 +1,11 @@
 package corp.khin.solutions.booqi.feature.provider.di
 
+import corp.khin.solutions.booqi.feature.provider.BookingInboxCommands
+import corp.khin.solutions.booqi.feature.provider.BookingInboxQueries
+import corp.khin.solutions.booqi.feature.provider.BookingInboxViewModel
 import corp.khin.solutions.booqi.feature.provider.DateBlockingViewModel
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileViewModel
+import corp.khin.solutions.booqi.feature.provider.ProviderReviewsViewModel
 import corp.khin.solutions.booqi.feature.provider.ServiceEditorViewModel
 import corp.khin.solutions.booqi.feature.provider.ServiceListViewModel
 import corp.khin.solutions.booqi.feature.provider.WeeklyScheduleViewModel
@@ -51,4 +55,24 @@ val providerModule = module {
             desbloquearFechaHora = get(),
         )
     }
+    // Destination.BookingRequestInbox, and the P11 ratings section on the completed profile.
+    // Their trailing clock/timeZone/providerId arguments keep their defaults (SystemClock, system
+    // time zone, TEMPORARY provider id).
+    viewModel {
+        BookingInboxViewModel(
+            queries = BookingInboxQueries(
+                pendingRequests = get(),
+                agenda = get(),
+                booking = get(),
+                services = get(),
+            ),
+            commands = BookingInboxCommands(
+                accept = get(),
+                reject = get(),
+                complete = get(),
+                cancel = get(),
+            ),
+        )
+    }
+    viewModel { ProviderReviewsViewModel(obtenerCalificaciones = get()) }
 }

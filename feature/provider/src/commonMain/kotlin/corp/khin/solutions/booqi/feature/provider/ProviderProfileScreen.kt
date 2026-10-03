@@ -30,6 +30,8 @@ fun ProviderProfileScreen(
     onManageServices: () -> Unit = {},
     /** Opens the Provider's schedule (`Destination.ScheduleManagement`) from the completed profile. */
     onManageSchedule: () -> Unit = {},
+    /** Opens the Provider's booking inbox (`Destination.BookingRequestInbox`) from the completed profile. */
+    onManageBookings: () -> Unit = {},
     viewModel: ProviderProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -53,6 +55,7 @@ fun ProviderProfileScreen(
         onAction = viewModel::onAction,
         onManageServices = onManageServices,
         onManageSchedule = onManageSchedule,
+        onManageBookings = onManageBookings,
     )
 }
 
@@ -62,6 +65,7 @@ private fun ProviderProfileContent(
     onAction: (ProviderProfileAction) -> Unit,
     onManageServices: () -> Unit,
     onManageSchedule: () -> Unit,
+    onManageBookings: () -> Unit,
 ) {
     val profile = state.profile
     when {
@@ -73,6 +77,7 @@ private fun ProviderProfileContent(
             onAction = onAction,
             onManageServices = onManageServices,
             onManageSchedule = onManageSchedule,
+            onManageBookings = onManageBookings,
         )
     }
 }
