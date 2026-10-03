@@ -75,3 +75,21 @@ new in the running app — that is expected, not a bug.
 Until a real entry point exists (Identity/profile screens aren't built), the wiring PR may add a
 clearly-commented TEMPORARY navigation affordance in `App.kt` so the flow is reachable; it is
 removed when the real trigger lands.
+
+## Booking expiry trigger (decision input for #27 / platform work)
+
+A `Requested` Booking must become `Expired` once `requestedAt + 24h <= now` (provider-flow.md
+§ Grupo 4). The **rule** is built and tested in `domain` (`Booking.expire`,
+`ExpirarSolicitudesVencidasUseCase`, idempotent, takes a `Clock`); what is deliberately **not**
+built is *what calls it*. Realistic options:
+
+| Option | How | For | Against |
+|---|---|---|---|
+| **A. Server-side schedule (Supabase `pg_cron`, or a scheduled Edge Function)** | Every few minutes run the same rule on the server: `UPDATE bookings SET status = 'Expired' WHERE status = 'Requested' AND requested_at + interval '24 hours' <= now()` | Fires with no app open (needed for the Customer's expiry message and any future push); one writer, so no RLS problem (a Provider's device can't update other Providers' rows); no dependence on iOS background rules | The 24h rule lives twice (Kotlin + SQL) — keep the SQL a one-liner mirroring `Booking.RESPONSE_WINDOW` and pin the equivalence with a test in #27 |
+| **B. Periodic client call** (WorkManager on Android, `BGTaskScheduler` on iOS) calling `ExpirarSolicitudesVencidasUseCase` | The app wakes up and sweeps | Reuses the Kotlin rule verbatim | Unreliable: iOS background tasks are opportunistic, Android defers under Doze, nothing runs if the user never opens the app; the sweep touches *all* Providers' rows, which RLS (and least privilege) should not allow from a client |
+| **C. Lazy / on-read** | Treat an overdue `Requested` as expired whenever it is read or acted on | Needs no scheduler at all | Already partly done in the domain (`isResponseOverdue`: accept/reject refuse a lapsed request and the inbox hides it), but a Customer's "Pendiente" stays stale and the TimeSlot stays held until someone reads, and no event ever fires |
+
+**Recommendation:** A as the authority (Supabase `pg_cron`, every ~5 min), with C's cheap guards
+kept in the domain as defence-in-depth (they already are). Reserve B only if the backend ends up
+without scheduled jobs. Implementation, the SQL, and the equivalence test belong to #27 (Supabase
+schema) / the platform work, not to the domain tickets.

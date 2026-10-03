@@ -22,8 +22,10 @@ enough to justify the ceremony.
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
 | **Availability** | A Provider's recurring weekly schedule (one range per day of the week) plus specific blocked dates/times. Value object, references its Provider by `providerId`. The optional "paused" date range (vacation mode) lives on `ProviderProfile.pausedRange` and is passed in alongside when TimeSlots are generated from this. |
 | **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` and `docs/domain/customer-flow.md` for the full state machine. |
-| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. |
-| **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). |
+| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. In code (`BookingStatus`: `REQUESTED`, `CONFIRMED`, …) the transition table lives in `BookingStatus` and every change goes through `Booking`'s transition functions, which reject invalid ones with `InvalidInput`. |
+| **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). In code it is the small `Address` value object (display line + latitude/longitude), introduced by `Booking` (#18) for the delivery-address *snapshot*; the Customer's saved address (#22) reuses it. |
+| **Reason** | Why a Booking was rejected or cancelled: a predefined code + optional free text. The list of codes depends on who acts — `ProviderReasonCode` today, a Customer list in #25, both under the sealed `ReasonCode`. |
+| **Rating** | A Customer's 1–5 stars + optional comment on a completed Booking. Embedded in `Booking`, not an aggregate. |
 
 ## Bounded contexts
 
@@ -35,8 +37,8 @@ Availability (define/modify schedule, block dates, pause profile). Fully specifi
 `docs/domain/provider-flow.md`. **Partially built:** Grupo 1 (perfil: activar/completar/pausar —
 domain, data and `feature:provider` UI) and Grupo 2's domain/data (`Service`, add/edit/disable use
 cases; its UI is #15) and Grupo 3's domain/data (`Availability`, define/modify weekly hours,
-block/unblock, TimeSlot generation; its UI is #17). The Provider side of Bookings (Grupo 4) is not built.
-All datasources are still in-memory fakes until #27.
+block/unblock, TimeSlot generation; its UI is #17). The Provider side of Bookings (Grupo 4) lives in
+the Scheduling context below. All datasources are still in-memory fakes until #27.
 
 **Catalog** — browsing/discovery, read-heavy. Searches across Services (not Providers directly),
 filterable by type, zone/distance (GPS-based, simple radius — no polygon zones). Partially built:
@@ -45,7 +47,12 @@ reworking to the Service/ProviderProfile split above.
 
 **Scheduling** — the Booking lifecycle: request, accept/reject/expire, complete, cancel, rate.
 Fully specified in `docs/domain/provider-flow.md`'s "Gestión de Reservas y Calificaciones" group.
-Not built in code yet.
+**Domain & data built (#18):** the `Booking` aggregate and its state machine, `SolicitarReserva`,
+accept/reject/complete/provider-cancel, the 24h expiry sweep (`ExpirarSolicitudesVencidas` — the
+scheduling *trigger* is deliberately not built, see `docs/ARCHITECTURE.md` § Booking expiry
+trigger), `CalificarCita` with the Provider's rating recomputation, the available-TimeSlots query
+and the Provider's queries (inbox, detail, agenda, reviews). **Not built:** the Customer's
+`CancelarReservaCliente`/`VerHistorialReservas` (#25), any notification, and both sides' UI.
 
 ## Aggregate boundaries — the rule that matters
 
@@ -57,20 +64,25 @@ agreed to pay.
 ```
 Booking (aggregate root)
 ├─ id: String
-├─ providerId: String      ← reference
+├─ providerId: String      ← reference (= ProviderProfile.id)
 ├─ serviceId: String       ← reference
-├─ customerId: String
-├─ timeSlot: TimeSlot       ← value object, embedded
-├─ status: BookingStatus
-├─ rejectionReason / cancellationReason: Reason?  ← predefined options + optional free text
+├─ customerId: String      ← reference
+├─ scheduledAt: LocalDateTime  ← provider-local date + start time (= timeSlot), no timezone yet
+├─ durationMinutesSnapshot / priceCentsSnapshot: Int  ← copied from Service at request time
 ├─ deliveryAddress: Address?  ← snapshot copied at request time, only if Service modality = Domicilio; never a live reference to User.direccion
-└─ rating: Rating?          ← stars + optional comment, set only once status = Completed
+├─ customerNote: String?
+├─ status: BookingStatus
+├─ reason: Reason?          ← rejection or cancellation (the status tells which): predefined code + optional free text
+├─ rating: Rating?          ← stars + optional comment, set only once status = Completed, only once
+└─ requestedAt / respondedAt / completedAt: Instant
 ```
 
 `Rating` is modeled as an optional field on `Booking` itself, not a separate aggregate — a rating
 is 1:1 with a completed Booking and has no independent lifecycle of its own. A Provider's overall
 rating shown on their profile is a *computed aggregate* (average across all their Bookings'
-ratings), not a stored field that gets manually updated.
+ratings), not a stored field that gets manually updated. `ProviderProfile.ratingAverage`/`ratingCount` are
+a persisted *copy* of that computation, recomputed from **all** the Provider's rated Bookings every
+time a rating is left (never incremented), so they cannot drift.
 
 ## Deliberate scope decisions for V1 (recorded so they don't get silently re-litigated)
 

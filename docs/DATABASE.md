@@ -82,19 +82,21 @@ erDiagram
     uuid provider_id FK
     uuid service_id FK
     uuid customer_id FK "-> PROFILES.id"
-    timestamp scheduled_at
+    timestamp scheduled_at "timezone-less: provider-local date + start time (TimeSlot), see DOMAIN.md"
     int duration_minutes_snapshot "copied from SERVICES at request time"
     int price_cents_snapshot "copied from SERVICES at request time"
-    string delivery_address_snapshot "copied from PROFILES at request time, nullable"
+    string delivery_address_line_snapshot "copied from PROFILES.address_line at request time, nullable"
+    float delivery_address_lat_snapshot "nullable, set together with the line"
+    float delivery_address_lng_snapshot "nullable, set together with the line"
     string customer_note
     string status "Requested|Confirmed|Completed|Rejected|Expired|CancelledByProvider|CancelledByCustomer"
-    string reason_code "nullable, predefined + Otro"
+    string reason_code "nullable, predefined + Otro; one pair serves rejection and cancellation (status says which)"
     string reason_note "nullable free text"
     int rating_stars "nullable, set only when Completed"
     string rating_comment "nullable"
-    timestamp requested_at
-    timestamp responded_at
-    timestamp completed_at
+    timestamptz requested_at "real instants — the 24h response window runs from here"
+    timestamptz responded_at
+    timestamptz completed_at
   }
 ```
 

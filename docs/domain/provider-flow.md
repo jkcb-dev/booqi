@@ -179,10 +179,10 @@ Notas de modelado (#16):
   antes de la hora de fin; se omiten los que se solapan con un rango bloqueado (el solape es
   semiabierto: un slot que termina justo cuando empieza el bloqueo sigue disponible) y todo el día si
   está bloqueado completo.
-- **Pendiente para #18/#25 (`Booking`):** descontar los TimeSlots ya ocupados por una `Booking`
-  pendiente o confirmada. `Booking` aún no existe, así que `GenerarTimeSlots` solo refleja la
-  disponibilidad del horario; nada de eso está simulado aquí. Ese cálculo también deberá seguir
-  respetando una cita aceptada aunque su hora quede después fuera del horario semanal.
+- **Resuelto en #18 (`Booking`):** descontar los TimeSlots ocupados por una `Booking` pendiente o
+  confirmada se hace en `ObtenerTimeSlotsDisponibles` (Grupo 4), no en `GenerarTimeSlots`, que sigue
+  siendo un cálculo puro del horario. Una cita aceptada se sigue respetando aunque su hora quede
+  después fuera del horario semanal: el descuento solo quita TimeSlots, nunca cancela citas.
 
 ```gherkin
 Escenario: El Proveedor define su horario semanal
@@ -273,10 +273,51 @@ Escenario: Un perfil pausado no genera TimeSlots durante la pausa
 | Se marcó como completada | `CompletarCita` | Proveedor (manual, no automático) | `Booking` |
 | Se canceló una cita aceptada (con motivo) | `CancelarReservaAceptada` | Proveedor | `Booking` |
 | Se recibió una calificación | `CalificarCita` | Cliente | `Booking` |
+| *(efecto de calificar)* Se recalculó el promedio del Proveedor | `RecalcularCalificacionDelProveedor` | Sistema (lo dispara `CalificarCita`) | `ProviderProfile` (resumen calculado desde las `Booking` calificadas) |
+| *(consulta, sin evento)* Calcular los TimeSlots realmente disponibles | `ObtenerTimeSlotsDisponibles` | Cliente / sistema | `Availability` + `ProviderProfile.pausedRange` + `Booking`s activas (lectura) |
+| *(consulta, sin evento)* Bandeja de solicitudes pendientes (Figma P8) | `ObtenerSolicitudesPendientes` | Proveedor | `Booking` (lectura) |
+| *(consulta, sin evento)* Detalle de una reserva (P9, P10) | `ObtenerReserva` | Proveedor / Cliente | `Booking` (lectura) |
+| *(consulta, sin evento)* Agenda del Proveedor por estado (P10) | `ObtenerReservasDelProveedor` | Proveedor | `Booking` (lectura) |
+| *(consulta, sin evento)* Reseñas del Proveedor (P11) | `ObtenerCalificacionesDelProveedor` | Proveedor / Cliente | `Booking` (lectura) |
 
 Motivos predefinidos (rechazo y cancelación — mismo listado, ver nota de asunción en
 `docs/DOMAIN.md`): *"No disponible en este horario"*, *"Fuera de mi zona de servicio"*,
 *"Servicio no disponible temporalmente"*, *"Otro"* (+ texto libre opcional).
+
+Notas de modelado (#18):
+
+- **Un solo state machine.** `BookingStatus` contiene la única tabla de transiciones permitidas
+  (`Requested → Confirmed | Rejected | Expired`, `Confirmed → Completed | CancelledByProvider |
+  CancelledByCustomer`; el resto son estados terminales). Todo cambio de estado pasa por las
+  funciones de transición de `Booking` (`confirm`, `reject`, `expire`, `complete`,
+  `cancelByProvider`), que devuelven `DomainError.InvalidInput` ante una transición inválida —
+  nunca se permite ni se ignora en silencio. Los casos de uso solo cargan, transicionan y guardan.
+  La transición `CancelledByCustomer` está en la tabla, pero su función y la regla de 3 horas son de
+  #25.
+- **Plazo de 24 horas.** Una solicitud vence cuando `requestedAt + 24 h <= ahora` (el instante
+  exacto ya cuenta como vencida). Aceptar o rechazar una solicitud vencida se rechaza aunque el
+  barrido aún no la haya pasado a `Expired`; `Expired` solo se alcanza una vez vencido el plazo. Los
+  casos de uso que dependen de "ahora" reciben un `Clock` (por defecto `Clock.System`).
+- **Motivos.** Un `Reason` es un código predefinido + nota opcional. El Proveedor usa
+  `ProviderReasonCode` (los tres motivos + "Otro"); la lista del Cliente (#25) será otro enum
+  (`CustomerReasonCode`) bajo la misma interfaz sellada `ReasonCode`. El texto libre es opcional y
+  una nota en blanco se guarda como ausente.
+- **Snapshots.** `Booking` guarda por ID `providerId`/`serviceId`/`customerId` y copia, al solicitar,
+  el precio, la duración y (solo si el Servicio lo requiere) la dirección de entrega
+  (`Address`: línea + lat/lng). Un Servicio `Domicilio` exige dirección; uno `Local` la descarta;
+  `Ambos` la guarda si viene.
+- **Hora de la cita.** `Booking.scheduledAt` es un `LocalDateTime` (fecha + hora de inicio locales
+  del Proveedor, igual que `TimeSlot`); aún no hay zonas horarias. Los instantes reales
+  (`requestedAt`, `respondedAt`, `completedAt`) son `Instant`.
+- **Calificación.** Se guarda en la `Booking` (`Rating`: 1..5 estrellas + comentario opcional); el
+  promedio y el conteo del Proveedor se recalculan desde *todas* sus `Booking` calificadas y se
+  guardan en `ProviderProfile` (calculado, no incremental).
+- **Diferido (no hay sistema de notificaciones):** todo "el Cliente/Proveedor es notificado" y el
+  mensaje fijo de expiración quedan fuera de #18. Tampoco se valida que el TimeSlot solicitado no
+  esté en el pasado (sin zona horaria no se puede comparar con "ahora"), ni que "Completar" solo
+  esté disponible tras la hora de la cita (afordancia de UI, Figma P10).
+- **Fuera de alcance, para #27:** evitar la doble reserva ante dos solicitudes simultáneas requiere
+  una restricción en la base de datos; el caso de uso solo verifica antes de insertar.
 
 ```gherkin
 Escenario: Un Cliente solicita una reserva
@@ -330,4 +371,96 @@ Escenario: El Cliente intenta calificar una cita no completada
   Cuando el Cliente intenta dejar una calificación
   Entonces el sistema rechaza la acción
   Y muestra un mensaje indicando que solo se puede calificar después de completada
+
+Escenario: Una solicitud solo puede cambiar de estado por las transiciones permitidas
+  Dado que existe una Booking en un estado que no es el de partida de la acción
+    (por ejemplo "Confirmed" y el Proveedor intenta aceptarla, "Requested" y intenta completarla,
+    o "Completed", "Rejected", "Expired" o cualquier cancelada y intenta cualquier acción)
+  Cuando el Proveedor intenta aceptar, rechazar, completar o cancelar la Booking
+  Entonces el sistema rechaza la acción con un error de validación
+  Y la Booking conserva su estado y no se guarda nada
+
+Escenario: El Proveedor intenta responder una solicitud vencida
+  Dado que existe una Booking en estado "Requested" cuyo plazo de 24 horas ya venció
+  Cuando el Proveedor intenta aceptarla o rechazarla
+  Entonces el sistema rechaza la acción indicando que la solicitud venció
+  Y la Booking solo puede pasar a "Expired"
+
+Escenario: Una solicitud todavía dentro de su plazo no expira
+  Dado que existe una Booking en estado "Requested" con menos de 24 horas
+  Cuando el sistema revisa las solicitudes vencidas
+  Entonces la Booking sigue en "Requested"
+  Y a partir de las 24 horas exactas la Booking pasa a "Expired"
+  Y revisar de nuevo no expira nada más (la revisión es idempotente)
+
+Escenario: Un Cliente solicita un TimeSlot que ya no está disponible
+  Dado que otra Booking en estado "Requested" o "Confirmed" ocupa ese TimeSlot
+  Cuando el Cliente solicita reservarlo
+  Entonces el sistema rechaza la solicitud indicando que el horario ya no está disponible
+  Y no se crea ninguna Booking
+
+Escenario: Los TimeSlots disponibles excluyen las reservas activas
+  Dado que el Proveedor tiene TimeSlots según su horario y una Booking "Requested" o "Confirmed"
+  Cuando se consultan los TimeSlots disponibles para un Servicio
+  Entonces no aparece ningún TimeSlot que se solape con esa Booking (por intervalo de tiempo,
+    aunque sea de otro Servicio con distinta duración)
+  Y los TimeSlots que solo colindan con ella siguen disponibles
+  Y las Booking "Rejected", "Expired", "CancelledByProvider", "CancelledByCustomer" y "Completed"
+    no ocupan ningún TimeSlot
+  Y una cita aceptada fuera del horario semanal actual no produce ningún error
+
+Escenario: La reserva conserva lo acordado aunque el Servicio cambie
+  Dado que existe una Booking creada para un Servicio de cierto precio y duración
+  Cuando el Proveedor edita o deshabilita ese Servicio
+  Entonces la Booking sigue mostrando el precio y la duración con que se solicitó
+
+Escenario: Una reserva a domicilio exige dirección
+  Dado que el Servicio es de modalidad "Domicilio"
+  Cuando el Cliente solicita reservar sin dirección de entrega
+  Entonces el sistema rechaza la solicitud y no se crea ninguna Booking
+  Y con dirección, la Booking guarda una copia de ella (no una referencia a la dirección del Cliente)
+  Y en un Servicio "Local" la dirección se descarta
+
+Escenario: Un Cliente solicita un Servicio no reservable
+  Dado que el Servicio no existe, está deshabilitado, o el TimeSlot es de otro Proveedor
+  Cuando el Cliente intenta solicitar la reserva
+  Entonces el sistema rechaza la solicitud y no se crea ninguna Booking
+
+Escenario: El Cliente intenta calificar una cita ya calificada
+  Dado que existe una Booking en estado "Completed" que ya tiene calificación
+  Cuando el Cliente intenta calificarla otra vez
+  Entonces el sistema rechaza la acción
+  Y la calificación original no cambia
+
+Escenario: El Cliente deja una calificación fuera del rango permitido
+  Dado que existe una Booking en estado "Completed" sin calificación
+  Cuando el Cliente elige menos de 1 o más de 5 estrellas
+  Entonces el sistema rechaza la calificación y no se guarda nada
+
+Escenario: El promedio del Proveedor se recalcula desde todas sus calificaciones
+  Dado que un Proveedor tiene citas completadas con 5, 4 y 3 estrellas
+  Cuando el Cliente califica otra cita con 2 estrellas
+  Entonces el promedio del Proveedor es 3.5 y su conteo es 4
+  Y el promedio se obtiene de todas sus Booking calificadas, no sumando a un valor anterior
+
+Escenario: El Proveedor consulta su bandeja de solicitudes pendientes
+  Dado que el Proveedor tiene solicitudes en distintos estados
+  Cuando abre la bandeja
+  Entonces ve solo las "Requested" que aún puede responder, la más antigua primero
+  Y una solicitud vencida pero aún no marcada "Expired" no aparece
+  Y un Proveedor sin solicitudes ve una lista vacía, no un error
+
+Escenario: El Proveedor consulta el detalle y su agenda de reservas
+  Dado que el Proveedor tiene reservas en distintos estados
+  Cuando abre el detalle de una reserva
+  Entonces ve la Booking con su precio, duración, dirección, nota del Cliente, motivo y calificación
+  Y una reserva inexistente responde "no encontrado"
+  Cuando consulta su agenda filtrando por estado (por ejemplo "Confirmed")
+  Entonces ve solo las reservas de esos estados, la más próxima primero
+
+Escenario: El Proveedor consulta sus calificaciones
+  Dado que el Proveedor tiene citas completadas, algunas con calificación
+  Cuando abre su perfil público
+  Entonces ve las reseñas (estrellas + comentario), la más reciente primero
+  Y un Proveedor sin calificaciones ve una lista vacía, no un error
 ```
