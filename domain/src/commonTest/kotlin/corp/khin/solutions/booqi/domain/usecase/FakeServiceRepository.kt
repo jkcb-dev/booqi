@@ -9,7 +9,7 @@ import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 
 /**
- * Hand-written fake shared by the Grupo 2 use case tests (Agregar/Editar/Deshabilitar) — a
+ * Hand-written fake shared by the Grupo 2 use case tests (Agregar/Editar/Deshabilitar/Habilitar/Obtener) — a
  * minimal, in-memory implementation of [ServiceRepository] good enough to exercise the BDD
  * scenarios in docs/domain/provider-flow.md § Grupo 2 without any real I/O. Not the same class as
  * `data`'s `FakeServiceRemoteDataSource` — that one fakes the datasource boundary for the app;
@@ -56,4 +56,19 @@ class FakeServiceRepository : ServiceRepository {
         servicesById[serviceId] = updated
         return updated.asSuccess()
     }
+
+    override suspend fun enableService(serviceId: String): DomainResult<Service> {
+        val existing = servicesById[serviceId] ?: return DomainError.NotFound.asFailure()
+        val updated = existing.copy(isActive = true)
+        servicesById[serviceId] = updated
+        return updated.asSuccess()
+    }
+
+    // servicesById is insertion-ordered and re-assigning an existing key keeps its position, so
+    // this is creation order — same contract as the real repository.
+    override suspend fun getServicesByProvider(providerId: String): DomainResult<List<Service>> =
+        servicesById.values.filter { it.providerId == providerId }.asSuccess()
+
+    override suspend fun getService(serviceId: String): DomainResult<Service> =
+        servicesById[serviceId]?.asSuccess() ?: DomainError.NotFound.asFailure()
 }

@@ -20,6 +20,11 @@ package corp.khin.solutions.booqi.domain.model
  * - Soft-deleted (never hard-deleted) by
  *   [corp.khin.solutions.booqi.domain.usecase.DeshabilitarServicioUseCase], which flips
  *   [isActive] to `false` so historical `Booking.serviceId` references never dangle.
+ * - Re-enabled by [corp.khin.solutions.booqi.domain.usecase.HabilitarServicioUseCase], the inverse
+ *   flip back to `true` (still soft — nothing else changes).
+ * - Read by [corp.khin.solutions.booqi.domain.usecase.ObtenerServiciosDelProveedorUseCase] (the
+ *   Provider's own list, disabled included) and
+ *   [corp.khin.solutions.booqi.domain.usecase.ObtenerServicioUseCase] (one by id).
  */
 data class Service(
     val id: String,
