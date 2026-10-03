@@ -8,7 +8,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * C3 — a Service's detail, for `Destination.ProviderDetail(providerId)`
+ * C3 — a Service's detail, for `Destination.ServiceDetail(serviceId)`
  * (`corp.khin.solutions.booqi.core.navigation.Destination`). Despite that destination's name its
  * parameter carries the **service id** (see its KDoc), which is [serviceId] here.
  *

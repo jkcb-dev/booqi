@@ -16,7 +16,10 @@ import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiTheme
 import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
+import corp.khin.solutions.booqi.core.navigation.Navigator
 import corp.khin.solutions.booqi.feature.browse.BrowseScreen
+import corp.khin.solutions.booqi.feature.browse.ProviderPublicProfileScreen
+import corp.khin.solutions.booqi.feature.browse.ServiceDetailScreen
 import corp.khin.solutions.booqi.feature.provider.BookingRequestInboxScreen
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileScreen
 import corp.khin.solutions.booqi.feature.provider.ScheduleManagementScreen
@@ -39,36 +42,7 @@ fun App() {
         // Insets are applied once here, for every screen, so no feature draws under the status
         // bar/Dynamic Island, the home indicator, or the keyboard.
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            when (val destination = backStack.last()) {
-                is Destination.Browse -> BrowseScreen(
-                    onProviderSelected = { providerId ->
-                        navigator.navigateTo(Destination.ProviderDetail(providerId))
-                    },
-                )
-                is Destination.ProviderProfileSetup -> ProviderProfileScreen(
-                    onManageServices = { navigator.navigateTo(Destination.ServiceList) },
-                    onManageSchedule = { navigator.navigateTo(Destination.ScheduleManagement) },
-                    onManageBookings = { navigator.navigateTo(Destination.BookingRequestInbox) },
-                )
-                is Destination.ServiceList -> ServiceListScreen(
-                    onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
-                    onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
-                )
-                is Destination.BookingRequestInbox -> BookingRequestInboxScreen(
-                    onFinished = { navigator.navigateBack() },
-                )
-                is Destination.ScheduleManagement -> ScheduleManagementScreen(
-                    onFinished = { navigator.navigateBack() },
-                )
-                is Destination.ServiceEditor -> ServiceEditorScreen(
-                    serviceId = destination.serviceId,
-                    onFinished = { navigator.navigateBack() },
-                )
-                // Remaining destinations land with their own feature modules as those tickets
-                // ship: ProviderDetail, ProviderProfileView (feature:browse); Booking,
-                // BookingConfirmation, MyBookings, AddressSelection (feature:booking).
-                else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
-            }
+            DestinationContent(destination = backStack.last(), navigator = navigator)
 
             // TEMPORARY: there is no "become a Provider" entry point in the product yet (that's
             // normally reached from a User's own profile/settings, which doesn't exist — Identity
@@ -89,5 +63,54 @@ fun App() {
                 Text(if (onProviderScreen) "Volver a Browse" else "Modo Proveedor")
             }
         }
+    }
+}
+
+/** Renders the screen for [destination]; one branch per wired [Destination]. */
+@Composable
+private fun DestinationContent(destination: Destination, navigator: Navigator) {
+    when (destination) {
+        is Destination.Browse -> BrowseScreen(
+            onProviderSelected = { serviceId ->
+                navigator.navigateTo(Destination.ServiceDetail(serviceId))
+            },
+        )
+        is Destination.ServiceDetail -> ServiceDetailScreen(
+            serviceId = destination.serviceId,
+            onProviderSelected = { id -> navigator.navigateTo(Destination.ProviderProfileView(id)) },
+            // TEMPORARY no-op: the Customer booking flow is #26 (feature:booking not built yet).
+            onBook = { _, _ -> },
+            onFinished = { navigator.navigateBack() },
+        )
+        is Destination.ProviderProfileView -> ProviderPublicProfileScreen(
+            providerId = destination.providerId,
+            onServiceSelected = { id -> navigator.navigateTo(Destination.ServiceDetail(id)) },
+            // TEMPORARY no-op until #26, same as above.
+            onBook = { _, _ -> },
+            onFinished = { navigator.navigateBack() },
+        )
+        is Destination.ProviderProfileSetup -> ProviderProfileScreen(
+            onManageServices = { navigator.navigateTo(Destination.ServiceList) },
+            onManageSchedule = { navigator.navigateTo(Destination.ScheduleManagement) },
+            onManageBookings = { navigator.navigateTo(Destination.BookingRequestInbox) },
+        )
+        is Destination.ServiceList -> ServiceListScreen(
+            onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
+            onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
+        )
+        is Destination.BookingRequestInbox -> BookingRequestInboxScreen(
+            onFinished = { navigator.navigateBack() },
+        )
+        is Destination.ScheduleManagement -> ScheduleManagementScreen(
+            onFinished = { navigator.navigateBack() },
+        )
+        is Destination.ServiceEditor -> ServiceEditorScreen(
+            serviceId = destination.serviceId,
+            onFinished = { navigator.navigateBack() },
+        )
+        // Remaining destinations land with their own feature modules as those tickets
+        // ship: Booking,
+        // BookingConfirmation, MyBookings, AddressSelection (feature:booking).
+        else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
     }
 }

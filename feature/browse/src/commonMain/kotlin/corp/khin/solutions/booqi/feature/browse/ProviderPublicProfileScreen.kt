@@ -14,7 +14,7 @@ import org.koin.compose.viewmodel.koinViewModel
  *
  * Navigation is exposed as callbacks so Architect's wiring can map them to `Navigator` calls
  * without this module importing another feature: [onServiceSelected] (a Service card) ->
- * `Destination.ProviderDetail(serviceId)`, the Service detail; [onBook] ("Reservar ›", with the
+ * `Destination.ServiceDetail(serviceId)`, the Service detail; [onBook] ("Reservar ›", with the
  * Service and its Provider) -> the booking flow of #26, **not built yet**; [onFinished]
  * ("Volver") -> back.
  */

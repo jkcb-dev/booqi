@@ -13,7 +13,7 @@ import org.koin.compose.viewmodel.koinViewModel
  *
  * [onProviderSelected] is called with the **service id** of the tapped result (the name predates
  * the model correction and is kept so `App.kt` keeps compiling): wiring maps it to
- * `Destination.ProviderDetail(serviceId)`, which despite its name renders a Service's detail.
+ * `Destination.ServiceDetail(serviceId)`, which despite its name renders a Service's detail.
  */
 @Composable
 fun BrowseScreen(
