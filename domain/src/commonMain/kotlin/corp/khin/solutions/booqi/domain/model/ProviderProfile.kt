@@ -21,8 +21,9 @@ package corp.khin.solutions.booqi.domain.model
  * represents a brand-new profile; wiring real computation from Bookings is out of scope here.
  *
  * [pausedRange] only carries the "vacation mode" span exercised by Grupo 1's PausarPerfil
- * scenarios. The full recurring weekly-schedule Availability model is Grupo 3 (issue #16) and is
- * deliberately not built here ahead of that ticket.
+ * scenarios. The recurring weekly schedule and blocked dates are [Availability] (Grupo 3, #16),
+ * a separate value object keyed by this profile's id; slot generation takes [pausedRange] as an
+ * explicit input rather than [Availability] duplicating it.
  */
 data class ProviderProfile(
     val id: String,

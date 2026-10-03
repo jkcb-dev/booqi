@@ -20,7 +20,7 @@ enough to justify the ceremony.
 | **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, and modality (Local / Domicilio / both). A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
 | **Modality** | Whether a Service is delivered at the Provider's location (**Local**) or the Customer's (**Domicilio**), or both. |
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
-| **Availability** | A Provider's recurring weekly schedule, plus specific blocked dates/times, plus an optional "paused" date range (vacation mode). TimeSlots are generated from this. |
+| **Availability** | A Provider's recurring weekly schedule (one range per day of the week) plus specific blocked dates/times. Value object, references its Provider by `providerId`. The optional "paused" date range (vacation mode) lives on `ProviderProfile.pausedRange` and is passed in alongside when TimeSlots are generated from this. |
 | **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` and `docs/domain/customer-flow.md` for the full state machine. |
 | **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. |
 | **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). |
@@ -34,7 +34,8 @@ this user. Not built yet.
 Availability (define/modify schedule, block dates, pause profile). Fully specified in
 `docs/domain/provider-flow.md`. **Partially built:** Grupo 1 (perfil: activar/completar/pausar —
 domain, data and `feature:provider` UI) and Grupo 2's domain/data (`Service`, add/edit/disable use
-cases; its UI is #15). Horario (Grupo 3) and the Provider side of Bookings (Grupo 4) are not built.
+cases; its UI is #15) and Grupo 3's domain/data (`Availability`, define/modify weekly hours,
+block/unblock, TimeSlot generation; its UI is #17). The Provider side of Bookings (Grupo 4) is not built.
 All datasources are still in-memory fakes until #27.
 
 **Catalog** — browsing/discovery, read-heavy. Searches across Services (not Providers directly),
