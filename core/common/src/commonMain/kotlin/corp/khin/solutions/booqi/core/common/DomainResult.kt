@@ -18,6 +18,12 @@ inline fun <T, R> DomainResult<T>.map(transform: (T) -> R): DomainResult<R> = wh
     is DomainResult.Failure -> this
 }
 
+/** Chains a step that can itself fail: runs [transform] on success, short-circuits on failure. */
+inline fun <T, R> DomainResult<T>.flatMap(transform: (T) -> DomainResult<R>): DomainResult<R> = when (this) {
+    is DomainResult.Success -> transform(value)
+    is DomainResult.Failure -> this
+}
+
 inline fun <T> DomainResult<T>.onSuccess(action: (T) -> Unit): DomainResult<T> {
     if (this is DomainResult.Success) action(value)
     return this

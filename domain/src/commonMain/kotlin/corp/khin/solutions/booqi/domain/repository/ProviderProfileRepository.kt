@@ -40,4 +40,24 @@ interface ProviderProfileRepository {
      * when [pausedRange] is `null`.
      */
     suspend fun setPausedRange(profileId: String, pausedRange: DateRange?): DomainResult<ProviderProfile>
+
+    /**
+     * Read side of the profile identified by [profileId], or
+     * [corp.khin.solutions.booqi.core.common.DomainError.NotFound]. Needed by the Booking flow to
+     * read [ProviderProfile.pausedRange] when computing available TimeSlots.
+     */
+    suspend fun getProfile(profileId: String): DomainResult<ProviderProfile>
+
+    /**
+     * Escenario: "El Cliente califica una cita completada" (recalculation half). Stores the
+     * Provider's rating summary — [ratingAverage] (`null` when there are no ratings) and
+     * [ratingCount] — on the profile identified by [profileId] (`Booking.providerId` equals this
+     * id). Narrow on purpose: the caller computes the summary from the rated Bookings; this only
+     * persists it.
+     */
+    suspend fun updateRating(
+        profileId: String,
+        ratingAverage: Double?,
+        ratingCount: Int,
+    ): DomainResult<ProviderProfile>
 }
