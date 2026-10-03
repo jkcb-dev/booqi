@@ -18,6 +18,7 @@ import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
 import corp.khin.solutions.booqi.feature.browse.BrowseScreen
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileScreen
+import corp.khin.solutions.booqi.feature.provider.ScheduleManagementScreen
 import corp.khin.solutions.booqi.feature.provider.ServiceEditorScreen
 import corp.khin.solutions.booqi.feature.provider.ServiceListScreen
 
@@ -45,10 +46,14 @@ fun App() {
                 )
                 is Destination.ProviderProfileSetup -> ProviderProfileScreen(
                     onManageServices = { navigator.navigateTo(Destination.ServiceList) },
+                    onManageSchedule = { navigator.navigateTo(Destination.ScheduleManagement) },
                 )
                 is Destination.ServiceList -> ServiceListScreen(
                     onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
                     onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
+                )
+                is Destination.ScheduleManagement -> ScheduleManagementScreen(
+                    onFinished = { navigator.navigateBack() },
                 )
                 is Destination.ServiceEditor -> ServiceEditorScreen(
                     serviceId = destination.serviceId,
@@ -57,7 +62,7 @@ fun App() {
                 // Remaining destinations land with their own feature modules as those tickets
                 // ship: ProviderDetail, ProviderProfileView (feature:browse); Booking,
                 // BookingConfirmation, MyBookings, AddressSelection (feature:booking);
-                // ScheduleManagement, BookingRequestInbox (feature:provider).
+                // BookingRequestInbox (feature:provider).
                 else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
             }
 
