@@ -9,6 +9,7 @@ import corp.khin.solutions.booqi.data.datasource.FakeProviderRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeServiceRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.ProviderProfileRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.ProviderRemoteDataSource
+import corp.khin.solutions.booqi.data.datasource.SampleData
 import corp.khin.solutions.booqi.data.datasource.ServiceRemoteDataSource
 import corp.khin.solutions.booqi.data.repository.AvailabilityRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.BookingRepositoryImpl
@@ -27,10 +28,10 @@ val dataModule = module {
     single<ServiceCatalogRepository> { ServiceCatalogRepositoryImpl(get()) }
     single<ProviderProfileRemoteDataSource> { FakeProviderProfileRemoteDataSource() }
     single<ProviderProfileRepository> { ProviderProfileRepositoryImpl(get()) }
-    single<ServiceRemoteDataSource> { FakeServiceRemoteDataSource() }
+    single<ServiceRemoteDataSource> { FakeServiceRemoteDataSource(seed = SampleData.services()) }
     single<ServiceRepository> { ServiceRepositoryImpl(get()) }
     single<AvailabilityRemoteDataSource> { FakeAvailabilityRemoteDataSource() }
     single<AvailabilityRepository> { AvailabilityRepositoryImpl(get()) }
-    single<BookingRemoteDataSource> { FakeBookingRemoteDataSource() }
+    single<BookingRemoteDataSource> { FakeBookingRemoteDataSource(seed = SampleData.bookings()) }
     single<BookingRepository> { BookingRepositoryImpl(get()) }
 }
