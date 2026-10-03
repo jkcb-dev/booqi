@@ -15,10 +15,11 @@ package corp.khin.solutions.booqi.domain.model
  *   [corp.khin.solutions.booqi.domain.usecase.PausarPerfilUseCase], which sets/clears
  *   [pausedRange].
  *
- * [ratingAverage]/[ratingCount] are modeled as they would be *read* today. The doc says the
- * rating is a computed aggregate over the Provider's completed `Booking`s — but `Booking` doesn't
- * exist as an entity yet (separate ticket), so there is nothing to compute from yet. `null`/`0`
- * represents a brand-new profile; wiring real computation from Bookings is out of scope here.
+ * [ratingAverage]/[ratingCount] are the Provider's rating summary: the mean stars and the number of
+ * rated, completed `Booking`s (docs/DOMAIN.md — a computed aggregate, not an incremental counter).
+ * They are persisted as a denormalized read value, recomputed from all the Provider's rated
+ * Bookings by [corp.khin.solutions.booqi.domain.usecase.RecalcularCalificacionDelProveedorUseCase]
+ * every time a rating is left; `null`/`0` means "no ratings yet". Not rounded here — the UI rounds.
  *
  * [pausedRange] only carries the "vacation mode" span exercised by Grupo 1's PausarPerfil
  * scenarios. The recurring weekly schedule and blocked dates are [Availability] (Grupo 3, #16),
