@@ -1,7 +1,7 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import corp.khin.solutions.booqi.domain.model.Booking
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Duration.Companion.minutes

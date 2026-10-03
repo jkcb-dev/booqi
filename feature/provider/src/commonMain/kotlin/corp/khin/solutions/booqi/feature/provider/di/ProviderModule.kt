@@ -56,7 +56,7 @@ val providerModule = module {
         )
     }
     // Destination.BookingRequestInbox, and the P11 ratings section on the completed profile.
-    // Their trailing clock/timeZone/providerId arguments keep their defaults (SystemClock, system
+    // Their trailing clock/timeZone/providerId arguments keep their defaults (Clock.System, system
     // time zone, TEMPORARY provider id).
     viewModel {
         BookingInboxViewModel(
