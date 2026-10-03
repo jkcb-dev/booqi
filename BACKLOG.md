@@ -62,8 +62,9 @@ Issues, not this file. Kept as-is for the historical record of what got scaffold
 `Destination.ProviderDetail(providerId)` exists; Browse already navigates to it on tap. No
 domain/data/UI work has started.
 
-- [ ] Domain & Data — expose full provider profile (bio, service list) vs. the summary shape
-      `ServiceProvider` currently has
+- [x] Domain & Data — expose full provider profile (bio, service list) vs. the summary shape
+      `ServiceProvider` currently has: `VerPerfilProveedorUseCase` (#20); the old `ServiceProvider`
+      stays `@Deprecated` until #21 migrates `feature:browse`
 - [ ] Compose UI — provider profile screen
 
 ---

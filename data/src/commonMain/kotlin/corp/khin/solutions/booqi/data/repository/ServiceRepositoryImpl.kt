@@ -43,6 +43,8 @@ class ServiceRepositoryImpl(
             priceCents = details.priceCents,
             durationMinutes = details.durationMinutes,
             modality = details.modality,
+            // No category in the form (null) keeps the stored one; the editor has no picker yet.
+            category = details.category ?: existing.toDomain().category,
         )
         remoteDataSource.save(updated.toDto()).toDomain().asSuccess()
     } catch (e: Exception) {

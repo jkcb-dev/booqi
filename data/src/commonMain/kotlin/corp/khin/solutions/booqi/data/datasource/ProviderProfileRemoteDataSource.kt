@@ -17,6 +17,9 @@ interface ProviderProfileRemoteDataSource {
 
     suspend fun findById(profileId: String): ProviderProfileDto?
 
+    /** The profiles whose id is in [ids]; ids with no profile are simply absent from the result. */
+    suspend fun findByIds(ids: Set<String>): List<ProviderProfileDto>
+
     /** Upserts by [ProviderProfileDto.id]. */
     suspend fun save(profile: ProviderProfileDto): ProviderProfileDto
 }

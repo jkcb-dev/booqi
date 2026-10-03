@@ -10,6 +10,9 @@ package corp.khin.solutions.booqi.data.dto
  * this keeps the DTO from presupposing the domain layer's value types
  * ([corp.khin.solutions.booqi.domain.model.DateRange]). Both `null` means "not paused"; the
  * mapper treats any other combination as a data inconsistency it doesn't try to guess around.
+ *
+ * [locationLat]/[locationLng] are the `provider_profiles.location_lat/lng` columns; the mapper only
+ * builds a domain `GeoPoint` when both are present.
  */
 data class ProviderProfileDto(
     val id: String,
@@ -23,4 +26,6 @@ data class ProviderProfileDto(
     val pausedRangeEnd: String?,
     val ratingAverage: Double?,
     val ratingCount: Int,
+    val locationLat: Double?,
+    val locationLng: Double?,
 )

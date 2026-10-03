@@ -3,8 +3,9 @@
 **Corrected 2026-08-11** — the original version of this document conflated Provider and Service
 into one entity. A product discovery session (see `docs/domain/provider-flow.md`) clarified that
 they're separate concepts with separate lifecycles. This version replaces that one; nothing below
-should be assumed to match the initial scaffold's `ServiceProvider` type, which is now known to be
-wrong and needs splitting (tracked as follow-up work, not yet done).
+should be assumed to match the initial scaffold's `ServiceProvider` type, which was wrong. The
+Catalog now runs on the split model (#20); the old type, repository and use case survive only as
+`@Deprecated` code for `feature:browse` until #21 migrates it.
 
 Scope note, unchanged from before: this is **tactical DDD** (ubiquitous language, aggregates,
 value objects, invariants), not full strategic DDD. Bounded contexts stay as packages inside the
@@ -16,8 +17,10 @@ enough to justify the ceremony.
 | Term | Meaning |
 |---|---|
 | **User** | An account. Authenticates via Google, Facebook, Apple ID, or email/password. Any User can book services (customer capability is implicit); a User optionally also has a **ProviderProfile** if they choose to offer services. Being a customer and a provider is not an exclusive choice — one account can be both. |
-| **ProviderProfile** | The identity of *who* offers services: display name, photo, description, location, aggregate rating, weekly availability. One optional ProviderProfile per User. |
-| **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, and modality (Local / Domicilio / both). A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
+| **ProviderProfile** | The identity of *who* offers services: display name, photo, description, location (a text line plus optional `coordinates`), aggregate rating, weekly availability. One optional ProviderProfile per User. |
+| **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, modality (Local / Domicilio / both) and **category**. A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
+| **ServiceCategory** | What kind of Service it is — the C1 chips: `BARBERIA`, `UNAS`, `LIMPIEZA`, `MASAJES`, `TECNICO`, plus `OTRO` (default when the Provider hasn't chosen one; no chip, only found under "Todos"). Lives on the `Service`, not the Provider. The old `ServiceCategory` of the deprecated `ServiceProvider` is now `LegacyServiceCategory`. |
+| **GeoPoint** | A latitude/longitude pair (value object) — the lat/lng half of `Address`. `ProviderProfile.coordinates` (optional, `provider_profiles.location_lat/lng`) and the Customer's GPS fix are compared with a simple great-circle distance. |
 | **Modality** | Whether a Service is delivered at the Provider's location (**Local**) or the Customer's (**Domicilio**), or both. |
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
 | **Availability** | A Provider's recurring weekly schedule (one range per day of the week) plus specific blocked dates/times. Value object, references its Provider by `providerId`. The optional "paused" date range (vacation mode) lives on `ProviderProfile.pausedRange` and is passed in alongside when TimeSlots are generated from this. |
@@ -43,9 +46,23 @@ block/unblock, TimeSlot generation; its UI is #17). The Provider side of Booking
 the Scheduling context below. All datasources are still in-memory fakes until #27.
 
 **Catalog** — browsing/discovery, read-heavy. Searches across Services (not Providers directly),
-filterable by type, zone/distance (GPS-based, simple radius — no polygon zones). Partially built:
-`feature:browse` + `domain`'s `ServiceProvider` exist but use the pre-correction model and need
-reworking to the Service/ProviderProfile split above.
+filterable by category, free text and distance (GPS-based, simple radius — no polygon zones).
+**Domain & data built (#20):** `BuscarServiciosUseCase` (text/category/distance; a Service is a
+candidate only if it is active, its profile complete and not paused *today*; ordered by distance,
+then title, then id), `VerDetalleServicioUseCase` (C3), `VerPerfilProveedorUseCase` (C4: profile +
+active Services + rating aggregate + reviews, reusing `ObtenerCalificacionesDelProveedor`), and the
+chip list (`ServiceCategory.filterable`). They return read models (`ServiceSearchResult`,
+`ServiceDetail`, `ProviderPublicProfile`, ...) and read through `CatalogRepository`, which joins
+`Service.providerId == ProviderProfile.id` — see "providerId contract" below. **Not built:** the
+Customer's UI (#21; `feature:browse` still shows the deprecated `ServiceProvider` model), a
+category picker in the Servicios editor and a way for a Provider to set `coordinates` (follow-ups
+of #20 — until then every Service is `OTRO` and every profile has no coordinates, so category and
+distance filters only find sample data).
+
+**providerId contract (#50).** `Service`/`Availability`/`Booking`.`providerId` **is** a
+`ProviderProfile.id`, not a user id. The Catalog follows that strictly and has no fallback by
+`userId`; today the Provider screens and `SampleData` still pass a user placeholder, so those
+Services don't join (and don't appear in search) until #50 aligns the ids.
 
 **Scheduling** — the Booking lifecycle: request, accept/reject/expire, complete, cancel, rate.
 Fully specified in `docs/domain/provider-flow.md`'s "Gestión de Reservas y Calificaciones" group.

@@ -4,6 +4,7 @@ import corp.khin.solutions.booqi.domain.usecase.AceptarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.BloquearFechaHoraUseCase
+import corp.khin.solutions.booqi.domain.usecase.BuscarServiciosUseCase
 import corp.khin.solutions.booqi.domain.usecase.CalificarCitaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CancelarReservaAceptadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarCitaUseCase
@@ -29,9 +30,12 @@ import corp.khin.solutions.booqi.domain.usecase.PausarPerfilUseCase
 import corp.khin.solutions.booqi.domain.usecase.RecalcularCalificacionDelProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.RechazarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.SolicitarReservaUseCase
+import corp.khin.solutions.booqi.domain.usecase.VerDetalleServicioUseCase
+import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import org.koin.dsl.module
 
 val domainModule = module {
+    // Deprecated pre-correction model, only for feature:browse until #21 migrates it.
     factory { GetFeaturedProvidersUseCase(get()) }
     factory { ActivarModoProveedorUseCase(get()) }
     factory { CompletarPerfilDeProveedorUseCase(get()) }
@@ -62,4 +66,8 @@ val domainModule = module {
     factory { ObtenerReservaUseCase(get()) }
     factory { ObtenerReservasDelProveedorUseCase(get()) }
     factory { ObtenerCalificacionesDelProveedorUseCase(get()) }
+    // Catalog (Cliente · Búsqueda, #20). BuscarServicios uses its Clock.System/system-zone defaults.
+    factory { BuscarServiciosUseCase(get()) }
+    factory { VerDetalleServicioUseCase(get(), get()) }
+    factory { VerPerfilProveedorUseCase(get(), get(), get()) }
 }

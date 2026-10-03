@@ -32,6 +32,7 @@ class FakeServiceRemoteDataSource(
             durationMinutes = details.durationMinutes,
             modality = details.modality,
             isActive = true,
+            category = details.category ?: DEFAULT_CATEGORY,
         )
         servicesById[service.id] = service
         return service
@@ -44,8 +45,14 @@ class FakeServiceRemoteDataSource(
     override suspend fun findByProviderId(providerId: String): List<ServiceDto> =
         servicesById.values.filter { it.providerId == providerId }
 
+    override suspend fun findAll(): List<ServiceDto> = servicesById.values.toList()
+
     override suspend fun save(service: ServiceDto): ServiceDto {
         servicesById[service.id] = service
         return service
+    }
+
+    private companion object {
+        const val DEFAULT_CATEGORY = "otro"
     }
 }

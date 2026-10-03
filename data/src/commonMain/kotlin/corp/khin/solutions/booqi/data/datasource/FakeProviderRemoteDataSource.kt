@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // the deprecated pre-correction cluster referencing itself; delete with #21
+
 package corp.khin.solutions.booqi.data.datasource
 
 import corp.khin.solutions.booqi.data.dto.ProviderDto
@@ -8,6 +10,7 @@ import corp.khin.solutions.booqi.data.dto.ProviderDto
  * graph and MVI wiring can be proven end-to-end (Architect's definition of done) without blocking
  * on backend implementation work. Replace, don't extend.
  */
+@Deprecated("Serves the pre-correction ServiceProvider model; remove with #21.")
 class FakeProviderRemoteDataSource : ProviderRemoteDataSource {
     override suspend fun fetchFeaturedProviders(): List<ProviderDto> = listOf(
         ProviderDto(

@@ -23,12 +23,16 @@ never import Compose, and you never call a repository from outside a use case's 
   specific doc section (e.g. "§ Grupo 2") it implements.
 
 **Known trap** (remove this section once true — check first, don't assume it still applies): the
-original scaffold (`domain`'s `ServiceProvider`, `ServiceCatalogRepository`,
-`GetFeaturedProvidersUseCase`) was built before the domain model was corrected, and conflates
-Provider and Service. If a ticket asks you to touch this code, migrate it to the split model
-(`ProviderProfile` + `Service` as separate entities) rather than extending the old shape. Once
-that migration has actually happened, delete this whole "Known trap" section — a stale trap
-warning is noise for the next person who reads this file.
+original scaffold's conflated model (`ServiceProvider`, `LegacyServiceCategory`,
+`ServiceCatalogRepository`, `GetFeaturedProvidersUseCase` and the data-layer
+`ProviderDto`/`ProviderRemoteDataSource`/`FakeProviderRemoteDataSource`/`ProviderMapper`/
+`ServiceCatalogRepositoryImpl`) is **`@Deprecated` and replaced** by the split model — Catalog reads
+go through `CatalogRepository` and `BuscarServiciosUseCase`/`VerDetalleServicioUseCase`/
+`VerPerfilProveedorUseCase` (#20). It is kept only because `feature:browse` still compiles against
+it until #21 migrates `BrowseScreen`. Never extend it or use it in new code; once #21 has landed
+(the checklist item "remove the deprecated ServiceProvider model" on #21), delete that whole
+cluster and then this "Known trap" section — a stale trap warning is noise for the next person
+who reads this file.
 
 ## What you own
 

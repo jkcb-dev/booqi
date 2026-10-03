@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION") // the deprecated pre-correction cluster referencing itself; delete with #21
+
 package corp.khin.solutions.booqi.data.repository
 
 import corp.khin.solutions.booqi.core.common.DomainError
@@ -16,6 +18,7 @@ import corp.khin.solutions.booqi.domain.repository.ServiceCatalogRepository
  * (serve last-known-good on [DomainError.NoConnection] instead of failing outright) — that's a
  * deliberate later decision, not an oversight.
  */
+@Deprecated("Serves the pre-correction ServiceProvider model; replaced by CatalogRepositoryImpl. Remove with #21.")
 class ServiceCatalogRepositoryImpl(
     private val remoteDataSource: ProviderRemoteDataSource,
 ) : ServiceCatalogRepository {

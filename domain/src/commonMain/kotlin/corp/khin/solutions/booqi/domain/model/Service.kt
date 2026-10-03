@@ -25,6 +25,12 @@ package corp.khin.solutions.booqi.domain.model
  * - Read by [corp.khin.solutions.booqi.domain.usecase.ObtenerServiciosDelProveedorUseCase] (the
  *   Provider's own list, disabled included) and
  *   [corp.khin.solutions.booqi.domain.usecase.ObtenerServicioUseCase] (one by id).
+ * - Discovered by Customers through the Catalog queries ([corp.khin.solutions.booqi.domain.usecase.
+ *   BuscarServiciosUseCase] et al.), which only ever surface active Services.
+ *
+ * [category] drives the C1 chips. It defaults to [ServiceCategory.OTRO] so code that predates it
+ * (the Servicios editor, which has no picker yet) keeps compiling; it is *not* part of
+ * [ServiceDetails]'s required fields for the same reason.
  */
 data class Service(
     val id: String,
@@ -36,6 +42,7 @@ data class Service(
     val durationMinutes: Int,
     val modality: ServiceModality,
     val isActive: Boolean = true,
+    val category: ServiceCategory = ServiceCategory.OTRO,
 )
 
 /**
@@ -43,6 +50,9 @@ data class Service(
  * one value so add/edit signatures stay small (detekt `LongParameterList`) and so "what a Provider
  * can set" is defined in one place. Excludes identity ([Service.id]), ownership
  * ([Service.providerId]) and lifecycle ([Service.isActive]), which are never form fields.
+ *
+ * [category] `null` means "not chosen": a new Service becomes [ServiceCategory.OTRO] and an edit
+ * **keeps** the Service's current category — so a form without a category picker can't wipe one.
  */
 data class ServiceDetails(
     val title: String,
@@ -51,6 +61,7 @@ data class ServiceDetails(
     val priceCents: Int,
     val durationMinutes: Int,
     val modality: ServiceModality,
+    val category: ServiceCategory? = null,
 )
 
 /** Where a [Service] is delivered: at the Provider's location, the Customer's, or both. */
