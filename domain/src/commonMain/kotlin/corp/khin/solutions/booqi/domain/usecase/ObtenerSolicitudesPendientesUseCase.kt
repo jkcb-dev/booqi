@@ -5,7 +5,7 @@ import corp.khin.solutions.booqi.core.common.map
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Query behind the Provider's request inbox (Figma P8, and P9's detail source list): the

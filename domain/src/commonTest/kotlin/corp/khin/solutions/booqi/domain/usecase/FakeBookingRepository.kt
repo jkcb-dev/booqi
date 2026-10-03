@@ -8,7 +8,7 @@ import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Hand-written fake shared by the Grupo 4 use case tests — a minimal in-memory [BookingRepository]

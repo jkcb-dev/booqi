@@ -11,7 +11,7 @@ import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Maps `bookings` rows to [Booking]s, does the status/rating/cutoff filtering and enforces the
