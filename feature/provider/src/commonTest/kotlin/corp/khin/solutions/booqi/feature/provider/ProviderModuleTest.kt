@@ -3,6 +3,7 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import corp.khin.solutions.booqi.domain.di.domainModule
+import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import corp.khin.solutions.booqi.feature.provider.di.providerModule
@@ -22,7 +23,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Proves `providerModule` actually resolves the service ViewModels — in particular the nullable
+ * Proves `providerModule` actually resolves the service and schedule ViewModels — in particular the nullable
  * `serviceId` Koin parameter `ServiceEditorScreen` passes with `parametersOf(serviceId)` — since
  * nothing registers the module in the app until Architect's wiring PR.
  */
@@ -45,6 +46,7 @@ class ProviderModuleTest {
             module {
                 single<ServiceRepository> { FakeServiceRepository() }
                 single<ProviderProfileRepository> { FakeProviderProfileRepository() }
+                single<AvailabilityRepository> { FakeAvailabilityRepository() }
             },
         )
     }.koin
@@ -78,6 +80,15 @@ class ProviderModuleTest {
 
         assertTrue(viewModel.state.value.isEditing)
         assertEquals("service-1", viewModel.state.value.serviceId)
+    }
+
+    @Test
+    fun `schedule view models resolve and start loading`() {
+        val weekly = koin.get<WeeklyScheduleViewModel>()
+        val blocking = koin.get<DateBlockingViewModel>()
+
+        assertTrue(weekly.state.value.isLoading)
+        assertTrue(blocking.state.value.isLoading)
     }
 
     @Test

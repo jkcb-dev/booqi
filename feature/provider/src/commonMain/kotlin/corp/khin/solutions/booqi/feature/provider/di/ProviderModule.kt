@@ -1,8 +1,10 @@
 package corp.khin.solutions.booqi.feature.provider.di
 
+import corp.khin.solutions.booqi.feature.provider.DateBlockingViewModel
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileViewModel
 import corp.khin.solutions.booqi.feature.provider.ServiceEditorViewModel
 import corp.khin.solutions.booqi.feature.provider.ServiceListViewModel
+import corp.khin.solutions.booqi.feature.provider.WeeklyScheduleViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -30,6 +32,23 @@ val providerModule = module {
             agregarServicio = get(),
             editarServicio = get(),
             obtenerServicio = get(),
+        )
+    }
+    // Both halves of Destination.ScheduleManagement; ScheduleManagementScreen resolves them with
+    // koinViewModel(). Their trailing providerId/clock/timeZone constructor arguments keep their
+    // defaults (TEMPORARY provider id, Clock.System, system time zone).
+    viewModel {
+        WeeklyScheduleViewModel(
+            obtenerHorario = get(),
+            definirHorario = get(),
+            modificarHorario = get(),
+        )
+    }
+    viewModel {
+        DateBlockingViewModel(
+            obtenerHorario = get(),
+            bloquearFechaHora = get(),
+            desbloquearFechaHora = get(),
         )
     }
 }

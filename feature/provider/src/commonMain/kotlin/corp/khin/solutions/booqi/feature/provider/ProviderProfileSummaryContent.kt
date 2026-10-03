@@ -28,6 +28,7 @@ internal fun ProfileSummaryContent(
     state: ProviderProfileUiState,
     onAction: (ProviderProfileAction) -> Unit,
     onManageServices: () -> Unit = {},
+    onManageSchedule: () -> Unit = {},
 ) {
     val profile = state.profile ?: return
     Column(
@@ -43,6 +44,9 @@ internal fun ProfileSummaryContent(
 
         Button(onClick = onManageServices, modifier = Modifier.fillMaxWidth()) {
             Text("Mis servicios")
+        }
+        Button(onClick = onManageSchedule, modifier = Modifier.fillMaxWidth()) {
+            Text("Mi horario")
         }
 
         if (profile.isPaused) {

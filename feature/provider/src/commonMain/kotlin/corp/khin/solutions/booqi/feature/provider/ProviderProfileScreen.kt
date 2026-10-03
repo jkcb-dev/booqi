@@ -28,6 +28,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProviderProfileScreen(
     /** Opens the Provider's service list (`Destination.ServiceList`) from the completed profile. */
     onManageServices: () -> Unit = {},
+    /** Opens the Provider's schedule (`Destination.ScheduleManagement`) from the completed profile. */
+    onManageSchedule: () -> Unit = {},
     viewModel: ProviderProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -46,7 +48,12 @@ fun ProviderProfileScreen(
         }
     }
 
-    ProviderProfileContent(state = state, onAction = viewModel::onAction, onManageServices = onManageServices)
+    ProviderProfileContent(
+        state = state,
+        onAction = viewModel::onAction,
+        onManageServices = onManageServices,
+        onManageSchedule = onManageSchedule,
+    )
 }
 
 @Composable
@@ -54,13 +61,19 @@ private fun ProviderProfileContent(
     state: ProviderProfileUiState,
     onAction: (ProviderProfileAction) -> Unit,
     onManageServices: () -> Unit,
+    onManageSchedule: () -> Unit,
 ) {
     val profile = state.profile
     when {
         state.isLoading -> LoadingContent()
         profile == null -> ActivateProviderModeContent(onAction = onAction)
         !profile.isComplete -> CompleteProfileContent(state = state, onAction = onAction)
-        else -> ProfileSummaryContent(state = state, onAction = onAction, onManageServices = onManageServices)
+        else -> ProfileSummaryContent(
+            state = state,
+            onAction = onAction,
+            onManageServices = onManageServices,
+            onManageSchedule = onManageSchedule,
+        )
     }
 }
 
