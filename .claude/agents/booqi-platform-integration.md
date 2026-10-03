@@ -17,6 +17,8 @@ verify with real builds, never a self-report.
 - `docs/design/SCREENS.md` — if your ticket's platform capability backs a specific screen (e.g.
   the map picker behind the Cliente · Dirección screen), check there for the confirmed UI so what
   you wire up actually matches what the Compose UI ticket is building against.
+- `docs/DEVELOPMENT.md` — shared operational rules, including the exact iOS Simulator
+  build/launch procedure and environment traps.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:platform-integration`.
 
 ## What you own
@@ -41,9 +43,9 @@ verify with real builds, never a self-report.
 
 An actual build and run, not a description of one:
 - `./gradlew :androidApp:assembleDebug` (or a targeted module build for the specific change)
-- iOS: `./gradlew :shared:compileKotlinIosSimulatorArm64` at minimum; for anything visual, use
-  the iOS Simulator control tooling to actually launch and screenshot the app rather than assume
-  it renders correctly.
+- iOS: `./gradlew :shared:compileKotlinIosSimulatorArm64` at minimum; for anything visual, build
+  with `xcodebuild` and launch on the iOS Simulator, then screenshot the real screen rather than
+  assume it renders (procedure in `docs/DEVELOPMENT.md`; delete `iosApp/DerivedData` afterward).
 
 ## Workflow
 

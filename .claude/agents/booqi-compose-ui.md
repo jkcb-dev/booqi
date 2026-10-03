@@ -30,6 +30,8 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   about to build belongs**: `core:designsystem` if more than one `feature:*` module will need it,
   otherwise the owning `feature:*` module. Check it before creating a new molecule/organism rather
   than guessing.
+- `docs/DEVELOPMENT.md` — shared operational rules: ticket/PR flow (including stacked PRs),
+  verification, and environment traps (detekt limits on Composables, no auth yet, etc.).
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:compose-ui`.
 
 **Known traps** (remove each once true — check first, don't assume either still applies):
@@ -48,6 +50,10 @@ for the next person who reads this file.
 - `core:designsystem` — `BooqiTheme`, real tokens (`Color.kt`/`Type.kt`/`Dimens.kt`, resolved from
   Figma in #7/#29), plus any atom/molecule/organism the ownership table in
   `docs/design/DESIGN_SYSTEM.md` assigns here
+- The scaffold of a `feature:*` module that `docs/ARCHITECTURE.md`'s policy table already lists
+  (`include(...)` in `settings.gradle.kts` + `build.gradle.kts` copied from `feature:browse`,
+  only `namespace` changed) — in your first ticket for that module. Anything not in the table is
+  Architect's call.
 - All `feature:*` modules — one MVI triad per screen:
   - `UiState` — immutable data class, exhaustive `error: DomainError?`
   - `Action` — sealed interface of user intents
@@ -74,6 +80,12 @@ for the next person who reads this file.
   `docs/design/DESIGN_SYSTEM.md`'s atom/molecule/organism catalog for one that already covers it
   (e.g. `StatusBadgeES`, `EmptyState`) — extend or compose existing components rather than
   reimplementing their look inline.
+- **No auth/session exists yet.** If a use case needs the current user's id, use a constant
+  marked `TEMPORARY` (see `ProviderProfileViewModel`) — don't build auth ahead of its ticket.
+- **Validation errors** (`DomainError.InvalidInput`) render as a form error on the field, never a
+  crash and never a generic error event.
+- **Split multi-step screens one file per step** — detekt's function-count/length limits apply to
+  Composables.
 - Match every disabled/enabled state, validation error, and confirmation flow described in the
   ticket's BDD scenarios exactly — e.g. a cancel action that should be hidden/disabled inside the
   3-hour window (Customer flow) isn't optional polish, it's an acceptance criterion.
@@ -81,21 +93,29 @@ for the next person who reads this file.
 ## Definition of done
 
 A real build on both platforms — `./gradlew :androidApp:assembleDebug` and
-`./gradlew :shared:compileKotlinIosSimulatorArm64` — plus a reducer test per ViewModel (`Action`
-in, `State`/`Event` out, via Turbine) derived from the ticket's BDD scenarios.
+`./gradlew :shared:compileKotlinIosSimulatorArm64` — plus `detekt`, plus a reducer test per
+ViewModel (`Action` in, `State`/`Event` out) derived from the ticket's BDD scenarios, plus a grep
+proving no hardcoded design values (`Color(0x`, bare `.dp`/`.sp`) in your module.
+
+Your PR will **not** show anything new in the running app: `Destination`, `InitKoin.kt`, and
+`App.kt` are Architect's. That is expected. End the PR description with a **"For Architect"**
+section listing exactly what to add (Koin module to register, `Destination` entries, the `App.kt`
+branch) — Architect's wiring PR is where the screen is first run and screenshotted.
 
 ## Workflow
 
 1. Create a branch from `main`: `feature/<issue-number>-<short-slug>` (GitHub Flow — never commit
    directly to `main`).
 2. Read the GitHub issue in full, plus the doc section(s) it references, plus the corresponding
-   `role:domain-data` ticket's use cases (build against them if done, or against a fake if not —
-   don't block on the other role finishing first).
+   `role:domain-data` ticket's use cases. **Check whether that ticket's PR is actually merged**
+   (`gh pr list`, `git log origin/main`) — if not, follow `docs/DEVELOPMENT.md` § Dependency
+   state (branch from its branch, base your PR on it) rather than assuming it's in `main`.
 3. Before creating a new `feature:*` module, check `docs/ARCHITECTURE.md`'s policy and confirm
    the screen doesn't belong in one of the three existing modules. Before creating a new MVI
    triad, check the target module for one already covering this screen from an earlier ticket.
-4. Implement the MVI triad + screen. If a new `Destination` is needed, note it in your PR
-   description for Architect to add rather than editing `Destination.kt` yourself.
+4. Implement the MVI triad + screen. If a new `Destination` is needed, or the screen must be
+   registered/rendered, list it under "For Architect" in your PR description rather than editing
+   `Destination.kt`, `InitKoin.kt`, `shared/build.gradle.kts` or `App.kt` yourself.
 5. If implementing reveals a BDD scenario in the flow doc is incomplete or wrong for how the UI
    actually needs to behave, correct the doc in the same change.
 6. Run the real build/test commands on both platforms.

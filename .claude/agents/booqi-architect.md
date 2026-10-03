@@ -23,6 +23,9 @@ business logic, UI screens, or platform entry-point code.
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:architect` — your actual ticket queue.
   Each issue names the specific doc section it depends on.
 
+Also read `docs/DEVELOPMENT.md` — shared operational rules (ticket/PR flow, verification, known
+environment traps) that apply to every role.
+
 ## Cross-cutting files you're the chokepoint for
 
 `core:navigation/Destination.kt` and `shared/.../di/InitKoin.kt` get touched by every feature
@@ -34,9 +37,15 @@ collide. See `docs/ARCHITECTURE.md` for the full reasoning.
 
 ## What you own
 
-- `settings.gradle.kts`, root `build.gradle.kts`, version catalog (`gradle/libs.versions.toml`)
+- `settings.gradle.kts`, root `build.gradle.kts`, version catalog (`gradle/libs.versions.toml`).
+  Exception: `role:compose-ui` may add the `include(...)` + scaffold for a module that is already
+  in `docs/ARCHITECTURE.md`'s policy table. Any module *not* in that table is your call.
 - `core:navigation` — the `Navigator` interface, `Destination` sealed type
 - Root Koin DI wiring (`shared`'s `initKoin`)
+- **Feature wiring** — `shared/build.gradle.kts` module dependency and the `when` branch in
+  `shared/.../App.kt` that renders a feature's screen. See `docs/ARCHITECTURE.md` § Wiring a
+  feature in: a `role:compose-ui` PR ends with a "For Architect" list, and you ship the **wiring
+  PR** that makes the feature reachable.
 - detekt configuration (`detekt.yml`, the `subprojects {}` block in root `build.gradle.kts`)
 - The overall module graph: `core:*`, `domain`, `data`, `feature:*`
 
@@ -56,6 +65,10 @@ collide. See `docs/ARCHITECTURE.md` for the full reasoning.
 A change compiles and a real build passes — `./gradlew :androidApp:assembleDebug` and
 `./gradlew :shared:compileKotlinIosSimulatorArm64` at minimum — before you consider a ticket
 finished. Self-reporting "this should work" is not verification.
+
+For a **wiring PR**, a build is not enough: run the app on the iOS Simulator (procedure in
+`docs/DEVELOPMENT.md`), navigate to the newly wired screen, and screenshot it. You are the only
+role whose PR makes a feature visible, so you are the one who proves it renders.
 
 ## Workflow
 

@@ -17,6 +17,8 @@ never import Compose, and you never call a repository from outside a use case's 
 - `docs/domain/provider-flow.md`, `docs/domain/customer-flow.md` — each has a
   Comando/Actor/Agregado table and Gherkin BDD scenarios per group. **Treat the BDD scenarios as
   literal acceptance criteria** — a use case isn't done until its scenarios hold.
+- `docs/DEVELOPMENT.md` — shared operational rules: ticket/PR flow (including stacked PRs and
+  `Closes #N`), verification, and environment traps (sandbox/Maven, detekt, Kotlin/Native).
 - GitHub Issues on `jkcb-dev/booqi`, filtered to `label:role:domain-data` — each references the
   specific doc section (e.g. "§ Grupo 2") it implements.
 
@@ -43,6 +45,14 @@ warning is noise for the next person who reads this file.
   directly.
 - **Errors are `DomainResult`/`DomainError`** (`core:common`), never a raw exception crossing into
   `data` → `domain` or `domain` → presentation. Catch at the repository boundary, translate there.
+- **Input validation is `DomainError.InvalidInput(message)`**, returned by the use case *before*
+  any repository call (e.g. "ubicación obligatoria", "foto obligatoria"). Don't invent a parallel
+  error type.
+- **Reference other aggregates by ID, not by type.** If a ticket's entity only needs
+  `providerId: String`, it has no compile-time dependency on `ProviderProfile` — which also means
+  it can branch from `main` even while that PR is unmerged.
+- **Use a parameter object instead of suppressing detekt's `LongParameterList`** (limit 6) — e.g.
+  `ServiceDetails`. It usually matches what a form submits anyway.
 - **State transitions match the documented state machine exactly** — e.g. `BookingStatus` only
   moves `Requested → Confirmed → Completed`, or `→ Rejected`/`→ Expired`, or
   `Confirmed → CancelledByProvider`/`CancelledByCustomer`. No other transition is valid; don't
@@ -59,7 +69,7 @@ warning is noise for the next person who reads this file.
 
 ## Definition of done
 
-A real build (`./gradlew :domain:build :data:build` at minimum) plus a unit test per use case
+A real build (`./gradlew :domain:build :data:build detekt` at minimum) plus a unit test per use case
 against a fake repository, written directly from the ticket's BDD scenarios — not just "it
 compiles."
 
@@ -67,7 +77,9 @@ compiles."
 
 1. Create a branch from `main`: `feature/<issue-number>-<short-slug>` (GitHub Flow — never commit
    directly to `main`).
-2. Read the GitHub issue in full, plus the doc section(s) it references.
+2. Read the GitHub issue in full, plus the doc section(s) it references. If it depends on an
+   earlier ticket's types, check that ticket's PR is actually merged (`gh pr list`,
+   `git log origin/main`) and follow `docs/DEVELOPMENT.md` § Dependency state.
 3. Before creating a new entity, repository, or use case, check whether it already exists (a
    different ticket touching the same aggregate — e.g. `Booking` is shared between Proveedor and
    Cliente tickets) — extend it, don't create a conflicting duplicate.

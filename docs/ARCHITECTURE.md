@@ -52,3 +52,26 @@ though other roles' tickets will often need something added to them:
 
 This is a deliberate chokepoint, not bureaucracy for its own sake — it's the one place collisions
 between parallel tickets would otherwise happen silently.
+
+## Wiring a feature in (who does what)
+
+Landing a feature touches several files with different owners. The split, settled while shipping
+#13/#14:
+
+| Step | File(s) | Owner |
+|---|---|---|
+| Create a **pre-approved** module scaffold (one of the three in the policy table above) | `settings.gradle.kts` `include(...)` + `feature/<x>/build.gradle.kts`, copied from `feature:browse` with only the `namespace` changed | `role:compose-ui`, inside its first ticket for that module. Creating a module *not* in the policy table is Architect's call. |
+| Screens, ViewModel, `<x>Module` Koin module | `feature/<x>/**` | `role:compose-ui` |
+| New `Destination` entries | `core:navigation/Destination.kt` | Architect |
+| Register the Koin module | `shared/.../di/InitKoin.kt` | Architect |
+| Module dependency + `when` branch that renders the screen | `shared/build.gradle.kts`, `shared/.../App.kt` | Architect |
+
+So a feature ships as **two PRs**: the `role:compose-ui` PR (ends with a "For Architect" section
+listing the exact lines needed), then an Architect **wiring PR** stacked on or following it. The
+wiring PR is also where the feature is first reachable, so it's where it gets **run on a simulator
+and screenshotted** (see `docs/DEVELOPMENT.md`). A compose-ui PR alone compiles but shows nothing
+new in the running app — that is expected, not a bug.
+
+Until a real entry point exists (Identity/profile screens aren't built), the wiring PR may add a
+clearly-commented TEMPORARY navigation affordance in `App.kt` so the flow is reachable; it is
+removed when the real trigger lands.
