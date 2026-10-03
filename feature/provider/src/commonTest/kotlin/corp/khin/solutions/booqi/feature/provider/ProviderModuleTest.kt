@@ -4,6 +4,7 @@ package corp.khin.solutions.booqi.feature.provider
 
 import corp.khin.solutions.booqi.domain.di.domainModule
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
+import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import corp.khin.solutions.booqi.feature.provider.di.providerModule
@@ -47,6 +48,7 @@ class ProviderModuleTest {
                 single<ServiceRepository> { FakeServiceRepository() }
                 single<ProviderProfileRepository> { FakeProviderProfileRepository() }
                 single<AvailabilityRepository> { FakeAvailabilityRepository() }
+                single<BookingRepository> { FakeBookingRepository() }
             },
         )
     }.koin
@@ -89,6 +91,14 @@ class ProviderModuleTest {
 
         assertTrue(weekly.state.value.isLoading)
         assertTrue(blocking.state.value.isLoading)
+    }
+
+    @Test
+    fun `booking inbox and reviews view models resolve and the inbox starts loading`() {
+        val inbox = koin.get<BookingInboxViewModel>()
+        koin.get<ProviderReviewsViewModel>()
+
+        assertTrue(inbox.state.value.isLoading)
     }
 
     @Test

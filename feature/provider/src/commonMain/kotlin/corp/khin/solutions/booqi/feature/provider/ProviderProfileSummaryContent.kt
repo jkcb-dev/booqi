@@ -29,6 +29,7 @@ internal fun ProfileSummaryContent(
     onAction: (ProviderProfileAction) -> Unit,
     onManageServices: () -> Unit = {},
     onManageSchedule: () -> Unit = {},
+    onManageBookings: () -> Unit = {},
 ) {
     val profile = state.profile ?: return
     Column(
@@ -48,6 +49,12 @@ internal fun ProfileSummaryContent(
         Button(onClick = onManageSchedule, modifier = Modifier.fillMaxWidth()) {
             Text("Mi horario")
         }
+        Button(onClick = onManageBookings, modifier = Modifier.fillMaxWidth()) {
+            Text("Solicitudes")
+        }
+
+        // P11: how Customers see the profile's rating and reviews; reloads on every entry.
+        ProviderReviewsSection()
 
         if (profile.isPaused) {
             PausedBanner(profile)

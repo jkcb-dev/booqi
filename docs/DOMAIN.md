@@ -51,8 +51,10 @@ Fully specified in `docs/domain/provider-flow.md`'s "Gestión de Reservas y Cali
 accept/reject/complete/provider-cancel, the 24h expiry sweep (`ExpirarSolicitudesVencidas` — the
 scheduling *trigger* is deliberately not built, see `docs/ARCHITECTURE.md` § Booking expiry
 trigger), `CalificarCita` with the Provider's rating recomputation, the available-TimeSlots query
-and the Provider's queries (inbox, detail, agenda, reviews). **Not built:** the Customer's
-`CancelarReservaCliente`/`VerHistorialReservas` (#25), any notification, and both sides' UI.
+and the Provider's queries (inbox, detail, agenda, reviews). **Provider UI built (#19):** the booking
+inbox/agenda with accept, reject, complete and cancel, and the received ratings on the profile.
+**Not built:** the Customer's `CancelarReservaCliente`/`VerHistorialReservas` (#25), any
+notification, and the Customer's UI.
 
 ## Aggregate boundaries — the rule that matters
 

@@ -316,6 +316,9 @@ Notas de modelado (#18):
   mensaje fijo de expiración quedan fuera de #18. Tampoco se valida que el TimeSlot solicitado no
   esté en el pasado (sin zona horaria no se puede comparar con "ahora"), ni que "Completar" solo
   esté disponible tras la hora de la cita (afordancia de UI, Figma P10).
+  Esa afordancia ya está implementada en la UI (#19): el botón de completar queda deshabilitado, con el
+  texto "Disponible al finalizar la cita", hasta que `scheduledAt` + `durationMinutesSnapshot` (leído en
+  la zona horaria del dispositivo) ya no esté en el futuro según un `Clock` inyectado.
 - **Fuera de alcance, para #27:** evitar la doble reserva ante dos solicitudes simultáneas requiere
   una restricción en la base de datos; el caso de uso solo verifica antes de insertar.
 
