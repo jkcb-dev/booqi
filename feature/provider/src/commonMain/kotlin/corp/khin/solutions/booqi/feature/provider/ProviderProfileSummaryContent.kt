@@ -27,6 +27,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderProfile
 internal fun ProfileSummaryContent(
     state: ProviderProfileUiState,
     onAction: (ProviderProfileAction) -> Unit,
+    onManageServices: () -> Unit = {},
 ) {
     val profile = state.profile ?: return
     Column(
@@ -39,6 +40,10 @@ internal fun ProfileSummaryContent(
         Text("Tu perfil de Proveedor", style = MaterialTheme.typography.titleLarge)
 
         ProfileSummaryCard(profile)
+
+        Button(onClick = onManageServices, modifier = Modifier.fillMaxWidth()) {
+            Text("Mis servicios")
+        }
 
         if (profile.isPaused) {
             PausedBanner(profile)

@@ -80,7 +80,7 @@ private fun ProfileFormHeader() {
 }
 
 @Composable
-private fun ProfileTextField(
+internal fun ProfileTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
