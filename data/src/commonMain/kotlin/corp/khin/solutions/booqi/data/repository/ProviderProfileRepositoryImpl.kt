@@ -61,4 +61,26 @@ class ProviderProfileRepositoryImpl(
     } catch (e: Exception) {
         DomainError.Unknown(e.message).asFailure()
     }
+
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun getProfile(profileId: String): DomainResult<ProviderProfile> = try {
+        remoteDataSource.findById(profileId)?.toDomain()?.asSuccess()
+            ?: DomainError.NotFound.asFailure()
+    } catch (e: Exception) {
+        DomainError.Unknown(e.message).asFailure()
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun updateRating(
+        profileId: String,
+        ratingAverage: Double?,
+        ratingCount: Int,
+    ): DomainResult<ProviderProfile> = try {
+        val existing = remoteDataSource.findById(profileId)
+            ?: return DomainError.NotFound.asFailure()
+        val updated = existing.toDomain().copy(ratingAverage = ratingAverage, ratingCount = ratingCount)
+        remoteDataSource.save(updated.toDto()).toDomain().asSuccess()
+    } catch (e: Exception) {
+        DomainError.Unknown(e.message).asFailure()
+    }
 }

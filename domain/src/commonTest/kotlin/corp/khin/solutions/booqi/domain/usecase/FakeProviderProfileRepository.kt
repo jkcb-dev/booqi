@@ -52,4 +52,18 @@ class FakeProviderProfileRepository : ProviderProfileRepository {
         profilesById[profileId] = updated
         return updated.asSuccess()
     }
+
+    override suspend fun getProfile(profileId: String): DomainResult<ProviderProfile> =
+        profilesById[profileId]?.asSuccess() ?: DomainError.NotFound.asFailure()
+
+    override suspend fun updateRating(
+        profileId: String,
+        ratingAverage: Double?,
+        ratingCount: Int,
+    ): DomainResult<ProviderProfile> {
+        val existing = profilesById[profileId] ?: return DomainError.NotFound.asFailure()
+        val updated = existing.copy(ratingAverage = ratingAverage, ratingCount = ratingCount)
+        profilesById[profileId] = updated
+        return updated.asSuccess()
+    }
 }

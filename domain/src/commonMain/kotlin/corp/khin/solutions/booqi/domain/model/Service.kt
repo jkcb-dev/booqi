@@ -8,7 +8,7 @@ package corp.khin.solutions.booqi.domain.model
  * References its owning `ProviderProfile` by [providerId] only — it never embeds a
  * `ProviderProfile` object. `Service` and `ProviderProfile` are two separate aggregates with two
  * separate lifecycles (docs/DOMAIN.md § Aggregate boundaries); the same rule applies to `Booking`
- * referencing this entity by `serviceId` (future ticket #18/#25/#26), never by embedding.
+ * referencing this entity by `serviceId` (`Booking`, #18), never by embedding.
  *
  * Lifecycle (docs/domain/provider-flow.md § Grupo 2):
  * - Created by [corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase], which requires

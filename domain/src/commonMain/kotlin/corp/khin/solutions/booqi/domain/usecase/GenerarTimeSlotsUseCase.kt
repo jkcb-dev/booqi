@@ -38,11 +38,9 @@ import kotlinx.datetime.plus
  * `durationMinutes <= 0` is [DomainError.InvalidInput] (it would never advance). The result is
  * ordered by date, then start time; an empty list is a valid outcome.
  *
- * **Out of scope — follow-up for #18/#25 (Booking):** slots already taken by a pending or
- * confirmed `Booking` are *not* excluded here, because `Booking` doesn't exist yet. When it does,
- * the booking flow must subtract them from this result (and keep honoring an accepted Booking
- * even if its time later falls outside the weekly hours — "cambiar el horario no cancela citas
- * aceptadas"). Nothing is stubbed for it.
+ * This is the schedule-only view: slots already taken by a pending or confirmed `Booking` are *not*
+ * excluded here on purpose, to keep it pure (no repository). Customer-facing flows use
+ * [ObtenerTimeSlotsDisponiblesUseCase], which subtracts them (#18) and reads the Provider's pause.
  */
 class GenerarTimeSlotsUseCase {
 
