@@ -66,6 +66,20 @@ class BookingRepositoryImpl(
     }
 
     @Suppress("TooGenericExceptionCaught")
+    override suspend fun getBookingsByCustomer(
+        customerId: String,
+        statuses: Set<BookingStatus>?,
+    ): DomainResult<List<Booking>> = try {
+        remoteDataSource.findByCustomerId(customerId)
+            .map { it.toDomain() }
+            .filter { statuses == null || it.status in statuses }
+            .sortedWith(compareBy({ it.scheduledAt }, { it.id }))
+            .asSuccess()
+    } catch (e: Exception) {
+        DomainError.Unknown(e.message).asFailure()
+    }
+
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun getPendingRequestedAtOrBefore(cutoff: Instant): DomainResult<List<Booking>> = try {
         remoteDataSource.findByStatus(PENDING)
             .map { it.toDomain() }

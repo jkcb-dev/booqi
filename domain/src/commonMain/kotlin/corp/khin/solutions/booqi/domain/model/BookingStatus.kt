@@ -42,6 +42,12 @@ enum class BookingStatus {
     val isTerminal: Boolean get() = allowedTransitions.isEmpty()
 
     /**
+     * True while the Booking is still open — `REQUESTED` or `CONFIRMED`, i.e. not [isTerminal].
+     * An account with such a Booking (as Customer or as Provider) cannot be deleted.
+     */
+    val isActive: Boolean get() = !isTerminal
+
+    /**
      * True while a Booking in this state holds its TimeSlot: pending and confirmed ones do;
      * rejected, expired and cancelled ones free it again ("el TimeSlot vuelve a estar
      * disponible"). A completed one is in the past and no longer competes for a future slot.

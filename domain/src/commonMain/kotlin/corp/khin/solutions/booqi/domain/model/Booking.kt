@@ -17,6 +17,9 @@ import kotlin.time.Duration.Companion.minutes
  * Scheduling context (docs/DOMAIN.md, docs/domain/provider-flow.md § Grupo 4). Plain data class,
  * no serialization annotations.
  *
+ * **providerId contract (#50/#56):** [providerId] is a [ProviderProfile.id], never a `User.id`. Get it
+ * from the signed-in user with `ObtenerMiPerfilDeProveedorUseCase` / `ProviderProfileRepository.findByUserId`.
+ *
  * **References by ID, snapshots by value.** [providerId], [serviceId] and [customerId] are IDs —
  * a Booking never embeds those aggregates. [priceCentsSnapshot], [durationMinutesSnapshot] and
  * [deliveryAddress] are *copies* taken when the request was made (docs/DATABASE.md `bookings`),

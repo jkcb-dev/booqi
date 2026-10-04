@@ -58,6 +58,15 @@ class FakeBookingRepository : BookingRepository {
             .sortedWith(compareBy({ it.scheduledAt }, { it.id }))
             .asSuccess()
 
+    // Added by #56 (Identity) to BookingRepository (account deletion); no booking ViewModel calls it.
+    override suspend fun getBookingsByCustomer(
+        customerId: String,
+        statuses: Set<BookingStatus>?,
+    ): DomainResult<List<Booking>> = bookingsById.values
+        .filter { it.customerId == customerId && (statuses == null || it.status in statuses) }
+        .sortedWith(compareBy({ it.scheduledAt }, { it.id }))
+        .asSuccess()
+
     override suspend fun getPendingRequestedAtOrBefore(cutoff: Instant): DomainResult<List<Booking>> =
         bookingsById.values
             .filter { it.status == BookingStatus.REQUESTED && it.requestedAt <= cutoff }

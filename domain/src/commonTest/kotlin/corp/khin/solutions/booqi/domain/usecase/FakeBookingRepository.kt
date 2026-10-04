@@ -55,6 +55,14 @@ class FakeBookingRepository : BookingRepository {
         .sortedWith(compareBy({ it.scheduledAt }, { it.id }))
         .asSuccess()
 
+    override suspend fun getBookingsByCustomer(
+        customerId: String,
+        statuses: Set<BookingStatus>?,
+    ): DomainResult<List<Booking>> = bookingsById.values
+        .filter { it.customerId == customerId && (statuses == null || it.status in statuses) }
+        .sortedWith(compareBy({ it.scheduledAt }, { it.id }))
+        .asSuccess()
+
     override suspend fun getPendingRequestedAtOrBefore(cutoff: Instant): DomainResult<List<Booking>> =
         bookingsById.values
             .filter { it.status == BookingStatus.REQUESTED && it.requestedAt <= cutoff }

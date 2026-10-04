@@ -83,4 +83,31 @@ class ProviderProfileRepositoryImpl(
     } catch (e: Exception) {
         DomainError.Unknown(e.message).asFailure()
     }
+
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun findByUserId(userId: String): DomainResult<ProviderProfile?> = try {
+        remoteDataSource.findByUserId(userId)?.toDomain().asSuccess()
+    } catch (e: Exception) {
+        DomainError.Unknown(e.message).asFailure()
+    }
+
+    // Personal data erased and isComplete = false: the existing Catalog gate that hides the profile
+    // and its Services. The rating summary stays (history). Idempotent.
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun anonymizeProfile(profileId: String): DomainResult<ProviderProfile> = try {
+        val existing = remoteDataSource.findById(profileId)
+            ?: return DomainError.NotFound.asFailure()
+        val anonymized = existing.toDomain().copy(
+            name = null,
+            photoUrl = null,
+            description = null,
+            location = null,
+            coordinates = null,
+            pausedRange = null,
+            isComplete = false,
+        )
+        remoteDataSource.save(anonymized.toDto()).toDomain().asSuccess()
+    } catch (e: Exception) {
+        DomainError.Unknown(e.message).asFailure()
+    }
 }
