@@ -16,7 +16,7 @@ enough to justify the ceremony.
 
 | Term | Meaning |
 |---|---|
-| **User** | An account. Authenticates via Google, Facebook, Apple ID, or email/password. Any User can book services (customer capability is implicit); a User optionally also has a **ProviderProfile** if they choose to offer services. Being a customer and a provider is not an exclusive choice — one account can be both. |
+| **User** | An account (`User`, Identity context). Authenticates via Google, Facebook, Apple ID, or email/password; email/password accounts must verify their email before booking or activating Provider mode. Any User can book services (customer capability is implicit); a User optionally also has a **ProviderProfile** if they choose to offer services. Being a customer and a provider is not an exclusive choice — one account can be both. |
 | **ProviderProfile** | The identity of *who* offers services: display name, photo, description, location (a text line plus optional `coordinates`), aggregate rating, weekly availability. One optional ProviderProfile per User. |
 | **Service** | The *what* — a specific offering a Provider provides, with its own title, photo, description, price, duration, modality (Local / Domicilio / both) and **category**. A ProviderProfile owns one or more Services. **A Provider is not a Service — this was the original modeling mistake.** |
 | **ServiceCategory** | What kind of Service it is — the C1 chips: `BARBERIA`, `UNAS`, `LIMPIEZA`, `MASAJES`, `TECNICO`, plus `OTRO` (default when the Provider hasn't chosen one; no chip, only found under "Todos"). Lives on the `Service`, not the Provider. |
@@ -33,9 +33,25 @@ enough to justify the ceremony.
 ## Bounded contexts
 
 **Identity** — the `User` account itself: authentication, whether a ProviderProfile exists for
-this user. Not built in code yet; the product rules (browse without an account, sign-in only to
-book or become a Provider, email verification, account deletion with anonymized history) are
-specified in `docs/domain/identity-flow.md` (issue #50).
+this user. The product rules (browse without an account, sign-in only to book or become a Provider,
+email verification, account deletion with anonymized history) are specified in
+`docs/domain/identity-flow.md` (issue #50). **Partially built — domain & data (#56):** `User` (+
+`SocialProvider`, `PublicUser`), `RegistrarUsuario` (email+password or Google/Facebook/Apple),
+`IniciarSesion`, `CerrarSesion`, `ObtenerUsuarioActual` (`null` while browsing), `VerificarCorreo` +
+`ReenviarCorreoDeVerificacion`, `ActualizarPerfilDeUsuario`, `EliminarCuenta`, `ObtenerUsuarioPublico`
+and the access guard `RequerirCuentaVerificada` (booking and Provider mode need a session **and** a
+verified email: no session -> `Unauthorized`, unverified -> `InvalidInput`). Persistence is a
+TEMPORARY in-memory fake auth (`FakeAuthRemoteDataSource`) until Supabase Auth (#27) — real
+authentication is Supabase's job. **Not built:** the screens, applying the guard in front of
+`SolicitarReserva`/`ActivarModoProveedor`, and aligning the Provider screens' ids (the UI
+sub-tickets of #50). **Account deletion** never removes the `User`: it is kept as an anonymized
+tombstone (`User.anonymized()` — name, photo and email erased, `isDeleted = true`), and
+`User.publicName` is the one place that renders it as "Usuario eliminado". Completed Bookings and
+their ratings stay (so a Provider's rating aggregate never changes), the personal data on the
+Customer's Bookings (delivery-address snapshot, free-text note) is erased, and a ProviderProfile is
+anonymized and set `isComplete = false` — the existing gate that removes it and its Services from
+Catalog search and public pages. It is refused while a Booking is `REQUESTED`/`CONFIRMED` as Customer
+(`customerId == user.id`) or as Provider (`providerId ==` the user's ProviderProfile id).
 
 **Provider Management** — a Provider's own "back office": profile, Services (create/edit/disable),
 Availability (define/modify schedule, block dates, pause profile). Fully specified in
@@ -59,10 +75,14 @@ platform location exists, #24). **Not built:** a category picker in the Servicio
 of #20 — until then every Service is `OTRO` and every profile has no coordinates, so category and
 distance filters only find sample data).
 
-**providerId contract (#50).** `Service`/`Availability`/`Booking`.`providerId` **is** a
-`ProviderProfile.id`, not a user id. The Catalog follows that strictly and has no fallback by
-`userId`; today the Provider screens and `SampleData` still pass a user placeholder, so those
-Services don't join (and don't appear in search) until #50 aligns the ids.
+**providerId contract (#50, settled in #56).** `Service`/`Availability`/`TimeSlot`/`Booking`.`providerId`
+**is** a `ProviderProfile.id`, never a `User.id`; `Booking.customerId` and `ProviderProfile.userId`
+are `User.id`s. The user -> profile path is `ProviderProfileRepository.findByUserId` /
+`ObtenerMiPerfilDeProveedorUseCase` (`null` when the user never activated Provider mode), and
+`ActivarModoProveedor` returns the profile whose `id` the Provider screens must use. The Catalog
+follows the contract strictly and has no fallback by `userId`. **Until the Provider screens are
+changed** (UI sub-ticket of #50), they and `SampleData`'s provider-side rows still pass a user
+placeholder, so those Services don't join (and don't appear in search).
 
 **Scheduling** — the Booking lifecycle: request, accept/reject/expire, complete, cancel, rate.
 Fully specified in `docs/domain/provider-flow.md`'s "Gestión de Reservas y Calificaciones" group.

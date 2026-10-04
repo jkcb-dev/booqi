@@ -65,4 +65,15 @@ interface BookingRepository {
      * [Booking.scheduledAt] descending, then id.
      */
     suspend fun getRatedBookingsByProvider(providerId: String): DomainResult<List<Booking>>
+
+    /**
+     * Every Booking requested by [customerId] (`Booking.customerId`) whose status is in
+     * [statuses] (all statuses when `null`), ordered by [Booking.scheduledAt] ascending, then by
+     * id. Used by account deletion (identity-flow.md): the Customer-side active Bookings that
+     * block it, and the history to scrub. Empty list when nothing matches.
+     */
+    suspend fun getBookingsByCustomer(
+        customerId: String,
+        statuses: Set<BookingStatus>? = null,
+    ): DomainResult<List<Booking>>
 }

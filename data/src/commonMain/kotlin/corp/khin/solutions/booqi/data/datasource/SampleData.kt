@@ -19,8 +19,10 @@ import kotlin.time.Instant
  * something to show on a device: there is no Customer UI yet that could create bookings. Goes away
  * with the fakes when #27 (Supabase) lands.
  *
- * [PROVIDER_ID] must match `feature:provider`'s `TEMPORARY_PROVIDER_ID` (a user id — whether
- * `Booking.providerId` should be a user id or a ProviderProfile id is open in #50). Dates are
+ * [PROVIDER_ID] must match `feature:provider`'s `TEMPORARY_PROVIDER_ID`. It is a *user* id
+ * placeholder; the contract (settled in #56) is that `Booking.providerId` is a ProviderProfile id,
+ * which the Identity UI sub-ticket of #50 switches the Provider screens to — until then these
+ * provider-side rows don't join to a profile. Dates are
  * relative to [now] so "future"/"past" appointments stay meaningful whenever the app runs.
  *
  * Two kinds of sample services, deliberately:

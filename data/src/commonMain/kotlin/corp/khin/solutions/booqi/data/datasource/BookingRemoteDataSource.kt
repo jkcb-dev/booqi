@@ -21,6 +21,9 @@ interface BookingRemoteDataSource {
     /** Every booking of [providerId], in any status; empty if none. */
     suspend fun findByProviderId(providerId: String): List<BookingDto>
 
+    /** Every booking requested by [customerId], in any status; empty if none. */
+    suspend fun findByCustomerId(customerId: String): List<BookingDto>
+
     /** Every booking, across providers, whose status is exactly [status]; empty if none. */
     suspend fun findByStatus(status: String): List<BookingDto>
 

@@ -53,6 +53,9 @@ class FakeBookingRemoteDataSource(
     override suspend fun findByProviderId(providerId: String): List<BookingDto> =
         bookingsById.values.filter { it.providerId == providerId }
 
+    override suspend fun findByCustomerId(customerId: String): List<BookingDto> =
+        bookingsById.values.filter { it.customerId == customerId }
+
     override suspend fun findByStatus(status: String): List<BookingDto> =
         bookingsById.values.filter { it.status == status }
 

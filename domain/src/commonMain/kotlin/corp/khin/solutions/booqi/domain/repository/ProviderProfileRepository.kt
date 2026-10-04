@@ -60,4 +60,21 @@ interface ProviderProfileRepository {
         ratingAverage: Double?,
         ratingCount: Int,
     ): DomainResult<ProviderProfile>
+
+    /**
+     * The user → profile path: the [ProviderProfile] owned by [userId], or `null` when that user
+     * never activated Provider mode (a normal state, not `NotFound`). Its [ProviderProfile.id] is
+     * what `Service`/`Availability`/`Booking`.`providerId` must be — see "providerId contract" in
+     * docs/DOMAIN.md.
+     */
+    suspend fun findByUserId(userId: String): DomainResult<ProviderProfile?>
+
+    /**
+     * Escenario: "El Usuario elimina su cuenta" (docs/domain/identity-flow.md). Erases the
+     * profile's personal data (name, photo, description, location, coordinates, pause) and marks
+     * it **not complete**, which is the existing gate that keeps a profile and its Services out of
+     * Catalog search and public pages. The rating summary is kept, so reviews and the aggregate
+     * stay as history. Idempotent; `NotFound` for an unknown [profileId].
+     */
+    suspend fun anonymizeProfile(profileId: String): DomainResult<ProviderProfile>
 }

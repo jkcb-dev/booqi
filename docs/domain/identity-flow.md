@@ -21,8 +21,9 @@ Defined via Event Storming before any Identity code exists (issue #50), same met
   - **History is anonymized, not deleted:** name, photo and personal data are erased; completed
     bookings and reviews stay, shown as "Usuario eliminado", so the other party's history and the
     Provider's rating aggregate don't change.
-- **`providerId` contract** (open in #50): resolved when this flow is implemented — the domain docs
-  say `providerId == ProviderProfile.id`; the current placeholders use the user id.
+- **`providerId` contract** (open in #50): **settled in #56** — `providerId == ProviderProfile.id`
+  (see `docs/DOMAIN.md`); the Provider screens' user-id placeholders are changed by the UI
+  sub-ticket.
 
 ## Event list
 
@@ -108,6 +109,23 @@ Escenario: El Usuario elimina su cuenta sin reservas activas
   Y el rating de los Proveedores que calificó no cambia
   Y si tenía perfil de Proveedor, deja de aparecer en las búsquedas
 ```
+
+## Implementation notes (#56, domain & data)
+
+What implementing revealed, so the decisions above stay honest:
+
+- **Deletion carries data when refused**, so `EliminarCuenta` returns `AccountDeletionResult`
+  (`Deleted` / `Blocked(activeBookings by role)`) instead of a `DomainError`; a `Failure` means
+  something actually broke.
+- **"Personal data" on Bookings:** besides the name/photo (which live on the `User`), the Customer's
+  delivery-address snapshot and free-text note on their Bookings are erased on deletion; status and
+  rating stay.
+- **Hiding the Provider** reuses the Catalog's existing visibility gate (`isComplete = false` plus
+  erasing the profile's personal data) instead of a new "deleted" flag on `ProviderProfile`; the
+  rating summary stays.
+- **The access guard** (`RequerirCuentaVerificada`) answers `Unauthorized` (no session) or
+  `InvalidInput` with a fixed message (unverified email). A dedicated `DomainError` variant was
+  considered and left out because it breaks the exhaustive `when (error)` in `feature:*`.
 
 ## Open questions (resolve when implementing, not now)
 

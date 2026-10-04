@@ -78,6 +78,9 @@ class FakeProviderProfileRepository(profiles: List<ProviderProfile> = emptyList(
     override suspend fun setPausedRange(profileId: String, pausedRange: DateRange?) = NOT_USED.asFailure()
     override suspend fun updateRating(profileId: String, ratingAverage: Double?, ratingCount: Int) =
         NOT_USED.asFailure()
+
+    override suspend fun findByUserId(userId: String) = NOT_USED.asFailure()
+    override suspend fun anonymizeProfile(profileId: String) = NOT_USED.asFailure()
 }
 
 /** Only [getRatedBookingsByProvider] is read (C4's reviews), newest completion first. */
@@ -92,6 +95,9 @@ class FakeBookingRepository(private val rated: List<Booking> = emptyList()) : Bo
     override suspend fun getBooking(bookingId: String) = NOT_USED.asFailure()
     override suspend fun updateBooking(booking: Booking) = NOT_USED.asFailure()
     override suspend fun getBookingsByProvider(providerId: String, statuses: Set<BookingStatus>?) =
+        NOT_USED.asFailure()
+
+    override suspend fun getBookingsByCustomer(customerId: String, statuses: Set<BookingStatus>?) =
         NOT_USED.asFailure()
 
     override suspend fun getPendingRequestedAtOrBefore(cutoff: Instant) = NOT_USED.asFailure()

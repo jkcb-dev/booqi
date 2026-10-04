@@ -31,6 +31,17 @@ import corp.khin.solutions.booqi.domain.usecase.RechazarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.SolicitarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerDetalleServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ActualizarPerfilDeUsuarioUseCase
+import corp.khin.solutions.booqi.domain.usecase.CerrarSesionUseCase
+import corp.khin.solutions.booqi.domain.usecase.EliminarCuentaUseCase
+import corp.khin.solutions.booqi.domain.usecase.IniciarSesionUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerMiPerfilDeProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioActualUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
+import corp.khin.solutions.booqi.domain.usecase.RegistrarUsuarioUseCase
+import corp.khin.solutions.booqi.domain.usecase.ReenviarCorreoDeVerificacionUseCase
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
+import corp.khin.solutions.booqi.domain.usecase.VerificarCorreoUseCase
 import org.koin.dsl.module
 
 val domainModule = module {
@@ -67,4 +78,17 @@ val domainModule = module {
     factory { BuscarServiciosUseCase(get()) }
     factory { VerDetalleServicioUseCase(get(), get()) }
     factory { VerPerfilProveedorUseCase(get(), get(), get()) }
+    // Identity (#56). The access guard goes in front of SolicitarReserva / ActivarModoProveedor
+    // in the UI sub-ticket; it is not wired into their signatures.
+    factory { RegistrarUsuarioUseCase(get()) }
+    factory { IniciarSesionUseCase(get()) }
+    factory { CerrarSesionUseCase(get()) }
+    factory { ObtenerUsuarioActualUseCase(get()) }
+    factory { ObtenerUsuarioPublicoUseCase(get()) }
+    factory { VerificarCorreoUseCase(get()) }
+    factory { ReenviarCorreoDeVerificacionUseCase(get()) }
+    factory { ActualizarPerfilDeUsuarioUseCase(get()) }
+    factory { RequerirCuentaVerificadaUseCase(get()) }
+    factory { ObtenerMiPerfilDeProveedorUseCase(get(), get()) }
+    factory { EliminarCuentaUseCase(get(), get(), get()) }
 }

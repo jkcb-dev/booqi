@@ -68,4 +68,12 @@ class FakeProviderProfileRepository : ProviderProfileRepository {
         profilesById[profileId] = updated
         return updated.asSuccess()
     }
+
+    // Added by #56 (Identity) to ProviderProfileRepository; not exercised by the profile ViewModel
+    // tests but required for the fake to compile.
+    override suspend fun findByUserId(userId: String): DomainResult<ProviderProfile?> =
+        profilesById.values.firstOrNull { it.userId == userId }.asSuccess()
+
+    override suspend fun anonymizeProfile(profileId: String): DomainResult<ProviderProfile> =
+        DomainError.Unknown("not used by feature:provider").asFailure()
 }

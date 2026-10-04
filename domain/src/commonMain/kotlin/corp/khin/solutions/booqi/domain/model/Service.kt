@@ -5,6 +5,9 @@ package corp.khin.solutions.booqi.domain.model
  * bounded context). Plain data class, no serialization annotations — those belong on the DTO in
  * `data`, never here.
  *
+ * **providerId contract (#50/#56):** [providerId] is a [ProviderProfile.id], never a `User.id`. Get it
+ * from the signed-in user with `ObtenerMiPerfilDeProveedorUseCase` / `ProviderProfileRepository.findByUserId`.
+ *
  * References its owning `ProviderProfile` by [providerId] only — it never embeds a
  * `ProviderProfile` object. `Service` and `ProviderProfile` are two separate aggregates with two
  * separate lifecycles (docs/DOMAIN.md § Aggregate boundaries); the same rule applies to `Booking`

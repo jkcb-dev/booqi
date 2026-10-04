@@ -66,4 +66,22 @@ class FakeProviderProfileRepository : ProviderProfileRepository {
         profilesById[profileId] = updated
         return updated.asSuccess()
     }
+
+    override suspend fun findByUserId(userId: String): DomainResult<ProviderProfile?> =
+        profilesById.values.firstOrNull { it.userId == userId }.asSuccess()
+
+    override suspend fun anonymizeProfile(profileId: String): DomainResult<ProviderProfile> {
+        val existing = profilesById[profileId] ?: return DomainError.NotFound.asFailure()
+        val updated = existing.copy(
+            name = null,
+            photoUrl = null,
+            description = null,
+            location = null,
+            coordinates = null,
+            pausedRange = null,
+            isComplete = false,
+        )
+        profilesById[profileId] = updated
+        return updated.asSuccess()
+    }
 }

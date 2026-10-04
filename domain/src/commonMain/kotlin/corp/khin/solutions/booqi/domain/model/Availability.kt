@@ -48,6 +48,9 @@ data class BlockedPeriod(
  * (docs/DOMAIN.md — Availability). Value object; `TimeSlot`s are generated from it by
  * [corp.khin.solutions.booqi.domain.usecase.GenerarTimeSlotsUseCase].
  *
+ * **providerId contract (#50/#56):** [providerId] is a [ProviderProfile.id], never a `User.id`. Get it
+ * from the signed-in user with `ObtenerMiPerfilDeProveedorUseCase` / `ProviderProfileRepository.findByUserId`.
+ *
  * References its Provider by [providerId] only — it never embeds a [ProviderProfile] (two
  * separate aggregates). Consequently the "paused" vacation range is **not** part of this class:
  * it lives on [ProviderProfile.pausedRange] (Grupo 1, #12) and is passed to slot generation as an
