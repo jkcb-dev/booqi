@@ -4,6 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.UserRepository
@@ -92,6 +93,9 @@ class FakeUserRepository : UserRepository {
 
     override suspend fun updateProfile(displayName: String, photoUrl: String?): DomainResult<User> =
         updateCurrent { it.copy(displayName = displayName, photoUrl = photoUrl) }
+
+    override suspend fun saveAddress(address: Address): DomainResult<User> =
+        updateCurrent { it.copy(address = address) }
 
     override suspend fun deleteAccount(): DomainResult<Unit> {
         writeCount++

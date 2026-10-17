@@ -18,6 +18,9 @@ import corp.khin.solutions.booqi.data.dto.UserDto
  * so tests can observe them. Not thread-safe by design (single process, single writer), like the
  * other fakes.
  */
+// Mirrors UserRepository one-to-one (account + session + profile columns of a single `profiles` row);
+// splitting it only to get under the function-count threshold would scatter that row.
+@Suppress("TooManyFunctions")
 class FakeAuthRemoteDataSource : AuthRemoteDataSource {
 
     private val usersById = mutableMapOf<String, UserDto>()
@@ -93,6 +96,11 @@ class FakeAuthRemoteDataSource : AuthRemoteDataSource {
 
     override suspend fun updateProfile(displayName: String, photoUrl: String?): UserDto? =
         usersById.update(currentUserId) { it.copy(displayName = displayName, photoUrl = photoUrl) }
+
+    override suspend fun updateAddress(line: String, latitude: Double, longitude: Double): UserDto? =
+        usersById.update(currentUserId) {
+            it.copy(addressLine = line, addressLat = latitude, addressLng = longitude)
+        }
 
     override suspend fun deleteCurrentAccount(tombstone: UserDto): Boolean {
         val current = currentUser() ?: return false

@@ -1,6 +1,9 @@
 package corp.khin.solutions.booqi.domain.di
 
 import corp.khin.solutions.booqi.domain.usecase.AceptarReservaUseCase
+import corp.khin.solutions.booqi.domain.usecase.ActualizarDireccionUseCase
+import corp.khin.solutions.booqi.domain.usecase.AgregarDireccionUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerMiDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.BloquearFechaHoraUseCase
@@ -91,4 +94,9 @@ val domainModule = module {
     factory { RequerirCuentaVerificadaUseCase(get()) }
     factory { ObtenerMiPerfilDeProveedorUseCase(get(), get()) }
     factory { EliminarCuentaUseCase(get(), get(), get()) }
+    // Cliente · Dirección (#22): the User's single saved address. Using it as the default Domicilio
+    // snapshot at booking time is #26.
+    factory { AgregarDireccionUseCase(get()) }
+    factory { ActualizarDireccionUseCase(get()) }
+    factory { ObtenerMiDireccionUseCase(get()) }
 }

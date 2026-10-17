@@ -3,6 +3,10 @@ package corp.khin.solutions.booqi.data.repository
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.data.datasource.FakeAuthRemoteDataSource
+import corp.khin.solutions.booqi.data.dto.UserDto
+import corp.khin.solutions.booqi.data.mapper.toDomain
+import corp.khin.solutions.booqi.data.mapper.toDto
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.coroutines.test.runTest
@@ -21,6 +25,9 @@ class UserRepositoryImplTest {
 
     private val auth = FakeAuthRemoteDataSource()
     private val repository = UserRepositoryImpl(auth)
+
+    private val casa = Address("Av. Corrientes 1234, Buenos Aires", -34.6037, -58.3816)
+    private val oficina = Address("Av. Santa Fe 900, Buenos Aires", -34.5956, -58.3777)
 
     private fun <T> DomainResult<T>.ok(): T = (this as DomainResult.Success<T>).value
 
@@ -83,6 +90,7 @@ class UserRepositoryImplTest {
         assertEquals(DomainError.Unauthorized, repository.resendVerificationEmail().error())
         assertEquals(DomainError.Unauthorized, repository.updateProfile("Ana", null).error())
         assertEquals(DomainError.Unauthorized, repository.deleteAccount().error())
+        assertEquals(DomainError.Unauthorized, repository.saveAddress(casa).error())
         repository.signOut().ok()
     }
 
@@ -96,6 +104,52 @@ class UserRepositoryImplTest {
         assertEquals("Ana Pérez", updated.displayName)
         assertEquals(updated, repository.getCurrentUser().ok())
         assertEquals(updated, repository.getUser(updated.id).ok())
+    }
+
+    @Test
+    fun `a new account has no address then saving sets it and a second save replaces it`() = runTest {
+        val registered = register()
+        assertNull(registered.address)
+
+        val first = repository.saveAddress(casa).ok()
+        assertEquals(casa, first.address)
+        assertEquals(casa, repository.getCurrentUser().ok()?.address)
+
+        val second = repository.saveAddress(oficina).ok()
+        assertEquals(oficina, second.address)
+        assertEquals(oficina, repository.getUser(registered.id).ok().address)
+        assertEquals(oficina, auth.currentUser()?.let { Address(it.addressLine!!, it.addressLat!!, it.addressLng!!) })
+    }
+
+    @Test
+    fun `the address survives signing out and back in`() = runTest {
+        register()
+        repository.saveAddress(casa).ok()
+        repository.signOut().ok()
+
+        assertEquals(casa, repository.signInWithEmail("ana@example.com", "secreto123").ok().address)
+    }
+
+    @Test
+    fun `deleting the account erases the saved address from the stored row`() = runTest {
+        val registered = register()
+        repository.saveAddress(casa).ok()
+
+        repository.deleteAccount().ok()
+
+        assertNull(repository.getUser(registered.id).ok().address)
+        val row = auth.findUserById(registered.id)!!
+        assertNull(row.addressLine)
+        assertNull(row.addressLat)
+        assertNull(row.addressLng)
+    }
+
+    @Test
+    fun `a partial address row is read as no address`() = runTest {
+        val partial = UserDto("u", "Ana", "a@b.c", null, false, null, false, addressLine = "Calle 1")
+
+        assertNull(partial.toDomain().address)
+        assertEquals(casa, User("u", "Ana", "a@b.c", address = casa).toDto().toDomain().address)
     }
 
     @Test
