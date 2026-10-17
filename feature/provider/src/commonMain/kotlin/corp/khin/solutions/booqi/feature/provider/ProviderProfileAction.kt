@@ -6,6 +6,10 @@ import kotlinx.datetime.LocalDate
  * these. */
 sealed interface ProviderProfileAction {
 
+    /** Sent on every entry: loads the signed-in User's profile, if they have one, on a clean slate
+     * (the ViewModel outlives a visit; the account behind it may have changed). */
+    data object Start : ProviderProfileAction
+
     // P1 — activar modo Proveedor
     data object ActivateProviderMode : ProviderProfileAction
 

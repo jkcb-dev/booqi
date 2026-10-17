@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.feature.provider.di
 import corp.khin.solutions.booqi.feature.provider.BookingInboxCommands
 import corp.khin.solutions.booqi.feature.provider.BookingInboxQueries
 import corp.khin.solutions.booqi.feature.provider.BookingInboxViewModel
+import corp.khin.solutions.booqi.feature.provider.CurrentProvider
 import corp.khin.solutions.booqi.feature.provider.DateBlockingViewModel
 import corp.khin.solutions.booqi.feature.provider.ProviderProfileViewModel
 import corp.khin.solutions.booqi.feature.provider.ProviderReviewsViewModel
@@ -13,21 +14,30 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 /**
- * Not yet registered in `shared/.../di/InitKoin.kt` — that's Architect's exclusive chokepoint
- * file (see this PR's description). Follows the exact `browseModule` pattern so registering it is
- * a one-line addition to `initKoin`'s `modules(...)` list.
+ * Registered in `shared/.../di/InitKoin.kt`.
  *
  * [ServiceEditorViewModel] takes its `serviceId` (null = add) as the first Koin parameter —
- * `ServiceEditorScreen` supplies it via `parametersOf(serviceId)`. The trailing `providerId`
- * constructor argument keeps its TEMPORARY default.
+ * `ServiceEditorScreen` supplies it via `parametersOf(serviceId)`.
  */
 val providerModule = module {
-    viewModel { ProviderProfileViewModel(get(), get(), get()) }
+    // The Provider screens act for the signed-in User's ProviderProfile: CurrentProvider resolves its
+    // id through ObtenerMiPerfilDeProveedor every time it is needed.
+    factory { CurrentProvider(obtenerMiPerfil = get()) }
+    viewModel {
+        ProviderProfileViewModel(
+            activarModoProveedor = get(),
+            completarPerfil = get(),
+            pausarPerfil = get(),
+            obtenerMiPerfil = get(),
+            requerirCuentaVerificada = get(),
+        )
+    }
     viewModel {
         ServiceListViewModel(
             obtenerServicios = get(),
             deshabilitarServicio = get(),
             habilitarServicio = get(),
+            currentProvider = get(),
         )
     }
     viewModel { params ->
@@ -36,16 +46,18 @@ val providerModule = module {
             agregarServicio = get(),
             editarServicio = get(),
             obtenerServicio = get(),
+            currentProvider = get(),
         )
     }
     // Both halves of Destination.ScheduleManagement; ScheduleManagementScreen resolves them with
-    // koinViewModel(). Their trailing providerId/clock/timeZone constructor arguments keep their
-    // defaults (TEMPORARY provider id, Clock.System, system time zone).
+    // koinViewModel(). Their trailing clock/timeZone constructor arguments keep their defaults
+    // (Clock.System, system time zone).
     viewModel {
         WeeklyScheduleViewModel(
             obtenerHorario = get(),
             definirHorario = get(),
             modificarHorario = get(),
+            currentProvider = get(),
         )
     }
     viewModel {
@@ -53,11 +65,11 @@ val providerModule = module {
             obtenerHorario = get(),
             bloquearFechaHora = get(),
             desbloquearFechaHora = get(),
+            currentProvider = get(),
         )
     }
     // Destination.BookingRequestInbox, and the P11 ratings section on the completed profile.
-    // Their trailing clock/timeZone/providerId arguments keep their defaults (Clock.System, system
-    // time zone, TEMPORARY provider id).
+    // Their trailing clock/timeZone arguments keep their defaults (Clock.System, system time zone).
     viewModel {
         BookingInboxViewModel(
             queries = BookingInboxQueries(
@@ -65,6 +77,7 @@ val providerModule = module {
                 agenda = get(),
                 booking = get(),
                 services = get(),
+                users = get(),
             ),
             commands = BookingInboxCommands(
                 accept = get(),
@@ -72,7 +85,14 @@ val providerModule = module {
                 complete = get(),
                 cancel = get(),
             ),
+            currentProvider = get(),
         )
     }
-    viewModel { ProviderReviewsViewModel(obtenerCalificaciones = get()) }
+    viewModel {
+        ProviderReviewsViewModel(
+            obtenerCalificaciones = get(),
+            obtenerUsuarioPublico = get(),
+            currentProvider = get(),
+        )
+    }
 }

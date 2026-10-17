@@ -3,10 +3,15 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,15 +31,14 @@ import org.koin.compose.viewmodel.koinViewModel
 // core:designsystem yet).
 @Composable
 fun ProviderProfileScreen(
-    /** Opens the Provider's service list (`Destination.ServiceList`) from the completed profile. */
-    onManageServices: () -> Unit = {},
-    /** Opens the Provider's schedule (`Destination.ScheduleManagement`) from the completed profile. */
-    onManageSchedule: () -> Unit = {},
-    /** Opens the Provider's booking inbox (`Destination.BookingRequestInbox`) from the completed profile. */
-    onManageBookings: () -> Unit = {},
+    navigation: ProviderProfileNavigation = ProviderProfileNavigation(),
     viewModel: ProviderProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+
+    // Load the signed-in User's profile on every entry: the ViewModel instance is reused across
+    // visits (docs/DEVELOPMENT.md), and the account behind it may have changed.
+    LaunchedEffect(Unit) { viewModel.onAction(ProviderProfileAction.Start) }
 
     // Effects are collected once, separately from state — see ProviderProfileEvent for why.
     LaunchedEffect(Unit) {
@@ -50,35 +54,35 @@ fun ProviderProfileScreen(
         }
     }
 
-    ProviderProfileContent(
-        state = state,
-        onAction = viewModel::onAction,
-        onManageServices = onManageServices,
-        onManageSchedule = onManageSchedule,
-        onManageBookings = onManageBookings,
-    )
+    ProviderProfileContent(state = state, onAction = viewModel::onAction, navigation = navigation)
 }
 
+/** The step the profile is in, under a "Volver al modo Cliente" row that every step keeps. */
 @Composable
 private fun ProviderProfileContent(
     state: ProviderProfileUiState,
     onAction: (ProviderProfileAction) -> Unit,
-    onManageServices: () -> Unit,
-    onManageSchedule: () -> Unit,
-    onManageBookings: () -> Unit,
+    navigation: ProviderProfileNavigation,
 ) {
-    val profile = state.profile
-    when {
-        state.isLoading -> LoadingContent()
-        profile == null -> ActivateProviderModeContent(onAction = onAction)
-        !profile.isComplete -> CompleteProfileContent(state = state, onAction = onAction)
-        else -> ProfileSummaryContent(
-            state = state,
-            onAction = onAction,
-            onManageServices = onManageServices,
-            onManageSchedule = onManageSchedule,
-            onManageBookings = onManageBookings,
-        )
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = navigation.onSwitchToCustomer) { Text("Volver al modo Cliente") }
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            val profile = state.profile
+            when {
+                state.isLoading -> LoadingContent()
+                profile == null -> ActivateProviderModeContent(error = state.error, onAction = onAction)
+                !profile.isComplete -> CompleteProfileContent(state = state, onAction = onAction)
+                else -> ProfileSummaryContent(
+                    state = state,
+                    onAction = onAction,
+                    onManageServices = navigation.onManageServices,
+                    onManageSchedule = navigation.onManageSchedule,
+                    onManageBookings = navigation.onManageBookings,
+                )
+            }
+        }
     }
 }
 

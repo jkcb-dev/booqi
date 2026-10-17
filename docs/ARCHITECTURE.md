@@ -7,7 +7,7 @@ model) — this is the codebase's shape. Referenced by `.claude/agents/booqi-arc
 ## Module graph
 
 ```
-feature:browse, feature:booking, feature:provider   ← Compose UI owns these
+feature:account, feature:browse, feature:booking, feature:provider   ← Compose UI owns these
               ↓
             domain                                  ← Shared Domain & Data owns these
               ↓
@@ -22,12 +22,13 @@ One-way dependencies only. `core:*` never depends upward. `domain` never imports
 
 ## Feature module policy (decided 2026-08-12)
 
-**Three `feature:*` modules, grouped by who uses them in one continuous session — not one module
+**Four `feature:*` modules, grouped by who uses them in one continuous session — not one module
 per screen.** A 1:1 screen-to-module mapping doesn't scale past a handful of screens; grouping by
 user session keeps the module count sane as more tickets land.
 
 | Module | Screens | Why grouped here |
 |---|---|---|
+| `feature:account` (exists, #58) | Sign in, sign up (email + Google/Facebook/Apple), verify email, user profile (name, photo, sign out, delete account), the "Convertirme en Proveedor" entry | Identity serves a *different session* than the other three: it is used by visitors and by users of either persona, before and around browsing, booking and Provider mode, and it owns no Catalog/Scheduling screen. Added by Architect in #58 (the policy's "genuinely different session" case) |
 | `feature:browse` (exists) | Search, results, service detail, provider profile view | The Catalog/discovery part of a Customer session |
 | `feature:booking` (new) | Time-slot selection, confirm, pending, confirmed, rejected/expired, cancel, rate, history, address picker | The Scheduling part of a Customer session — address lives here because it's only ever touched mid-booking |
 | `feature:provider` (new) | Activate mode, complete/pause profile, manage services, manage schedule, booking request inbox, accept/reject/cancel | The entire Provider-side experience — one persona, one module |
@@ -36,7 +37,8 @@ user session keeps the module count sane as more tickets land.
 a new group of screens serves a genuinely different user session/persona than the three above —
 not per individual screen, not per bounded context, not per GitHub issue. If unsure whether
 something is a new module or belongs in an existing one, default to extending an existing module;
-splitting later is cheap, over-splitting early isn't.
+splitting later is cheap, over-splitting early isn't. (`feature:account` is the one such case so far:
+Identity's screens are reached from every session and are not part of any of them.)
 
 ## Cross-cutting file ownership (avoids collisions as ticket count grows)
 
@@ -72,9 +74,29 @@ wiring PR is also where the feature is first reachable, so it's where it gets **
 and screenshotted** (see `docs/DEVELOPMENT.md`). A compose-ui PR alone compiles but shows nothing
 new in the running app — that is expected, not a bug.
 
-Until a real entry point exists (Identity/profile screens aren't built), the wiring PR may add a
-clearly-commented TEMPORARY navigation affordance in `App.kt` so the flow is reachable; it is
-removed when the real trigger lands.
+Until a real entry point exists, the wiring PR may add a clearly-commented TEMPORARY navigation
+affordance in `App.kt` so the flow is reachable; it is removed when the real trigger lands. (The one
+for Provider mode is gone: #58 replaced it with the profile's "Convertirme en Proveedor" and the
+bottom navigation.)
+
+## Navigation shell (decided in #58)
+
+`App.kt` renders the current `Destination` above the Figma `BottomNavigation` organism
+(`core:designsystem`), and only tabs whose screen exists are shown (`shared/.../AppNavigationBar.kt`
+holds the map):
+
+| Shell | Tabs shown | Omitted until their screen exists |
+|---|---|---|
+| Cliente (`Browse`, `ServiceDetail`, `ProviderProfileView`, `Profile`) | Buscar, Perfil | Inicio (no home screen designed/built), Reservas (`feature:booking`, #26) |
+| Proveedor (`ProviderProfileSetup`, `ScheduleManagement`, `BookingRequestInbox`, `ServiceList`) | Solicitudes, Servicios, Perfil | Inicio (same) |
+
+`Navigator.navigateToRoot` switches tabs (and leaves a session: sign-out, account deletion) without
+stacking screens; everything else pushes. The Provider area is entered from the Cliente "Perfil" tab
+(`Profile` → "Convertirme en Proveedor" / "Ir a mi panel de Proveedor", behind the
+`RequerirCuentaVerificada` guard) and left through "Volver al modo Cliente" on the Provider's profile.
+`Auth` and `VerifyEmail` are *pushed* over whatever needed an account ("Reservar", "Convertirme en
+Proveedor", the profile) and show no bar, so finishing them is a plain back — that is how the visitor
+"vuelve a donde estaba".
 
 ## Booking expiry trigger (decision input for #27 / platform work)
 

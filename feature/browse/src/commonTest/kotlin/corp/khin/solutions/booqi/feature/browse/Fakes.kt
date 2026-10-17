@@ -12,10 +12,13 @@ import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
+import corp.khin.solutions.booqi.domain.model.SocialProvider
+import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.CatalogRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
+import corp.khin.solutions.booqi.domain.repository.UserRepository
 import kotlin.time.Instant
 
 // Minimal in-memory fakes for the Customer's read side, scoped to feature:browse's reducer tests.
@@ -101,4 +104,24 @@ class FakeBookingRepository(private val rated: List<Booking> = emptyList()) : Bo
         NOT_USED.asFailure()
 
     override suspend fun getPendingRequestedAtOrBefore(cutoff: Instant) = NOT_USED.asFailure()
+}
+
+/**
+ * Only [getCurrentUser] is read (the access guard in front of "Reservar"): [current] is the session,
+ * `null` meaning a visitor browsing without an account.
+ */
+class FakeUserRepository(
+    var current: User? = User(id = "user-1", displayName = "Ana Pérez", email = "ana@booqi.test", isEmailVerified = true),
+) : UserRepository {
+
+    override suspend fun getCurrentUser(): DomainResult<User?> = current.asSuccess()
+    override suspend fun getUser(userId: String) = NOT_USED.asFailure()
+    override suspend fun registerWithEmail(name: String, email: String, password: String) = NOT_USED.asFailure()
+    override suspend fun signInWithSocial(provider: SocialProvider) = NOT_USED.asFailure()
+    override suspend fun signInWithEmail(email: String, password: String) = NOT_USED.asFailure()
+    override suspend fun signOut() = NOT_USED.asFailure()
+    override suspend fun confirmEmail() = NOT_USED.asFailure()
+    override suspend fun resendVerificationEmail() = NOT_USED.asFailure()
+    override suspend fun updateProfile(displayName: String, photoUrl: String?) = NOT_USED.asFailure()
+    override suspend fun deleteAccount() = NOT_USED.asFailure()
 }

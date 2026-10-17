@@ -12,6 +12,6 @@ import org.koin.dsl.module
  */
 val browseModule = module {
     viewModel { BrowseViewModel(buscarServicios = get()) }
-    viewModel { ServiceDetailViewModel(verDetalleServicio = get()) }
-    viewModel { ProviderPublicProfileViewModel(verPerfilProveedor = get()) }
+    viewModel { ServiceDetailViewModel(verDetalleServicio = get(), requerirCuentaVerificada = get()) }
+    viewModel { ProviderPublicProfileViewModel(verPerfilProveedor = get(), requerirCuentaVerificada = get()) }
 }

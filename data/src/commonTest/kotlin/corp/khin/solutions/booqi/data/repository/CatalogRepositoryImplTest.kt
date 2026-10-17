@@ -100,8 +100,9 @@ class CatalogRepositoryImplTest {
             (it as DomainResult.Success).value
         }
 
-        // The provider-side placeholder services (providerId = user id) must not join until #50.
-        assertTrue(results.none { it.service.providerId == SampleData.PROVIDER_ID })
+        // The demo Provider's own services join through its ProviderProfile id (the #56 contract), so
+        // services created in the app show up in the search like these do.
+        assertTrue(results.any { it.service.providerId == SampleData.DEMO_PROVIDER_PROFILE_ID })
         assertEquals(ServiceCategory.filterable.toSet(), results.map { it.service.category }.toSet())
         assertTrue(results.all { it.provider.name.isNotBlank() })
     }

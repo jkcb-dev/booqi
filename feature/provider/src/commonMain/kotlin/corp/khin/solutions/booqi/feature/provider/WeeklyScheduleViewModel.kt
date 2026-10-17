@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Availability
 import corp.khin.solutions.booqi.domain.usecase.DefinirHorarioSemanalUseCase
 import corp.khin.solutions.booqi.domain.usecase.ModificarHorarioSemanalUseCase
@@ -37,13 +38,14 @@ import kotlinx.datetime.DayOfWeek
  * docs/DEVELOPMENT.md): the screen sends [WeeklyScheduleAction.Start] on every entry, which
  * reloads and drops unsaved edits.
  *
- * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]).
+ * The schedule is the signed-in User's Provider profile's ([CurrentProvider], resolved on every
+ * load and save).
  */
 class WeeklyScheduleViewModel(
     private val obtenerHorario: ObtenerHorarioUseCase,
     private val definirHorario: DefinirHorarioSemanalUseCase,
     private val modificarHorario: ModificarHorarioSemanalUseCase,
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
+    private val currentProvider: CurrentProvider,
 ) : ViewModel() {
 
     private var loadJob: Job? = null
@@ -70,7 +72,7 @@ class WeeklyScheduleViewModel(
         loadJob?.cancel()
         _state.value = WeeklyScheduleUiState()
         loadJob = viewModelScope.launch {
-            when (val result = obtenerHorario(providerId)) {
+            when (val result = currentProvider.profileId().flatMap { obtenerHorario(it) }) {
                 is DomainResult.Success -> _state.update { it.loadedFrom(result.value) }
                 is DomainResult.Failure -> {
                     _state.update { it.copy(isLoading = false, loadError = result.error) }
@@ -108,8 +110,12 @@ class WeeklyScheduleViewModel(
         when (val draft = current.toDraft()) {
             is ScheduleDraft.Invalid -> _state.update { it.copy(rows = draft.rows, formError = null) }
             ScheduleDraft.NothingToSave -> Unit
-            is ScheduleDraft.Define -> submit { definirHorario(providerId, draft.week) }
-            is ScheduleDraft.Modify -> submit { modificarHorario(providerId, draft.changes) }
+            is ScheduleDraft.Define -> submit {
+                currentProvider.profileId().flatMap { definirHorario(it, draft.week) }
+            }
+            is ScheduleDraft.Modify -> submit {
+                currentProvider.profileId().flatMap { modificarHorario(it, draft.changes) }
+            }
         }
     }
 
@@ -131,15 +137,16 @@ class WeeklyScheduleViewModel(
      * is shown on the active rows whose range is inverted (and as a form error when none is). */
     private suspend fun onSaveFailed(error: DomainError) {
         val message = error.describe(NOT_FOUND_MESSAGE)
+        val isHoursError = error is DomainError.InvalidInput && error != NoProviderProfile
         _state.update { state ->
-            val rows = if (error is DomainError.InvalidInput) state.rows.withRangeErrors(message) else state.rows
+            val rows = if (isHoursError) state.rows.withRangeErrors(message) else state.rows
             state.copy(
                 isSaving = false,
                 rows = rows,
                 formError = message.takeIf { rows.none { it.error != null } },
             )
         }
-        if (error !is DomainError.InvalidInput) _events.send(WeeklyScheduleEvent.ShowError(message))
+        if (!isHoursError) _events.send(WeeklyScheduleEvent.ShowError(message))
     }
 
     private companion object {

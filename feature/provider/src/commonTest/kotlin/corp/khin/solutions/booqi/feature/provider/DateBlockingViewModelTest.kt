@@ -64,6 +64,7 @@ class DateBlockingViewModelTest {
         obtenerHorario = ObtenerHorarioUseCase(repository),
         bloquearFechaHora = BloquearFechaHoraUseCase(repository),
         desbloquearFechaHora = DesbloquearFechaHoraUseCase(repository),
+        currentProvider = testCurrentProvider(),
         clock = clock,
         timeZone = timeZone,
     ).also { it.onAction(DateBlockingAction.Start) }
@@ -164,6 +165,7 @@ class DateBlockingViewModelTest {
             obtenerHorario = ObtenerHorarioUseCase(repository),
             bloquearFechaHora = BloquearFechaHoraUseCase(repository),
             desbloquearFechaHora = DesbloquearFechaHoraUseCase(repository),
+            currentProvider = testCurrentProvider(),
             clock = clock,
             timeZone = TimeZone.UTC,
         )

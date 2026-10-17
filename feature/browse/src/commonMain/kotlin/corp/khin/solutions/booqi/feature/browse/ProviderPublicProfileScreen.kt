@@ -14,21 +14,21 @@ import org.koin.compose.viewmodel.koinViewModel
  *
  * Navigation is exposed as callbacks so Architect's wiring can map them to `Navigator` calls
  * without this module importing another feature: [onServiceSelected] (a Service card) ->
- * `Destination.ServiceDetail(serviceId)`, the Service detail; [onBook] ("Reservar ›", with the
- * Service and its Provider) -> the booking flow of #26, **not built yet**; [onFinished]
- * ("Volver") -> back.
+ * `Destination.ServiceDetail(serviceId)`, the Service detail; [booking] ("Reservar ›") -> the access
+ * guard first (sign-in / verification flows, see [BookingNavigation]), then the booking flow of
+ * #26, **not built yet**; [onFinished] ("Volver") -> back.
  */
 @Composable
 fun ProviderPublicProfileScreen(
     providerId: String,
     onServiceSelected: (serviceId: String) -> Unit,
-    onBook: (serviceId: String, providerId: String) -> Unit,
+    booking: BookingNavigation,
     onFinished: () -> Unit,
     viewModel: ProviderPublicProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val currentOnServiceSelected by rememberUpdatedState(onServiceSelected)
-    val currentOnBook by rememberUpdatedState(onBook)
+    val currentBooking by rememberUpdatedState(booking)
     val currentOnFinished by rememberUpdatedState(onFinished)
 
     // Reset/reload on every entry and whenever providerId changes: the ViewModel instance is
@@ -40,7 +40,10 @@ fun ProviderPublicProfileScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ProviderPublicProfileEvent.NavigateToService -> currentOnServiceSelected(event.serviceId)
-                is ProviderPublicProfileEvent.NavigateToBooking -> currentOnBook(event.serviceId, event.providerId)
+                is ProviderPublicProfileEvent.NavigateToBooking ->
+                    currentBooking.onBook(event.serviceId, event.providerId)
+                ProviderPublicProfileEvent.SignInRequired -> currentBooking.onSignInRequired()
+                ProviderPublicProfileEvent.VerificationRequired -> currentBooking.onVerificationRequired()
                 ProviderPublicProfileEvent.NavigateBack -> currentOnFinished()
             }
         }

@@ -91,11 +91,21 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   one file per step (`...ActivateContent.kt`, `...CompleteContent.kt`).
 - **Kotlin/Native test names**: no commas inside backticked test names — the iOS target rejects
   them even though the Android target accepts them.
-- **Current user:** Identity's domain exists (#56): `ObtenerUsuarioActual` (null when browsing
-  without an account), access guard `RequerirCuentaVerificada` before booking / Provider mode.
-  `providerId` everywhere is the **ProviderProfile id** (get it via `ObtenerMiPerfilDeProveedor`),
-  never the user id. Until #58 lands, the Provider screens still use the TEMPORARY placeholder id —
-  don't add new placeholders; use the use cases above.
+- **Current user:** Identity exists (#56 domain & data, #58 UI): `ObtenerUsuarioActual` (null when
+  browsing without an account), access guard `RequerirCuentaVerificada` before booking / Provider
+  mode (`feature:browse` runs it on "Reservar", `feature:account` on "Convertirme en Proveedor",
+  `feature:provider` before `ActivarModoProveedor`). `providerId` everywhere is the **ProviderProfile
+  id** — in `feature:provider` always through `CurrentProvider` (wraps `ObtenerMiPerfilDeProveedor`,
+  resolved on every use because ViewModels outlive a visit and the account can change), never the
+  user id and never a constant. Don't add placeholders; use the use cases above.
+- **Demo account (fake-only test credentials, no real accounts exist until Supabase Auth, #27):**
+  email `demo@booqi.test`, password `Demo1234`. Seeded by `SampleData` (see its KDoc): verified, owns
+  the demo Provider profile "Demo Studio" with two services, sample bookings (one pending, two
+  confirmed, two completed with ratings) and sample customers ("Camila Torres", one deleted account →
+  "Usuario eliminado"). Its active Provider bookings make "Eliminar cuenta" answer with the blocking
+  list. A new email sign-up starts *unverified* (use "Ya verifiqué mi correo" on the verification
+  notice — the fake confirms at once); a social button creates a verified account. The seed lives
+  only in memory and starts signed out on every launch.
 - **Date/time: use `kotlin.time.Clock` / `kotlin.time.Instant`, with `kotlinx-datetime` pinned to
   the version Material3 resolves (currently 0.7.1).** Material3 drags its own `kotlinx-datetime`
   onto the iOS classpath of `:shared` and every feature module, so a different pin in the catalog

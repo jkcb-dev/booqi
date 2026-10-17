@@ -14,4 +14,6 @@ data class ServiceDetailUiState(
     val isLoading: Boolean = true,
     val detail: ServiceDetail? = null,
     val error: DomainError? = null,
+    /** Why the last "Reservar" tap could not even reach the access answer (shown under the button). */
+    val bookingError: DomainError? = null,
 )

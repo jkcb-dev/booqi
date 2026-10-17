@@ -80,5 +80,5 @@ internal fun DomainError.describe(notFound: String): String = when (this) {
     DomainError.NoConnection -> "Sin conexión"
     DomainError.Timeout -> "La operación tardó demasiado"
     DomainError.NotFound -> notFound
-    DomainError.Unauthorized -> "No autorizado"
+    DomainError.Unauthorized -> "Iniciá sesión para continuar"
 }

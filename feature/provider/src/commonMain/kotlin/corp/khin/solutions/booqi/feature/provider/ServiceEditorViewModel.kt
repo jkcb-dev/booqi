@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
@@ -28,14 +29,15 @@ import kotlinx.coroutines.launch
  * resets all form state and (re)loads for the given id. [initialServiceId] only shapes the very
  * first frame before `Start` arrives.
  *
- * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]).
+ * A new service belongs to the signed-in User's Provider profile ([CurrentProvider], resolved when
+ * saving), which is what makes it appear in the Customer's search.
  */
 class ServiceEditorViewModel(
     initialServiceId: String?,
     private val agregarServicio: AgregarServicioUseCase,
     private val editarServicio: EditarServicioUseCase,
     private val obtenerServicio: ObtenerServicioUseCase,
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
+    private val currentProvider: CurrentProvider,
 ) : ViewModel() {
 
     private var serviceId: String? = initialServiceId
@@ -133,7 +135,7 @@ class ServiceEditorViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, photoError = null, priceError = null, durationError = null) }
             val result = if (targetId == null) {
-                agregarServicio(providerId, details)
+                currentProvider.profileId().flatMap { agregarServicio(it, details) }
             } else {
                 editarServicio(targetId, details)
             }
@@ -148,7 +150,7 @@ class ServiceEditorViewModel(
     }
 
     private suspend fun onSaveFailed(error: DomainError) {
-        if (error is DomainError.InvalidInput) {
+        if (error is DomainError.InvalidInput && error != NoProviderProfile) {
             // The only input rule the use cases enforce today is "la foto es obligatoria".
             _state.update { it.copy(isSaving = false, photoError = error.message) }
         } else {

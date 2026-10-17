@@ -7,19 +7,22 @@ import corp.khin.solutions.booqi.domain.usecase.ObtenerReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerReservasDelProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerServiciosDelProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerSolicitudesPendientesUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import corp.khin.solutions.booqi.domain.usecase.RechazarReservaUseCase
 
 /**
  * The read side of [BookingInboxViewModel], grouped into one parameter object so the ViewModel's
  * constructor stays under detekt's `LongParameterList` limit (this is a plain holder, not a layer:
  * the ViewModel still talks to the domain only through these use cases).
- * [services] resolves `Booking.serviceId` to a title — a Booking only holds the id.
+ * [services] resolves `Booking.serviceId` to a title and [users] `Booking.customerId` to the
+ * Customer's name — a Booking only holds the ids.
  */
 class BookingInboxQueries(
     val pendingRequests: ObtenerSolicitudesPendientesUseCase,
     val agenda: ObtenerReservasDelProveedorUseCase,
     val booking: ObtenerReservaUseCase,
     val services: ObtenerServiciosDelProveedorUseCase,
+    val users: ObtenerUsuarioPublicoUseCase,
 )
 
 /** The write side of [BookingInboxViewModel]: the four Provider transitions of Grupo 4. */

@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.feature.provider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.usecase.DeshabilitarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.HabilitarServicioUseCase
@@ -25,14 +26,14 @@ import kotlinx.coroutines.launch
  * e.g. when coming back from the editor. [ServiceListScreen] therefore sends
  * [ServiceListAction.Refresh] every time it enters composition.
  *
- * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]); wiring can
- * pass the real one once Identity exists.
+ * The Provider whose services are listed is the signed-in User's ([CurrentProvider]), resolved on
+ * every load.
  */
 class ServiceListViewModel(
     private val obtenerServicios: ObtenerServiciosDelProveedorUseCase,
     private val deshabilitarServicio: DeshabilitarServicioUseCase,
     private val habilitarServicio: HabilitarServicioUseCase,
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
+    private val currentProvider: CurrentProvider,
 ) : ViewModel() {
 
     // Starts in the loading state so the first frame before ServiceListScreen's Refresh never
@@ -61,7 +62,7 @@ class ServiceListViewModel(
     private fun load() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = obtenerServicios(providerId)) {
+            when (val result = currentProvider.profileId().flatMap { obtenerServicios(it) }) {
                 is DomainResult.Success -> _state.update {
                     it.copy(isLoading = false, services = result.value)
                 }

@@ -4,10 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarPerfilDeProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerMiPerfilDeProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.PausarPerfilUseCase
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +32,22 @@ import kotlinx.datetime.LocalDate
  * `Destination.ProviderProfileSetup` is one screen for both "activar modo" (P1) and "completar
  * perfil" (P2), and "pausar perfil" (P3) is reached as an in-screen action once the profile is
  * complete rather than a separate destination (see this PR's description for why).
+ *
+ * **Whose profile.** The signed-in User's: [ProviderProfileAction.Start] (sent on every entry — the
+ * instance outlives a visit, and the account behind it can change) loads their profile through
+ * [ObtenerMiPerfilDeProveedorUseCase], and activating goes through the access guard
+ * ([RequerirCuentaVerificadaUseCase]: no session or an unverified email is refused with a message
+ * under the CTA) before [ActivarModoProveedorUseCase] gets the User's id.
  */
 class ProviderProfileViewModel(
     private val activarModoProveedor: ActivarModoProveedorUseCase,
     private val completarPerfil: CompletarPerfilDeProveedorUseCase,
     private val pausarPerfil: PausarPerfilUseCase,
+    private val obtenerMiPerfil: ObtenerMiPerfilDeProveedorUseCase,
+    private val requerirCuentaVerificada: RequerirCuentaVerificadaUseCase,
 ) : ViewModel() {
+
+    private var loadJob: Job? = null
 
     private val _state = MutableStateFlow(ProviderProfileUiState())
     val state: StateFlow<ProviderProfileUiState> = _state.asStateFlow()
@@ -42,6 +57,7 @@ class ProviderProfileViewModel(
 
     fun onAction(action: ProviderProfileAction) {
         when (action) {
+            ProviderProfileAction.Start -> start()
             is ProviderProfileAction.ActivateProviderMode -> activateProviderMode()
             is ProviderProfileAction.NameChanged -> _state.update { it.copy(nameInput = action.value) }
             is ProviderProfileAction.PhotoUrlChanged -> _state.update { it.copy(photoUrlInput = action.value) }
@@ -68,22 +84,39 @@ class ProviderProfileViewModel(
         }
     }
 
-    /** Escenario: "Un usuario activa el modo Proveedor". Idempotent on the repository side, so
+    /** The signed-in User's profile, or the activation CTA when they have none. A fresh slate each
+     * time: a previous visit's form, pause sheet and errors never carry over (nor another account's). */
+    private fun start() {
+        loadJob?.cancel()
+        _state.value = ProviderProfileUiState(isLoading = true)
+        loadJob = viewModelScope.launch {
+            when (val result = obtenerMiPerfil()) {
+                is DomainResult.Success -> _state.update { current ->
+                    result.value?.let { current.withProfile(it) } ?: current.copy(isLoading = false)
+                }
+                is DomainResult.Failure -> _state.update { it.copy(isLoading = false, error = result.error) }
+            }
+        }
+    }
+
+    private fun ProviderProfileUiState.withProfile(profile: ProviderProfile) = copy(
+        isLoading = false,
+        profile = profile,
+        nameInput = profile.name.orEmpty(),
+        photoUrlInput = profile.photoUrl.orEmpty(),
+        descriptionInput = profile.description.orEmpty(),
+        locationInput = profile.location.orEmpty(),
+    )
+
+    /** Escenario: "Un usuario activa el modo Proveedor" — for a signed-in User with a verified
+     * email, else refused by the guard (identity-flow.md). Idempotent on the repository side, so
      * re-entering this screen and tapping Activar again is safe (returns the existing profile). */
     private fun activateProviderMode() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = activarModoProveedor(CURRENT_USER_ID_PLACEHOLDER)) {
-                is DomainResult.Success -> _state.update {
-                    it.copy(
-                        isLoading = false,
-                        profile = result.value,
-                        nameInput = result.value.name.orEmpty(),
-                        photoUrlInput = result.value.photoUrl.orEmpty(),
-                        descriptionInput = result.value.description.orEmpty(),
-                        locationInput = result.value.location.orEmpty(),
-                    )
-                }
+            val result = requerirCuentaVerificada().flatMap { user -> activarModoProveedor(user.id) }
+            when (result) {
+                is DomainResult.Success -> _state.update { it.withProfile(result.value) }
                 is DomainResult.Failure -> {
                     _state.update { it.copy(isLoading = false, error = result.error) }
                     _events.send(ProviderProfileEvent.ShowError(result.error.describe()))
@@ -188,21 +221,12 @@ class ProviderProfileViewModel(
         DomainError.NoConnection -> "Sin conexión"
         DomainError.Timeout -> "La operación tardó demasiado"
         DomainError.NotFound -> "No se encontró el perfil"
-        DomainError.Unauthorized -> "No autorizado"
+        DomainError.Unauthorized -> "Iniciá sesión para continuar"
     }
 
     private fun validatePauseRange(from: LocalDate?, until: LocalDate?): String? = when {
         from == null || until == null -> "Selecciona una fecha de inicio y de fin"
         from > until -> "La fecha de inicio debe ser anterior a la de fin"
         else -> null
-    }
-
-    private companion object {
-        // TEMPORARY: there is no auth/session concept built yet in this codebase (Identity
-        // bounded context is "Not built yet" per docs/DOMAIN.md). Hardcoded so the
-        // screen/ViewModel/Koin wiring can be proven end-to-end, same spirit as the fake
-        // datasources used elsewhere before a real backend/session existed. Replace with the real
-        // signed-in User's id once Identity exists.
-        const val CURRENT_USER_ID_PLACEHOLDER = TEMPORARY_PROVIDER_ID
     }
 }

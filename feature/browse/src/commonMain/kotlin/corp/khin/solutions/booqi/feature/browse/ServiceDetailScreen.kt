@@ -14,20 +14,21 @@ import org.koin.compose.viewmodel.koinViewModel
  *
  * Navigation is exposed as callbacks so Architect's wiring can map them to `Navigator` calls
  * without this module importing another feature: [onProviderSelected] (the Provider block) ->
- * `Destination.ProviderProfileView(providerId)`; [onBook] ("Reservar", with the Service and its
- * Provider) -> the booking flow of #26, **not built yet**; [onFinished] ("Volver") -> back.
+ * `Destination.ProviderProfileView(providerId)`; [booking] ("Reservar") -> the access guard first
+ * (sign-in / verification flows, see [BookingNavigation]), then the booking flow of #26, **not built
+ * yet**; [onFinished] ("Volver") -> back.
  */
 @Composable
 fun ServiceDetailScreen(
     serviceId: String,
     onProviderSelected: (providerId: String) -> Unit,
-    onBook: (serviceId: String, providerId: String) -> Unit,
+    booking: BookingNavigation,
     onFinished: () -> Unit,
     viewModel: ServiceDetailViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val currentOnProviderSelected by rememberUpdatedState(onProviderSelected)
-    val currentOnBook by rememberUpdatedState(onBook)
+    val currentBooking by rememberUpdatedState(booking)
     val currentOnFinished by rememberUpdatedState(onFinished)
 
     // Reset/reload on every entry and whenever serviceId changes: the ViewModel instance is
@@ -39,7 +40,9 @@ fun ServiceDetailScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ServiceDetailEvent.NavigateToProvider -> currentOnProviderSelected(event.providerId)
-                is ServiceDetailEvent.NavigateToBooking -> currentOnBook(event.serviceId, event.providerId)
+                is ServiceDetailEvent.NavigateToBooking -> currentBooking.onBook(event.serviceId, event.providerId)
+                ServiceDetailEvent.SignInRequired -> currentBooking.onSignInRequired()
+                ServiceDetailEvent.VerificationRequired -> currentBooking.onVerificationRequired()
                 ServiceDetailEvent.NavigateBack -> currentOnFinished()
             }
         }

@@ -38,7 +38,7 @@ internal fun BookingListContent(state: BookingInboxUiState, onAction: (BookingIn
                 items(bookings, key = { it.id }) { booking ->
                     BookingListItem(
                         booking = booking,
-                        serviceTitle = state.serviceTitles[booking.serviceId] ?: SERVICE_FALLBACK_LABEL,
+                        labels = state.labelsOf(booking),
                         showRequestActions = isRequests,
                         isSubmitting = state.submittingBookingId != null,
                         onAction = onAction,

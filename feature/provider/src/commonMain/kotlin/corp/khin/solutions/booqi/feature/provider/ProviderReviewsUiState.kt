@@ -11,10 +11,13 @@ import corp.khin.solutions.booqi.domain.model.Booking
  * `ProviderProfile.ratingAverage`/`ratingCount`: the persisted summary is by definition the mean
  * over exactly these Bookings, so they agree, and deriving them keeps the summary consistent with
  * the list shown and fresh on every entry (the profile ViewModel does not reload its profile).
+ * [authorNames] maps `Booking.customerId` to the reviewer's name ("Usuario eliminado" for a deleted
+ * account); a missing entry reads "Cliente".
  */
 data class ProviderReviewsUiState(
     val isLoading: Boolean = true,
     val reviews: List<Booking> = emptyList(),
+    val authorNames: Map<String, String> = emptyMap(),
     val error: DomainError? = null,
 ) {
     private val stars: List<Int> get() = reviews.mapNotNull { it.rating?.stars }

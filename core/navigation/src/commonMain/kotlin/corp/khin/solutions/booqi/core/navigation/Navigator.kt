@@ -13,4 +13,11 @@ interface Navigator {
 
     fun navigateTo(destination: Destination)
     fun navigateBack(): Boolean
+
+    /**
+     * Makes [destination] the only entry of the back stack — for switching between the top-level
+     * tabs of a bottom navigation (and for leaving a session: signing out, deleting the account),
+     * where pushing would stack a screen on itself.
+     */
+    fun navigateToRoot(destination: Destination)
 }

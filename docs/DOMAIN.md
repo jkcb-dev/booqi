@@ -42,9 +42,13 @@ email verification, account deletion with anonymized history) are specified in
 and the access guard `RequerirCuentaVerificada` (booking and Provider mode need a session **and** a
 verified email: no session -> `Unauthorized`, unverified -> `InvalidInput`). Persistence is a
 TEMPORARY in-memory fake auth (`FakeAuthRemoteDataSource`) until Supabase Auth (#27) — real
-authentication is Supabase's job. **Not built:** the screens, applying the guard in front of
-`SolicitarReserva`/`ActivarModoProveedor`, and aligning the Provider screens' ids (the UI
-sub-tickets of #50). **Account deletion** never removes the `User`: it is kept as an anonymized
+authentication is Supabase's job. **UI built (#58, `feature:account`):** sign in / sign up
+(email + the three social buttons, run against the fake — real SDKs are Platform Integration's),
+verification notice with resend, user profile (name, photo, sign out, delete account listing the
+blocking Bookings) and the "Convertirme en Proveedor" entry. The guard runs in front of
+`ActivarModoProveedor` (Provider mode) and on "Reservar" in `feature:browse` (the booking itself is
+#26); Provider screens read the current Provider's ProviderProfile id and show Customers' real names.
+**Not built:** reviewer names on the *public* C4 page (`ProviderReview` carries no reviewer id yet). **Account deletion** never removes the `User`: it is kept as an anonymized
 tombstone (`User.anonymized()` — name, photo and email erased, `isDeleted = true`), and
 `User.publicName` is the one place that renders it as "Usuario eliminado". Completed Bookings and
 their ratings stay (so a Provider's rating aggregate never changes), the personal data on the
