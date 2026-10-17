@@ -129,6 +129,7 @@ imports), so it moves up to `core:designsystem`.
 | Organism | `BottomNavigation` | `core:designsystem` | both Cliente and Proveedor session shells need it |
 | Organism | `RatingDisplay` | `core:designsystem` | shown in both `feature:browse` (C4) and `feature:provider` (P11) |
 | Organism | `ReasonPicker` | `core:designsystem` | Provider picks the reason (P9), Customer sees it read-only (C10) — cross-module |
+| Organism | `ReasonSummary` | `core:designsystem` | The read-only counterpart of `ReasonPicker` the Customer sees on a rejection (C10, #26) |
 | Organism | `ProviderCard` | `feature:browse` | Browse-results-only (C2) |
 | Organism | `WeeklyScheduleEditor`, `DateBlockingCalendar` | `feature:provider` | Provider-schedule-only (P6/P7) |
 | Organism | `TimeSlotGrid` | `feature:booking` | Customer slot selection only (C5) |
