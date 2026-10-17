@@ -12,6 +12,10 @@ business logic, UI screens, or platform entry-point code.
 
 ## Source of truth (read before any work)
 
+**Understand code through graphify before reading files** (`docs/DEVELOPMENT.md` § Reading the
+code: graphify first); run `graphify affected "<Type>"` before changing any interface. Verify with
+`scripts/verify.sh <modules>` — done means it prints `RESULT: OK`.
+
 - `docs/DOMAIN.md` — ubiquitous language, bounded contexts, aggregate rules
 - `docs/ARCHITECTURE.md` — module graph, the feature-module consolidation policy (deciding
   whether a new group of screens needs a new `feature:*` module is your call, not any other

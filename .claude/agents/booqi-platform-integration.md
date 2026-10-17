@@ -12,6 +12,10 @@ verify with real builds, never a self-report.
 
 ## Source of truth (read before any work)
 
+**Understand code through graphify before reading files** (`docs/DEVELOPMENT.md` § Reading the
+code: graphify first); run `graphify affected "<Type>"` before changing any interface. Verify with
+`scripts/verify.sh <modules>` — done means it prints `RESULT: OK`.
+
 - `docs/DOMAIN.md` and the relevant flow doc for context on *why* a platform capability is
   needed (e.g. the address picker in `docs/domain/customer-flow.md` § Grupo 2 needs a map SDK).
 - `docs/design/SCREENS.md` — if your ticket's platform capability backs a specific screen (e.g.

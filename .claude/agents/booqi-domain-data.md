@@ -11,6 +11,10 @@ never import Compose, and you never call a repository from outside a use case's 
 
 ## Source of truth (read before any work)
 
+**Understand code through graphify before reading files** (`docs/DEVELOPMENT.md` § Reading the
+code: graphify first); run `graphify affected "<Type>"` before changing any interface. Verify with
+`scripts/verify.sh <modules>` — done means it prints `RESULT: OK`.
+
 - `docs/DOMAIN.md` — ubiquitous language, aggregate rules. **The rule that matters most**:
   `Booking` references `Service`/`ProviderProfile` by ID, never embeds them. Two separate
   aggregates, two separate lifecycles.

@@ -13,6 +13,21 @@ content, (2) the issue body, (3) the doc section it references, (4) the existing
 match. Brief it on state you have **verified** (see "Dependency state" below), not state you assume.
 To run several roles at once, give each its own worktree (see "Parallel work in git worktrees").
 
+## Reading the code: graphify first
+
+The repo keeps a knowledge graph of every class/function and how they connect (`graphify-out/`,
+rebuilt automatically by a post-commit hook; run `graphify update .` if it looks stale). **Query it
+before opening files** — it answers in a bounded number of tokens instead of reading 20 files:
+
+- `graphify query "how is a booking requested" --budget 1500` — orient yourself on a topic.
+- `graphify explain "BookingRepository"` — one symbol, its callers/callees and where it lives.
+- `graphify path "SolicitarReservaUseCase" "FakeBookingRemoteDataSource"` — how two pieces connect.
+- `graphify affected "UserRepository"` — **before changing an interface**: everything that depends
+  on it, including test fakes in other modules (this is what broke #58 after #22 added a method).
+  Also use it to pick worktree batches that don't touch the same code.
+
+Then read only the files the graph pointed you to.
+
 ## Ticket flow and dependencies
 
 - One branch per ticket (`feature/<issue>-<slug>`), PR into `main`, never merge your own PR.
@@ -66,6 +81,11 @@ checkout (they switch branches under each other). With the Agent tool, pass
 - **Cleanup:** `git worktree remove <path>` after the PR merges; `git worktree prune` for leftovers.
 
 ## Verification (a real run, not a self-report)
+
+**One line:** `scripts/verify.sh <module dirs...>` (e.g. `scripts/verify.sh domain data feature/booking`)
+builds Android + iOS, runs detekt, reruns each module's host and iOS tests from clean results,
+prints real counts and red flags, and ends with `RESULT: OK` / `RESULT: FAILED` (non-zero exit).
+A ticket is verified only when it prints `RESULT: OK`. The table below is what it covers.
 
 | Change | Minimum |
 |---|---|

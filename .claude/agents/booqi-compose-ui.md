@@ -11,6 +11,10 @@ through `UseCase` classes injected via Koin — never a repository or datasource
 
 ## Source of truth (read before any work)
 
+**Understand code through graphify before reading files** (`docs/DEVELOPMENT.md` § Reading the
+code: graphify first); run `graphify affected "<Type>"` before changing any interface. Verify with
+`scripts/verify.sh <modules>` — done means it prints `RESULT: OK`.
+
 - `docs/DOMAIN.md` and the relevant flow doc (`docs/domain/provider-flow.md` or
   `customer-flow.md`) — read the BDD scenarios for your ticket's group; they describe the exact
   UI behavior expected (what's disabled when, what validation errors look like, what happens on
