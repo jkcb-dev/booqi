@@ -309,7 +309,10 @@ Notas de modelado (#18):
 - **Hora de la cita.** `Booking.scheduledAt` es un `LocalDateTime` (fecha + hora de inicio locales
   del Proveedor, igual que `TimeSlot`); aún no hay zonas horarias. Los instantes reales
   (`requestedAt`, `respondedAt`, `completedAt`) son `Instant`.
-- **Calificación.** Se guarda en la `Booking` (`Rating`: 1..5 estrellas + comentario opcional); el
+- **Calificación.** Solo la califica el Cliente de la Booking (#62): `CalificarCita` resuelve el
+  Usuario actual (mismo patrón que `CancelarReservaCliente`); orden de errores: sin sesión →
+  `Unauthorized`, Booking inexistente → `NotFound`, `customerId` distinto → `Unauthorized`, y
+  solo entonces las reglas (Completed, una vez, 1..5). Se guarda en la `Booking` (`Rating`: 1..5 estrellas + comentario opcional); el
   promedio y el conteo del Proveedor se recalculan desde *todas* sus `Booking` calificadas y se
   guardan en `ProviderProfile` (calculado, no incremental).
 - **Diferido (no hay sistema de notificaciones):** todo "el Cliente/Proveedor es notificado" y el
@@ -439,6 +442,20 @@ Escenario: El Cliente deja una calificación fuera del rango permitido
   Dado que existe una Booking en estado "Completed" sin calificación
   Cuando el Cliente elige menos de 1 o más de 5 estrellas
   Entonces el sistema rechaza la calificación y no se guarda nada
+
+Escenario: Solo el Cliente de la reserva puede calificarla
+  Dado que existe una Booking "Completed" sin calificación que pertenece a otro Cliente
+  Cuando un Usuario distinto del Cliente de esa Booking intenta calificarla
+  Entonces el sistema responde que no está autorizado
+  Y no se guarda ninguna calificación ni cambia el promedio del Proveedor
+  Y esto se decide antes que el resto de reglas: quien no es el Cliente no se entera, por el
+    error, de si la cita está completada o ya calificada
+
+Escenario: Un visitante sin sesión intenta calificar
+  Dado que no hay una sesión iniciada
+  Cuando intenta calificar una Booking
+  Entonces el sistema responde que no está autorizado
+  Y no se guarda nada
 
 Escenario: El promedio del Proveedor se recalcula desde todas sus calificaciones
   Dado que un Proveedor tiene citas completadas con 5, 4 y 3 estrellas
