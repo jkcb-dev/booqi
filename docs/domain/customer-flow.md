@@ -330,3 +330,27 @@ Escenario: Un Cliente sin reservas ve su historial vacío
   Cuando abre "Mis reservas"
   Entonces ve una lista vacía, no un error
 ```
+
+### Notas de implementación (#26 — Compose UI, `feature:booking`)
+
+- **Pantallas** (callbacks, sin `Navigator`): `BookingFlowScreen` (C5 horario + C7 confirmar),
+  `BookingDetailScreen` (C8 pendiente, C9 confirmada, C10 rechazada, C10b expirada, y las cerradas:
+  completada/cancelada), `MyBookingsScreen` (C11), `RateBookingScreen` (C12).
+- **Reservar exige sesión y correo verificado, pero se pide al enviar.** El visitante puede elegir
+  horario y ver el resumen; "Enviar solicitud" corre la guarda `RequerirCuentaVerificada` y, si
+  falla, muestra un aviso y llama `onSignInRequired` (sin sesión -> iniciar sesión; correo sin
+  verificar -> cuenta). Al volver al **mismo** servicio el flujo se retoma con el horario, la nota y
+  el paso elegidos (también al volver de agregar la dirección); entrar de cualquier otra forma
+  empieza limpio.
+- **Domicilio.** "A domicilio" usa la dirección guardada (`ObtenerMiDireccion`) como snapshot sin
+  volver a pedirla; sin dirección el envío queda bloqueado y se ofrece `onAddAddress` (pantalla #23).
+  Para "Local & Dom." el Cliente elige dónde (local por defecto) y solo "A domicilio" exige dirección.
+- **Horarios.** La grilla muestra todo lo que genera el horario del Proveedor ese día
+  (`GenerarTimeSlots`) y tacha lo que ya no está libre (`ObtenerTimeSlotsDisponibles`) o ya pasó
+  (reloj inyectado): el dominio no compara horarios con "ahora". Si el horario se ocupa antes de
+  enviar, la solicitud falla con `InvalidInput` y se vuelve a elegir con un mensaje.
+- **Pendiente vencida.** Una `Requested` con más de 24 h se muestra como expirada aunque el barrido
+  del backend aún no la haya guardado (opción C de `docs/ARCHITECTURE.md`).
+- **Cancelar.** El botón se deshabilita con un aviso dentro de las 3 horas (inclusive, igual que el
+  dominio); el dominio sigue siendo la autoridad si el plazo vence con el selector abierto.
+
