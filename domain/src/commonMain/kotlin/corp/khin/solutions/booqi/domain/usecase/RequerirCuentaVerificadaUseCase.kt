@@ -24,9 +24,10 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * exhaustive `when (error)` in `feature:*` — left to the UI sub-ticket; swapping it in is a
  * one-line change in [guard].
  *
- * Not wired into [SolicitarReservaUseCase] / [ActivarModoProveedorUseCase] on purpose (it would
- * change their signatures and force `feature:*` changes): the UI sub-ticket applies it in front of
- * both.
+ * [SolicitarReservaUseCase] applies it itself (#25: it needs the user anyway, for the Booking's
+ * customer-name snapshot, and a screen can't forget it). [ActivarModoProveedorUseCase] is not wired
+ * to it on purpose (it would change its signature and force `feature:*` changes): the UI
+ * sub-ticket applies it in front of that one.
  */
 class RequerirCuentaVerificadaUseCase(
     private val users: UserRepository,

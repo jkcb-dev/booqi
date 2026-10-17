@@ -1,6 +1,7 @@
 package corp.khin.solutions.booqi.domain.model
 
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.domain.usecase.APPOINTMENT
 import corp.khin.solutions.booqi.domain.usecase.REQUESTED_AT
 import corp.khin.solutions.booqi.domain.usecase.booking
 import corp.khin.solutions.booqi.domain.usecase.invalidInput
@@ -9,6 +10,8 @@ import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,6 +30,10 @@ class BookingTest {
 
     private val deadline = REQUESTED_AT + 24.hours
     private val inWindow = REQUESTED_AT + 1.hours
+    private val utc = TimeZone.UTC
+
+    /** An instant [hours] before the default [APPOINTMENT]'s start, read in UTC. */
+    private fun hoursBeforeStart(hours: Int) = APPOINTMENT.toInstant(utc) - hours.hours
 
     // --- The transition table is exactly the documented graph ---
 
@@ -113,6 +120,12 @@ class BookingTest {
             it.cancelByProvider(ProviderReasonCode.OTHER, null)
         }
 
+    @Test
+    fun `cancelByCustomer moves only a confirmed booking to cancelled by customer`() =
+        assertOnlyFrom(BookingStatus.CONFIRMED, BookingStatus.CANCELLED_BY_CUSTOMER) {
+            it.cancelByCustomer(CustomerReasonCode.OTHER, null, hoursBeforeStart(5), utc)
+        }
+
     // --- What each transition records ---
 
     @Test
@@ -142,6 +155,61 @@ class BookingTest {
         val completed = booking(status = BookingStatus.CONFIRMED).complete(inWindow).value()
 
         assertEquals(inWindow, completed.completedAt)
+    }
+
+    @Test
+    fun `cancelByCustomer stores the Customer reason and the free text of Otro`() {
+        val cancelled = booking(status = BookingStatus.CONFIRMED)
+            .cancelByCustomer(CustomerReasonCode.OTHER, "  Viaje  ", hoursBeforeStart(4), utc).value()
+
+        assertEquals(Reason(CustomerReasonCode.OTHER, "Viaje"), cancelled.reason)
+    }
+
+    @Test
+    fun `cancelByCustomer without a note or with a blank one stores no note`() {
+        val confirmed = booking(status = BookingStatus.CONFIRMED)
+
+        assertNull(confirmed.cancelByCustomer(CustomerReasonCode.CHANGE_OF_PLANS, null, hoursBeforeStart(4), utc).value().reason?.note)
+        assertNull(confirmed.cancelByCustomer(CustomerReasonCode.CHANGE_OF_PLANS, "  ", hoursBeforeStart(4), utc).value().reason?.note)
+    }
+
+    @Test
+    fun `a Customer can cancel up to exactly 3 hours before the start and not one millisecond later`() {
+        val confirmed = booking(status = BookingStatus.CONFIRMED)
+        val boundary = hoursBeforeStart(3)
+
+        assertEquals(
+            BookingStatus.CANCELLED_BY_CUSTOMER,
+            confirmed.cancelByCustomer(CustomerReasonCode.OTHER, null, boundary - 1.milliseconds, utc).value().status,
+        )
+        assertEquals(
+            BookingStatus.CANCELLED_BY_CUSTOMER,
+            confirmed.cancelByCustomer(CustomerReasonCode.OTHER, null, boundary, utc).value().status,
+        )
+        assertEquals(
+            Booking.TOO_LATE_TO_CANCEL_MESSAGE,
+            confirmed.cancelByCustomer(CustomerReasonCode.OTHER, null, boundary + 1.milliseconds, utc).invalidInput(),
+        )
+    }
+
+    @Test
+    fun `the 3 hour window reads scheduledAt in the given time zone`() {
+        val confirmed = booking(status = BookingStatus.CONFIRMED)
+        val plusThree = TimeZone.of("Etc/GMT-3") // UTC+3: 10:00 local is 07:00Z
+        val start = APPOINTMENT.toInstant(plusThree)
+
+        confirmed.cancelByCustomer(CustomerReasonCode.OTHER, null, start - 3.hours, plusThree).value()
+        confirmed.cancelByCustomer(CustomerReasonCode.OTHER, null, start - 2.hours, plusThree).invalidInput()
+    }
+
+    @Test
+    fun `a booking that is not confirmed gets the transition error even when it is too late`() {
+        val late = APPOINTMENT.toInstant(utc) - 1.hours
+
+        val message = booking(status = BookingStatus.COMPLETED)
+            .cancelByCustomer(CustomerReasonCode.OTHER, null, late, utc).invalidInput()
+
+        assertTrue(message != Booking.TOO_LATE_TO_CANCEL_MESSAGE)
     }
 
     @Test
@@ -317,5 +385,22 @@ class BookingTest {
         assertEquals("Timbre roto", created.customerNote)
         assertNull(created.reason)
         assertNull(created.rating)
+        assertNull(created.customerNameSnapshot)
+    }
+
+    @Test
+    fun `requested copies the customer name snapshot from the draft`() {
+        val draft = BookingDraft(
+            providerId = "p",
+            serviceId = "s",
+            customerId = "c",
+            scheduledAt = tenAm,
+            durationMinutesSnapshot = 45,
+            priceCentsSnapshot = 2000,
+            requestedAt = Instant.parse("2026-10-05T08:00:00Z"),
+            customerNameSnapshot = "Ana Pérez",
+        )
+
+        assertEquals("Ana Pérez", Booking.requested("booking-9", draft).customerNameSnapshot)
     }
 }

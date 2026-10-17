@@ -90,6 +90,7 @@ erDiagram
     float delivery_address_lat_snapshot "nullable, set together with the line"
     float delivery_address_lng_snapshot "nullable, set together with the line"
     string customer_note
+    string customer_name_snapshot "copied from PROFILES.display_name at request time, nullable (rows that predate it); erased on account deletion"
     string status "Requested|Confirmed|Completed|Rejected|Expired|CancelledByProvider|CancelledByCustomer"
     string reason_code "nullable, predefined + Otro; one pair serves rejection and cancellation (status says which)"
     string reason_note "nullable free text"
@@ -110,7 +111,7 @@ erDiagram
 | `provider_weekly_hours` | One row per day-of-week per provider. Modeling this as a JSON blob or 7 columns on `provider_profiles` would violate 1NF (repeating group) and make querying "who's open Tuesdays at 3pm" require unpacking JSON instead of a plain `WHERE`. |
 | `provider_blocked_dates` | Same reasoning — a provider can have any number of blocked dates, so it's a child table, not a list column. |
 | `services` | `category` is the C1 chip (a Postgres `ENUM` later, like `modality`; unknown values read as `otro`). `provider_profiles.location_lat/lng` are nullable: the Catalog's distance filter skips providers without them. `is_active` is a soft-delete flag, not a row deletion — per `docs/DOMAIN.md`, hard-deleting a `Service` would orphan `bookings.service_id` on historical (including completed) bookings. |
-| `bookings` | The `_snapshot` fields exist because `docs/DOMAIN.md` requires a booking to freeze the price/duration/address at request time — if we instead read live from `services`/`profiles` every time, a price change would retroactively alter what a past customer agreed to pay. `rating_stars`/`rating_comment` are embedded here rather than a separate `ratings` table because a rating is 1:1 with a completed booking and has no independent lifecycle of its own (still valid 3NF: both columns depend on nothing but `bookings.id`). |
+| `bookings` | The `_snapshot` fields exist because `docs/DOMAIN.md` requires a booking to freeze the price/duration/address at request time — if we instead read live from `services`/`profiles` every time, a price change would retroactively alter what a past customer agreed to pay. `rating_stars`/`rating_comment` are embedded here rather than a separate `ratings` table because a rating is 1:1 with a completed booking and has no independent lifecycle of its own (still valid 3NF: both columns depend on nothing but `bookings.id`). `customer_name_snapshot` is the Customer's display name at request time (#25) so a Provider's inbox shows who booked without a live join that drifts on rename/deletion; it is nullable (older rows) and set to `NULL` — like the address and note — when the Customer deletes their account. `reason_code` values are prefixed by who acts: `provider_*` (rejection, provider cancellation) and `customer_*` (customer cancellation, `CancelledByCustomer`). |
 
 ## Not yet done
 

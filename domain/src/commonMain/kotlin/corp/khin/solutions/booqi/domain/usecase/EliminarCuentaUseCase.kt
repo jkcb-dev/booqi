@@ -28,10 +28,10 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  *
  * **Otherwise the account is anonymized, not removed.** In this order, each step idempotent so a
  * failure part-way can simply be retried while the session is still alive:
- * 1. the personal data on the user's Customer-side Bookings — the delivery address snapshot and
- *    the free-text note — is erased; the Bookings themselves, their status and their **rating**
- *    stay, so the Provider's history and rating aggregate (`ratingAverage`/`ratingCount`, which
- *    this never recomputes) don't change;
+ * 1. the personal data on the user's Customer-side Bookings — the delivery address snapshot, the
+ *    free-text note and the customer-name snapshot (#25) — is erased; the Bookings themselves,
+ *    their status and their **rating** stay, so the Provider's history and rating aggregate
+ *    (`ratingAverage`/`ratingCount`, which this never recomputes) don't change;
  * 2. a ProviderProfile, if any, is anonymized and marked incomplete — the existing gate that
  *    removes it, and its Services, from Catalog search and public pages
  *    ([ProviderProfileRepository.anonymizeProfile]);
@@ -81,12 +81,17 @@ class EliminarCuentaUseCase(
             .map { AccountDeletionResult.Deleted }
 
     private suspend fun scrubPersonalData(customerBookings: List<Booking>): DomainResult<Unit> {
-        for (booking in customerBookings.filter { it.deliveryAddress != null || it.customerNote != null }) {
-            val result = bookings.updateBooking(booking.copy(deliveryAddress = null, customerNote = null))
+        for (booking in customerBookings.filter { it.hasPersonalData() }) {
+            val result = bookings.updateBooking(
+                booking.copy(deliveryAddress = null, customerNote = null, customerNameSnapshot = null),
+            )
             if (result is DomainResult.Failure) return result
         }
         return Unit.asSuccess()
     }
+
+    private fun Booking.hasPersonalData() =
+        deliveryAddress != null || customerNote != null || customerNameSnapshot != null
 
     private companion object {
         val ACTIVE_STATUSES: Set<BookingStatus> = BookingStatus.entries.filter { it.isActive }.toSet()

@@ -242,6 +242,35 @@ planes"*, *"Encontré otro Proveedor"*, *"Ya no necesito el servicio"*, *"Otro"*
 Ventana de cancelación: **hasta 3 horas antes** de la cita (más amplia que si fuera 2h, para
 compensar factores como tráfico en servicios a domicilio).
 
+### Notas de implementación (#25 — `CancelarReservaCliente` / `VerHistorialReservas`)
+
+- **Un solo state machine.** La cancelación del Cliente es `Booking.cancelByCustomer`
+  (`Confirmed → CancelledByCustomer`, la misma tabla de `BookingStatus` que usa todo el resto);
+  desde cualquier otro estado es `InvalidInput` (transición inválida), también en terminales.
+- **Motivos.** `CustomerReasonCode` (`CHANGE_OF_PLANS`, `FOUND_ANOTHER_PROVIDER`,
+  `NO_LONGER_NEEDED`, `OTHER`, códigos guardados `customer_*`) bajo la interfaz sellada
+  `ReasonCode`; `cancelByCustomer` solo acepta esa lista (y `reject`/`cancelByProvider` solo la del
+  Proveedor), así no se mezclan por error. El texto libre es opcional; en blanco se guarda ausente.
+- **Plazo de 3 horas, inclusivo.** Se permite mientras `ahora <= inicio − 3 h`: con exactamente 3
+  horas por delante todavía se puede ("hasta 3 horas antes"); un instante después se rechaza.
+  `scheduledAt` es la hora local del Proveedor (sin zona horaria todavía) y se interpreta en la zona
+  del dispositivo, igual que el resto de la app; `Clock` y zona se inyectan para poder probarlo.
+- **Solo la reserva propia.** La reserva debe ser del usuario con sesión (`customerId == user.id`);
+  la de otro, o no tener sesión, es `Unauthorized`. Una reserva inexistente es `NotFound`.
+- **El TimeSlot se libera** solo, porque `CancelledByCustomer` no ocupa horario
+  (`BookingStatus.occupiesSlot`); `ObtenerTimeSlotsDisponibles` vuelve a ofrecerlo.
+- **Historial.** `VerHistorialReservas` devuelve un `BookingHistory`: un grupo por estado (solo los
+  que tienen reservas) en orden fijo — pendientes, confirmadas, completadas, canceladas por el
+  Cliente, canceladas por el Proveedor, rechazadas, vencidas. Dentro del grupo, las abiertas
+  (pendiente/confirmada) van de la más próxima a la más lejana y las cerradas de la más reciente a la
+  más antigua (por `scheduledAt`, luego id). Sin reservas es una lista vacía; sin sesión,
+  `Unauthorized`.
+- **Quién reserva.** `SolicitarReserva` resuelve al usuario por sí mismo con la guarda
+  `RequerirCuentaVerificada` (sin sesión `Unauthorized`; correo sin verificar `InvalidInput`) y
+  `customerId` debe ser ese usuario (otro id → `Unauthorized`). De ahí copia el nombre del Cliente
+  como **snapshot** en la `Booking` (`customerNameSnapshot`, ver `identity-flow.md`).
+- **Diferido** (no hay sistema de notificaciones): avisar al Proveedor de la cancelación y su motivo.
+
 ```gherkin
 Escenario: El Cliente cancela una reserva confirmada a tiempo
   Dado que existe una Booking en estado "Confirmed" que empieza en más de 3 horas
@@ -250,15 +279,54 @@ Escenario: El Cliente cancela una reserva confirmada a tiempo
   Y el TimeSlot vuelve a estar disponible para otros Clientes
   Y el Proveedor es notificado de la cancelación y el motivo
 
+Escenario: El Cliente cancela justo 3 horas antes de la cita
+  Dado que existe una Booking en estado "Confirmed" que empieza dentro de exactamente 3 horas
+  Cuando el Cliente la cancela
+  Entonces la Booking pasa a estado "CancelledByCustomer"
+  (el plazo es "hasta 3 horas antes", inclusive)
+
 Escenario: El Cliente intenta cancelar fuera del plazo permitido
   Dado que existe una Booking en estado "Confirmed" que empieza en menos de 3 horas
   Cuando el Cliente intenta cancelarla
   Entonces el sistema rechaza la cancelación
   Y muestra un mensaje indicando que ya no se puede cancelar (fuera del plazo de 3 horas)
 
+Escenario: El Cliente solo puede cancelar reservas confirmadas
+  Dado que existe una Booking en estado "Requested", "Completed", "Rejected", "Expired" o cancelada
+  Cuando el Cliente intenta cancelarla
+  Entonces el sistema rechaza la cancelación (transición inválida) y la Booking no cambia
+
+Escenario: El Cliente no puede cancelar la reserva de otro
+  Dado que existe una Booking "Confirmed" de otro Cliente
+  Cuando un Cliente distinto intenta cancelarla
+  Entonces el sistema responde "no autorizado" y la Booking no cambia
+
+Escenario: Cancelar sin haber iniciado sesión
+  Dado que el visitante no tiene una sesión iniciada
+  Cuando intenta cancelar una reserva
+  Entonces el sistema responde "no autorizado"
+
+Escenario: Solicitar una reserva exige una cuenta verificada
+  Dado que el visitante no inició sesión, o inició sesión con un correo sin verificar
+  Cuando intenta solicitar una reserva
+  Entonces no se crea ninguna Booking
+  Y recibe "no autorizado" (sin sesión) o un error de validación pidiendo verificar el correo
+
+Escenario: La reserva guarda el nombre del Cliente al momento de solicitarla
+  Dado que la Cliente "Ana" tiene la sesión iniciada
+  Cuando solicita una reserva
+  Entonces la Booking guarda el nombre "Ana" como copia (snapshot)
+  Y si después cambia su nombre a "Ana María", la Booking sigue diciendo "Ana"
+
 Escenario: El Cliente consulta su historial de reservas
   Dado que el Cliente tiene reservas en distintos estados (pendiente, confirmada, completada,
     cancelada)
   Cuando abre "Mis reservas"
   Entonces las ve separadas o marcadas claramente por estado
+  Y solo ve las suyas, en un orden determinista (ver notas)
+
+Escenario: Un Cliente sin reservas ve su historial vacío
+  Dado que el Cliente no ha hecho ninguna reserva
+  Cuando abre "Mis reservas"
+  Entonces ve una lista vacía, no un error
 ```

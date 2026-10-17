@@ -173,6 +173,7 @@ class EliminarCuentaUseCaseTest {
             booking(id = "b-1", customerId = me.id, status = BookingStatus.COMPLETED).copy(
                 deliveryAddress = Address("Av. Corrientes 1234", -34.6, -58.4),
                 customerNote = "Timbre roto, llamar al celular",
+                customerNameSnapshot = "Ana",
             ),
         )
 
@@ -180,6 +181,7 @@ class EliminarCuentaUseCaseTest {
 
         assertNull(bookings.stored("b-1").deliveryAddress)
         assertNull(bookings.stored("b-1").customerNote)
+        assertNull(bookings.stored("b-1").customerNameSnapshot)
         assertEquals(BookingStatus.COMPLETED, bookings.stored("b-1").status)
     }
 

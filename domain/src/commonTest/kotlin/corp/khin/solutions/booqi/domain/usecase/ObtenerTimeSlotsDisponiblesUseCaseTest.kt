@@ -3,10 +3,13 @@ package corp.khin.solutions.booqi.domain.usecase
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.BookingStatus
+import corp.khin.solutions.booqi.domain.model.CustomerReasonCode
 import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -98,6 +101,22 @@ class ObtenerTimeSlotsDisponiblesUseCaseTest {
         assertEquals(listOf(time(9), time(11)), starts())
 
         CancelarReservaAceptadaUseCase(f.bookings)("booking-1", ProviderReasonCode.OTHER).value()
+
+        assertEquals(listOf(time(9), time(10), time(11)), starts())
+    }
+
+    @Test
+    fun `a slot comes back after the Customer cancels the confirmed appointment`() = runTest {
+        f.givenProvider()
+        f.signInCustomer("customer-1")
+        bookAt(10, BookingStatus.CONFIRMED, id = "booking-1")
+        assertEquals(listOf(time(9), time(11)), starts())
+        f.clock.now = LocalDateTime(MONDAY_DATE, time(10)).toInstant(TimeZone.UTC) - 24.hours
+
+        CancelarReservaClienteUseCase(ObtenerUsuarioActualUseCase(f.users), f.bookings, f.clock, TimeZone.UTC)(
+            "booking-1",
+            CustomerReasonCode.CHANGE_OF_PLANS,
+        ).value()
 
         assertEquals(listOf(time(9), time(10), time(11)), starts())
     }

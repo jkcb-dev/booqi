@@ -11,6 +11,7 @@ import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 import corp.khin.solutions.booqi.domain.model.TimeSlot
+import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import kotlin.time.Clock
@@ -40,6 +41,7 @@ class SolicitarReservaUseCase(
     private val bookings: BookingRepository,
     private val services: ServiceRepository,
     private val availableSlots: ObtenerTimeSlotsDisponiblesUseCase,
+    private val requireVerifiedAccount: RequerirCuentaVerificadaUseCase,
     private val clock: Clock = Clock.System,
 ) {
     suspend operator fun invoke(
@@ -49,9 +51,12 @@ class SolicitarReservaUseCase(
         deliveryAddress: Address? = null,
         customerNote: String? = null,
     ): DomainResult<Booking> =
-        services.getService(serviceId).flatMap { service ->
-            validate(service, slot, deliveryAddress)?.asFailure()
-                ?: createIfAvailable(slot, draft(service, customerId, slot, deliveryAddress, customerNote))
+        requireVerifiedAccount().flatMap { user ->
+            if (user.id != customerId) return DomainError.Unauthorized.asFailure()
+            services.getService(serviceId).flatMap { service ->
+                validate(service, slot, deliveryAddress)?.asFailure()
+                    ?: createIfAvailable(slot, draft(service, user, slot, deliveryAddress, customerNote))
+            }
         }
 
     // The draft carries the snapshots; its duration is the Service's, which is what the slot must fit.
@@ -77,19 +82,20 @@ class SolicitarReservaUseCase(
 
     private fun draft(
         service: Service,
-        customerId: String,
+        customer: User,
         slot: TimeSlot,
         deliveryAddress: Address?,
         customerNote: String?,
     ) = BookingDraft(
         providerId = service.providerId,
         serviceId = service.id,
-        customerId = customerId,
+        customerId = customer.id,
         scheduledAt = LocalDateTime(slot.date, slot.start),
         durationMinutesSnapshot = service.durationMinutes,
         priceCentsSnapshot = service.priceCents,
         requestedAt = clock.now(),
         deliveryAddress = deliveryAddress.takeUnless { service.modality == ServiceModality.LOCAL },
         customerNote = customerNote?.trim()?.takeIf { it.isNotEmpty() },
+        customerNameSnapshot = customer.displayName.trim().takeIf { it.isNotEmpty() },
     )
 }

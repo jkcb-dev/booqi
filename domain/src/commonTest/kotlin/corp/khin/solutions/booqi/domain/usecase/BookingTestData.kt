@@ -43,6 +43,7 @@ internal fun booking(
     reason: Reason? = null,
     rating: Rating? = null,
     completedAt: Instant? = null,
+    customerNameSnapshot: String? = null,
 ) = Booking(
     id = id,
     providerId = providerId,
@@ -56,6 +57,7 @@ internal fun booking(
     reason = reason,
     rating = rating,
     completedAt = completedAt,
+    customerNameSnapshot = customerNameSnapshot,
 )
 
 /** Asserts a failure carrying [DomainError.InvalidInput] and returns its message. */

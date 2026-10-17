@@ -132,6 +132,17 @@ What implementing revealed, so the decisions above stay honest:
 
 - Whether a deleted Provider's still-public reviews should keep showing on their (now hidden)
   profile — moot while the profile is hidden; revisit if profiles become reachable by link.
-- The "name saved in the booking" in the update-profile scenario implies a **customer name
-  snapshot on `Booking`** (consistent with the snapshot rule in `DOMAIN.md`) — confirm when the
-  Customer booking flow (#25) is built.
+
+## Resolved
+
+- **Customer-name snapshot on `Booking` (resolved in #25).** Yes: `Booking.customerNameSnapshot`
+  (`bookings.customer_name_snapshot`, nullable) is copied from the signed-in user's display name by
+  `SolicitarReserva` when the request is made, so a rename later does not change it (scenario in
+  `customer-flow.md` § Grupo 3). It is `null` for Bookings that predate it, and — as personal data —
+  it is erased on account deletion together with the address and note (`EliminarCuenta`; the
+  Booking and its rating stay). The Provider's inbox still shows the name resolved through
+  `ObtenerUsuarioPublico`; it can switch to the snapshot (with "Usuario eliminado" for a `null` one)
+  in a UI follow-up.
+- **`SolicitarReserva` applies the access guard itself (#25).** It resolves the user through
+  `RequerirCuentaVerificada` (sin sesión → `Unauthorized`, correo sin verificar → `InvalidInput`)
+  and requires `customerId` to be that user.

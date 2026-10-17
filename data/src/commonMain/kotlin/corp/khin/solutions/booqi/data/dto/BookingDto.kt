@@ -11,7 +11,8 @@ package corp.khin.solutions.booqi.data.dto
  * (`"2026-10-03T10:00:00Z"`); [status] is one of `Requested | Confirmed | Completed | Rejected |
  * Expired | CancelledByProvider | CancelledByCustomer`; [reasonCode] is the stored code of a
  * predefined reason. The delivery-address snapshot is three nullable columns (all set, or all
- * `null`).
+ * `null`). [customerNameSnapshot] (`customer_name_snapshot`, #25) is the Customer's display name
+ * at request time; `null` for rows that predate it, hence the default.
  */
 data class BookingDto(
     val id: String,
@@ -33,6 +34,7 @@ data class BookingDto(
     val requestedAt: String,
     val respondedAt: String?,
     val completedAt: String?,
+    val customerNameSnapshot: String? = null,
 )
 
 /**
@@ -52,4 +54,5 @@ data class BookingDraftDto(
     val deliveryAddressLngSnapshot: Double?,
     val customerNote: String?,
     val requestedAt: String,
+    val customerNameSnapshot: String? = null,
 )
