@@ -34,17 +34,25 @@ import kotlin.time.Duration.Companion.minutes
  * are real [Instant]s (moments in time, used for the 24h response window).
  *
  * **State machine.** [status] changes only through [confirm], [reject], [expire], [complete] and
- * [cancelByProvider], which all funnel through one private function backed by
+ * [cancelByProvider] and [cancelByCustomer], which all funnel through one private function backed by
  * [BookingStatus.allowedTransitions] ([rate] attaches a rating but is not a status change). Each
  * returns the updated copy, or a [DomainError.InvalidInput] — never a silently allowed or ignored
- * invalid transition. (The
- * Customer's cancellation, `CancelledByCustomer`, is in the table but its transition function and
- * 3-hour rule belong to ticket #25.) Notifying the other party after a transition is deferred —
- * no notification system exists yet.
+ * invalid transition. The Customer's cancellation also carries the **3-hour rule** (#25), see
+ * [cancelByCustomer]. Notifying the other party after a transition is deferred — no notification
+ * system exists yet.
+ *
+ * **Customer name snapshot (#25).** [customerNameSnapshot] is the Customer's display name copied
+ * when the request was made (`SolicitarReserva`), so the Provider's inbox can show who booked
+ * without a live lookup that drifts when the Customer renames or deletes their account (the
+ * snapshot is erased on account deletion, like the address and note). `null` for Bookings created
+ * before the snapshot existed — screens fall back to the live `User` name until they switch to it.
  *
  * Lifecycle and persistence are driven by the Scheduling use cases; see
  * [corp.khin.solutions.booqi.domain.usecase.SolicitarReservaUseCase] for creation.
  */
+// One function per state-machine transition plus its two private helpers: splitting the aggregate's
+// behaviour across files would hide the single path every status change must take.
+@Suppress("TooManyFunctions")
 data class Booking(
     val id: String,
     val providerId: String,
@@ -61,6 +69,7 @@ data class Booking(
     val rating: Rating? = null,
     val respondedAt: Instant? = null,
     val completedAt: Instant? = null,
+    val customerNameSnapshot: String? = null,
 ) {
     /** The TimeSlot this Booking holds (while [BookingStatus.occupiesSlot]). */
     val timeSlot: TimeSlot get() = TimeSlot(providerId, scheduledAt.date, scheduledAt.time)
@@ -115,6 +124,29 @@ data class Booking(
         moveTo(BookingStatus.CANCELLED_BY_PROVIDER) { copy(reason = Reason.of(code, note)) }
 
     /**
+     * CONFIRMED → CANCELLED_BY_CUSTOMER with a predefined Customer reason ([code] + optional
+     * [note]), allowed **up to 3 hours before** the appointment ([CUSTOMER_CANCELLATION_WINDOW]):
+     * `now <= start - 3h` is accepted — exactly three hours before still counts ("hasta 3 horas
+     * antes"), one instant later is refused. [scheduledAt] is the Provider's wall-clock start, read
+     * in [timeZone] (the same interpretation the UI uses for "has it ended", there is no timezone
+     * feature yet). A Booking that isn't CONFIRMED gets the usual invalid-transition error, whatever
+     * the time; a CONFIRMED one that is too late gets [TOO_LATE_TO_CANCEL_MESSAGE].
+     */
+    fun cancelByCustomer(
+        code: CustomerReasonCode,
+        note: String?,
+        now: Instant,
+        timeZone: TimeZone,
+    ): DomainResult<Booking> =
+        if (status.canTransitionTo(BookingStatus.CANCELLED_BY_CUSTOMER) &&
+            now > scheduledAt.toInstant(timeZone) - CUSTOMER_CANCELLATION_WINDOW
+        ) {
+            DomainError.InvalidInput(TOO_LATE_TO_CANCEL_MESSAGE).asFailure()
+        } else {
+            moveTo(BookingStatus.CANCELLED_BY_CUSTOMER) { copy(reason = Reason.of(code, note)) }
+        }
+
+    /**
      * Attaches the Customer's [rating]. Only a COMPLETED Booking, only once, stars within
      * [Rating.MIN_STARS]..[Rating.MAX_STARS]; a blank comment is stored as `null`. Not a status
      * transition — the Booking stays COMPLETED.
@@ -151,6 +183,12 @@ data class Booking(
         /** How long the Provider has to answer a request before it expires. */
         val RESPONSE_WINDOW: Duration = 24.hours
 
+        /** How long before the appointment the Customer may still cancel a confirmed Booking. */
+        val CUSTOMER_CANCELLATION_WINDOW: Duration = 3.hours
+
+        const val TOO_LATE_TO_CANCEL_MESSAGE =
+            "Ya no se puede cancelar: la cancelación es hasta 3 horas antes de la cita"
+
         /** Builds the initial REQUESTED Booking for [draft] under the storage-assigned [id]. */
         fun requested(id: String, draft: BookingDraft): Booking = Booking(
             id = id,
@@ -163,6 +201,7 @@ data class Booking(
             requestedAt = draft.requestedAt,
             deliveryAddress = draft.deliveryAddress,
             customerNote = draft.customerNote,
+            customerNameSnapshot = draft.customerNameSnapshot,
         )
     }
 }
@@ -182,4 +221,5 @@ data class BookingDraft(
     val requestedAt: Instant,
     val deliveryAddress: Address? = null,
     val customerNote: String? = null,
+    val customerNameSnapshot: String? = null,
 )

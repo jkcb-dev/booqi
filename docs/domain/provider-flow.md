@@ -290,16 +290,16 @@ Notas de modelado (#18):
   (`Requested → Confirmed | Rejected | Expired`, `Confirmed → Completed | CancelledByProvider |
   CancelledByCustomer`; el resto son estados terminales). Todo cambio de estado pasa por las
   funciones de transición de `Booking` (`confirm`, `reject`, `expire`, `complete`,
-  `cancelByProvider`), que devuelven `DomainError.InvalidInput` ante una transición inválida —
+  `cancelByProvider`, `cancelByCustomer`), que devuelven `DomainError.InvalidInput` ante una transición inválida —
   nunca se permite ni se ignora en silencio. Los casos de uso solo cargan, transicionan y guardan.
-  La transición `CancelledByCustomer` está en la tabla, pero su función y la regla de 3 horas son de
-  #25.
+  La transición `CancelledByCustomer` (`cancelByCustomer`, con la regla de 3 horas) la implementó
+  #25: ver `customer-flow.md` § Grupo 3.
 - **Plazo de 24 horas.** Una solicitud vence cuando `requestedAt + 24 h <= ahora` (el instante
   exacto ya cuenta como vencida). Aceptar o rechazar una solicitud vencida se rechaza aunque el
   barrido aún no la haya pasado a `Expired`; `Expired` solo se alcanza una vez vencido el plazo. Los
   casos de uso que dependen de "ahora" reciben un `Clock` (por defecto `Clock.System`).
 - **Motivos.** Un `Reason` es un código predefinido + nota opcional. El Proveedor usa
-  `ProviderReasonCode` (los tres motivos + "Otro"); la lista del Cliente (#25) será otro enum
+  `ProviderReasonCode` (los tres motivos + "Otro"); la lista del Cliente (#25) es otro enum
   (`CustomerReasonCode`) bajo la misma interfaz sellada `ReasonCode`. El texto libre es opcional y
   una nota en blanco se guarda como ausente.
 - **Snapshots.** `Booking` guarda por ID `providerId`/`serviceId`/`customerId` y copia, al solicitar,

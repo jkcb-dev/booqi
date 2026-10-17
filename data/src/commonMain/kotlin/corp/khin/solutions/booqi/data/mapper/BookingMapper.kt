@@ -6,6 +6,7 @@ import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
+import corp.khin.solutions.booqi.domain.model.CustomerReasonCode
 import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.Rating
 import corp.khin.solutions.booqi.domain.model.Reason
@@ -29,6 +30,7 @@ fun BookingDto.toDomain(): Booking = Booking(
     rating = ratingStars?.let { Rating(it, ratingComment) },
     respondedAt = respondedAt?.let(Instant::parse),
     completedAt = completedAt?.let(Instant::parse),
+    customerNameSnapshot = customerNameSnapshot,
 )
 
 // The three address columns are all set or all null; any other combination is a data
@@ -60,6 +62,7 @@ fun Booking.toDto(): BookingDto = BookingDto(
     requestedAt = requestedAt.toString(),
     respondedAt = respondedAt?.toString(),
     completedAt = completedAt?.toString(),
+    customerNameSnapshot = customerNameSnapshot,
 )
 
 fun BookingDraft.toDto(): BookingDraftDto = BookingDraftDto(
@@ -74,6 +77,7 @@ fun BookingDraft.toDto(): BookingDraftDto = BookingDraftDto(
     deliveryAddressLngSnapshot = deliveryAddress?.longitude,
     customerNote = customerNote,
     requestedAt = requestedAt.toString(),
+    customerNameSnapshot = customerNameSnapshot,
 )
 
 // Explicit both ways (not enum names) so the stored strings stay exactly the ones in
@@ -99,8 +103,8 @@ private fun BookingStatus.toDtoStatus(): String = when (this) {
     BookingStatus.CANCELLED_BY_CUSTOMER -> "CancelledByCustomer"
 }
 
-// Storage codes are unique across every ReasonCode implementation, so one lookup finds the enum;
-// ticket #25 adds its CustomerReasonCode.entries here.
+// Storage codes are unique across every ReasonCode implementation (provider_* / customer_*), so one
+// lookup finds the enum.
 private fun String.toDomainReasonCode(): ReasonCode =
-    ProviderReasonCode.entries.firstOrNull { it.storageCode == this }
+    (ProviderReasonCode.entries + CustomerReasonCode.entries).firstOrNull { it.storageCode == this }
         ?: error("Unknown Booking reason code: $this")

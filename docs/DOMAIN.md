@@ -25,9 +25,9 @@ enough to justify the ceremony.
 | **TimeSlot** | A specific bookable unit of time for a Provider. Value object — equality by value (`providerId` + date + start time), no identity of its own. |
 | **Availability** | A Provider's recurring weekly schedule (one range per day of the week) plus specific blocked dates/times. Value object, references its Provider by `providerId`. The optional "paused" date range (vacation mode) lives on `ProviderProfile.pausedRange` and is passed in alongside when TimeSlots are generated from this. |
 | **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` and `docs/domain/customer-flow.md` for the full state machine. |
-| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. In code (`BookingStatus`: `REQUESTED`, `CONFIRMED`, …) the transition table lives in `BookingStatus` and every change goes through `Booking`'s transition functions, which reject invalid ones with `InvalidInput`. |
+| **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment, boundary included). No other transitions are valid. In code (`BookingStatus`: `REQUESTED`, `CONFIRMED`, …) the transition table lives in `BookingStatus` and every change goes through `Booking`'s transition functions, which reject invalid ones with `InvalidInput`. |
 | **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). In code it is the small `Address` value object (display line + latitude/longitude), introduced by `Booking` (#18) for the delivery-address *snapshot*; the Customer's saved address is `User.address` (#22, `profiles.address_*`) and reuses it. Both coordinates are required; `AgregarDireccion` / `ActualizarDireccion` / `ObtenerMiDireccion` manage it, and account deletion erases it. |
-| **Reason** | Why a Booking was rejected or cancelled: a predefined code + optional free text. The list of codes depends on who acts — `ProviderReasonCode` today, a Customer list in #25, both under the sealed `ReasonCode`. |
+| **Reason** | Why a Booking was rejected or cancelled: a predefined code + optional free text. The list of codes depends on who acts — `ProviderReasonCode` and `CustomerReasonCode` (#25), both under the sealed `ReasonCode`. |
 | **Rating** | A Customer's 1–5 stars + optional comment on a completed Booking. Embedded in `Booking`, not an aggregate. |
 
 ## Bounded contexts
@@ -92,8 +92,12 @@ scheduling *trigger* is deliberately not built, see `docs/ARCHITECTURE.md` § Bo
 trigger), `CalificarCita` with the Provider's rating recomputation, the available-TimeSlots query
 and the Provider's queries (inbox, detail, agenda, reviews). **Provider UI built (#19):** the booking
 inbox/agenda with accept, reject, complete and cancel, and the received ratings on the profile.
-**Not built:** the Customer's `CancelarReservaCliente`/`VerHistorialReservas` (#25), any
-notification, and the Customer's UI.
+**Customer side, domain & data built (#25):** `CancelarReservaCliente` (`Confirmed →
+CancelledByCustomer` through `Booking.cancelByCustomer`, own bookings only, up to 3h before the
+start inclusive, with a `CustomerReasonCode`), `VerHistorialReservas` (the signed-in Customer's
+Bookings grouped by status in a fixed, documented order) and `Booking.customerNameSnapshot`, set by
+`SolicitarReserva`, which now resolves the user itself through `RequerirCuentaVerificada` and
+requires `customerId` to be that user. **Not built:** any notification and the Customer's UI.
 
 ## Aggregate boundaries — the rule that matters
 
@@ -108,6 +112,7 @@ Booking (aggregate root)
 ├─ providerId: String      ← reference (= ProviderProfile.id)
 ├─ serviceId: String       ← reference
 ├─ customerId: String      ← reference
+├─ customerNameSnapshot: String?  ← copied from User.displayName at request time (#25); erased on account deletion
 ├─ scheduledAt: LocalDateTime  ← provider-local date + start time (= timeSlot), no timezone yet
 ├─ durationMinutesSnapshot / priceCentsSnapshot: Int  ← copied from Service at request time
 ├─ deliveryAddress: Address?  ← snapshot copied at request time, only if Service modality = Domicilio; never a live reference to User.direccion
@@ -144,10 +149,12 @@ time a rating is left (never incremented), so they cannot drift.
 - **Payments are out of scope for V1** — Bookings reach `Confirmed` without any payment step.
   Revisit when payments are designed; it will likely insert a state between `Requested` and
   `Confirmed`, or attach to `Confirmed`, not replace the flow above.
-- **Cancellation reason options are assumed to reuse the same predefined list as rejection**
-  ("No disponible en este horario" / "Fuera de mi zona de servicio" / "Servicio no disponible
-  temporalmente" / "Otro" + free text) — this was proposed but not explicitly re-confirmed after
-  the rejection-reason discussion; flagged here so it's easy to correct if wrong.
+- **The Provider's cancellation reason options are assumed to reuse the same predefined list as
+  rejection** ("No disponible en este horario" / "Fuera de mi zona de servicio" / "Servicio no
+  disponible temporalmente" / "Otro" + free text) — this was proposed but not explicitly re-confirmed
+  after the rejection-reason discussion; flagged here so it's easy to correct if wrong. The Customer
+  has its own list ("Cambio de planes" / "Encontré otro Proveedor" / "Ya no necesito el servicio" /
+  "Otro", `CustomerReasonCode`, #25).
 
 ## See also
 

@@ -10,6 +10,7 @@ import corp.khin.solutions.booqi.domain.usecase.BloquearFechaHoraUseCase
 import corp.khin.solutions.booqi.domain.usecase.BuscarServiciosUseCase
 import corp.khin.solutions.booqi.domain.usecase.CalificarCitaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CancelarReservaAceptadaUseCase
+import corp.khin.solutions.booqi.domain.usecase.CancelarReservaClienteUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarCitaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarPerfilDeProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.DefinirHorarioSemanalUseCase
@@ -33,6 +34,7 @@ import corp.khin.solutions.booqi.domain.usecase.RecalcularCalificacionDelProveed
 import corp.khin.solutions.booqi.domain.usecase.RechazarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.SolicitarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerDetalleServicioUseCase
+import corp.khin.solutions.booqi.domain.usecase.VerHistorialReservasUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ActualizarPerfilDeUsuarioUseCase
 import corp.khin.solutions.booqi.domain.usecase.CerrarSesionUseCase
@@ -72,7 +74,7 @@ val domainModule = module {
     factory { RecalcularCalificacionDelProveedorUseCase(get(), get()) }
     factory { CalificarCitaUseCase(get(), get()) }
     factory { ObtenerTimeSlotsDisponiblesUseCase(get(), get(), get(), get()) }
-    factory { SolicitarReservaUseCase(get(), get(), get()) }
+    factory { SolicitarReservaUseCase(get(), get(), get(), get()) }
     factory { ObtenerSolicitudesPendientesUseCase(get()) }
     factory { ObtenerReservaUseCase(get()) }
     factory { ObtenerReservasDelProveedorUseCase(get()) }
@@ -99,4 +101,8 @@ val domainModule = module {
     factory { AgregarDireccionUseCase(get()) }
     factory { ActualizarDireccionUseCase(get()) }
     factory { ObtenerMiDireccionUseCase(get()) }
+    // Cliente · Reservas (#25). SolicitarReserva resolves the user via RequerirCuentaVerificada;
+    // CancelarReservaCliente uses its Clock.System / system-zone defaults.
+    factory { CancelarReservaClienteUseCase(get(), get()) }
+    factory { VerHistorialReservasUseCase(get(), get()) }
 }

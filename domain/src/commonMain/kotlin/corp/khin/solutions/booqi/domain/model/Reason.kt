@@ -6,9 +6,8 @@ package corp.khin.solutions.booqi.domain.model
  * [Booking] tells whether it is a rejection or a cancellation.
  *
  * The *list* of codes depends on who acts, so [ReasonCode] is a sealed interface with one enum per
- * actor: [ProviderReasonCode] (Grupo 4, docs/domain/provider-flow.md) today, and a
- * `CustomerReasonCode` that ticket #25 adds beside it ("Cambio de planes" / "Encontré otro
- * Proveedor" / ...) without redesigning this class. Notifying the other party of the reason is
+ * actor: [ProviderReasonCode] (Grupo 4, docs/domain/provider-flow.md) and [CustomerReasonCode]
+ * (Grupo 3, docs/domain/customer-flow.md, #25). Notifying the other party of the reason is
  * deferred — no notification system exists yet.
  */
 data class Reason(
@@ -49,4 +48,23 @@ enum class ProviderReasonCode(override val storageCode: String) : ReasonCode {
 
     /** "Otro" — the free-text [Reason.note] is optional. */
     OTHER("provider_other"),
+}
+
+/**
+ * The Customer's predefined reasons for cancelling a confirmed appointment (docs/domain/customer-flow.md
+ * § Grupo 3) — deliberately a different list from [ProviderReasonCode]. Wording shown to users
+ * lives in the UI layer.
+ */
+enum class CustomerReasonCode(override val storageCode: String) : ReasonCode {
+    /** "Cambio de planes". */
+    CHANGE_OF_PLANS("customer_change_of_plans"),
+
+    /** "Encontré otro Proveedor". */
+    FOUND_ANOTHER_PROVIDER("customer_found_another_provider"),
+
+    /** "Ya no necesito el servicio". */
+    NO_LONGER_NEEDED("customer_no_longer_needed"),
+
+    /** "Otro" — the free-text [Reason.note] is optional. */
+    OTHER("customer_other"),
 }

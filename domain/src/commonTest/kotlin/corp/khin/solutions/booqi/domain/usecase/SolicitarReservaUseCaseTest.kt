@@ -8,6 +8,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 import corp.khin.solutions.booqi.domain.model.TimeSlot
+import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -123,6 +124,68 @@ class SolicitarReservaUseCaseTest {
         DeshabilitarServicioUseCase(f.services)(service.id).value()
 
         assertEquals(BookingStatus.REQUESTED, f.bookings.stored(booking.id).status)
+    }
+
+    // --- Who is booking (#25): the signed-in, verified user; the name snapshot ---
+
+    @Test
+    fun `the booking copies the signed in customer's display name as a snapshot`() = runTest {
+        val service = ready()
+        f.signInCustomer("customer-1", name = "  Ana Pérez ")
+
+        val booking = f.solicitarUseCase("customer-1", service.id, f.slot(9)).value()
+
+        assertEquals("Ana Pérez", booking.customerNameSnapshot)
+        assertEquals("Ana Pérez", f.bookings.stored(booking.id).customerNameSnapshot)
+    }
+
+    @Test
+    fun `a later rename does not change the snapshot`() = runTest {
+        val service = ready()
+        f.signInCustomer("customer-1", name = "Ana")
+        val booking = f.solicitarUseCase("customer-1", service.id, f.slot(9)).value()
+
+        ActualizarPerfilDeUsuarioUseCase(f.users)("Ana María", null).value()
+
+        assertEquals("Ana", f.bookings.stored(booking.id).customerNameSnapshot)
+    }
+
+    @Test
+    fun `a blank display name leaves the snapshot absent`() = runTest {
+        val service = ready()
+        f.signInCustomer("customer-1", name = "   ")
+
+        assertNull(f.solicitarUseCase("customer-1", service.id, f.slot(9)).value().customerNameSnapshot)
+    }
+
+    @Test
+    fun `without a session the request is Unauthorized and nothing is read or written`() = runTest {
+        val service = ready()
+
+        f.solicitarUseCase("customer-1", service.id, f.slot(9)).assertUnauthorized()
+
+        assertEquals(0, f.bookings.writeCount)
+    }
+
+    @Test
+    fun `an unverified email cannot book`() = runTest {
+        val service = ready()
+        f.users.seedSignedIn(User("customer-1", "Ana", "ana@example.com", isEmailVerified = false))
+
+        val message = f.solicitarUseCase("customer-1", service.id, f.slot(9)).invalidInput()
+
+        assertEquals(RequerirCuentaVerificadaUseCase.EMAIL_NOT_VERIFIED_MESSAGE, message)
+        assertEquals(0, f.bookings.writeCount)
+    }
+
+    @Test
+    fun `nobody can book in another user's name`() = runTest {
+        val service = ready()
+        f.signInCustomer("customer-1")
+
+        f.solicitarUseCase("customer-2", service.id, f.slot(9)).assertUnauthorized()
+
+        assertEquals(0, f.bookings.writeCount)
     }
 
     // --- Delivery address ---

@@ -8,6 +8,7 @@ import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
+import corp.khin.solutions.booqi.domain.model.CustomerReasonCode
 import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.Rating
 import corp.khin.solutions.booqi.domain.model.Reason
@@ -98,6 +99,47 @@ class BookingRepositoryImplTest {
             repository.updateBooking(withReason)
             assertEquals(withReason, repository.getBooking(created.id).ok())
         }
+    }
+
+    @Test
+    fun `every Customer reason survives a round trip and is told apart from the Provider's`() = runTest {
+        val created = create()
+        for (code in CustomerReasonCode.entries) {
+            val cancelled = created.copy(
+                status = BookingStatus.CANCELLED_BY_CUSTOMER,
+                reason = Reason(code, "nota"),
+            )
+            repository.updateBooking(cancelled)
+            assertEquals(cancelled, repository.getBooking(created.id).ok())
+        }
+        val storageCodes = (ProviderReasonCode.entries + CustomerReasonCode.entries).map { it.storageCode }
+        assertEquals(storageCodes.size, storageCodes.toSet().size)
+    }
+
+    @Test
+    fun `the customer name snapshot is stored with the booking and survives updates`() = runTest {
+        val created = create(draft().copy(customerNameSnapshot = "Ana Pérez"))
+
+        assertEquals("Ana Pérez", created.customerNameSnapshot)
+        val updated = created.copy(status = BookingStatus.CONFIRMED)
+        repository.updateBooking(updated)
+        assertEquals("Ana Pérez", repository.getBooking(created.id).ok().customerNameSnapshot)
+    }
+
+    @Test
+    fun `a booking created without a name snapshot has none`() = runTest {
+        assertNull(create().customerNameSnapshot)
+    }
+
+    @Test
+    fun `customer bookings are scoped to that customer and ordered by scheduled time then id`() = runTest {
+        create(draft(scheduledAt = LocalDateTime(2026, 10, 14, 10, 0)))
+        create(draft(scheduledAt = LocalDateTime(2026, 10, 12, 10, 0)))
+        repository.createBooking(draft().copy(customerId = "c2"))
+
+        val mine = repository.getBookingsByCustomer("c1").ok()
+
+        assertEquals(listOf("booking-2", "booking-1"), mine.map { it.id })
     }
 
     @Test
