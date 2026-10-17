@@ -19,6 +19,9 @@ kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
         }
+        androidResources {
+            enable = true
+        }
         withHostTest {
             isIncludeAndroidResources = false
         }
@@ -30,9 +33,17 @@ kotlin {
             api(libs.compose.foundation)
             api(libs.compose.material3)
             api(libs.compose.ui)
+            // Nunito .ttf files live in composeResources/font; Res stays internal to this module
+            // so features consume the font only through the theme tokens (see Font.kt).
+            implementation(libs.compose.components.resources)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "corp.khin.solutions.booqi.core.designsystem.resources"
+    publicResClass = false
 }

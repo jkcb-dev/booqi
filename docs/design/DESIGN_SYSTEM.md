@@ -48,8 +48,19 @@ derivation of the same hues, flagged in code, not a second Figma-sourced set.
 | Label | 13px · 700 (Bold) |
 | Caption | 11px · 500 (Medium) |
 
-Font family is Compose's default pending #31 (adding Nunito's `.ttf` files as a
-`composeResources` font) — sizes/weights are already Figma-accurate.
+The Nunito family is wired (#31). `booqiFontFamily()` (`theme/Font.kt`) is the design-system
+token: static Regular 400 / Medium 500 / Bold 700 / ExtraBold 800 TTFs in
+`core/designsystem/src/commonMain/composeResources/font/`, applied to every style of
+`booqiTypography()`. **How to consume it:** just use `MaterialTheme.typography.*` inside
+`BooqiTheme` — Nunito comes for free. If you must build a `TextStyle` by hand, start from
+`booqiFontFamily()`. Feature modules never reference the font files or `Res.font.*` (the
+generated `Res` is `internal` to `core:designsystem`).
+
+Font source: Google Fonts `ofl/nunito` (`Nunito[wght].ttf`, google/fonts @ 8b0a1d0), the only
+official build — it ships variable-only, so the four static weights were instanced from it with
+`fonttools varLib.instancer` (no outline changes; static files avoid depending on
+variable-font axis support in Compose on iOS). Licence: SIL OFL 1.1, bundled as an app resource
+at `composeResources/files/licenses/nunito_ofl.txt` so it ships alongside the font binaries.
 
 ### Spacing — 8pt scale
 
@@ -141,6 +152,5 @@ that's the trigger to promote it into `core:designsystem` — don't duplicate it
 
 - Dark color palette: not defined in Figma yet; current dark scheme is a placeholder derivation
   (see `BooqiTheme.kt` comments).
-- Nunito font files: sizes/weights are wired, actual `.ttf` resources are tracked in #31.
 - Templates: intentionally not built ahead of the screens that need them (no speculative
   building, per every role file's rules).
