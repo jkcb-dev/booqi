@@ -12,6 +12,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.SocialProvider
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
@@ -107,6 +108,11 @@ class FakeUserRepository : UserRepository {
         val email = current?.email ?: return DomainError.Unauthorized.asFailure()
         verificationEmails += email
         return Unit.asSuccess()
+    }
+
+    override suspend fun saveAddress(address: Address): DomainResult<User> {
+        val user = current ?: return DomainError.Unauthorized.asFailure()
+        return user.copy(address = address).also { byId[it.id] = it; current = it }.asSuccess()
     }
 
     override suspend fun updateProfile(displayName: String, photoUrl: String?): DomainResult<User> {

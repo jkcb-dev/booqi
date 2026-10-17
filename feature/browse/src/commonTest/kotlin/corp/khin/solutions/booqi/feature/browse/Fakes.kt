@@ -13,6 +13,7 @@ import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.SocialProvider
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.CatalogRepository
@@ -122,6 +123,7 @@ class FakeUserRepository(
     override suspend fun signOut() = NOT_USED.asFailure()
     override suspend fun confirmEmail() = NOT_USED.asFailure()
     override suspend fun resendVerificationEmail() = NOT_USED.asFailure()
+    override suspend fun saveAddress(address: Address) = NOT_USED.asFailure()
     override suspend fun updateProfile(displayName: String, photoUrl: String?) = NOT_USED.asFailure()
     override suspend fun deleteAccount() = NOT_USED.asFailure()
 }
