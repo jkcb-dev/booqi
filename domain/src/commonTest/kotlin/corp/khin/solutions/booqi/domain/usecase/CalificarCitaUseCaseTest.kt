@@ -2,6 +2,7 @@ package corp.khin.solutions.booqi.domain.usecase
 
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.Rating
+import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,9 +17,21 @@ import kotlin.test.assertTrue
  */
 class CalificarCitaUseCaseTest {
 
+    private val users = FakeUserRepository()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
-    private val calificar = CalificarCitaUseCase(bookings, RecalcularCalificacionDelProveedorUseCase(bookings, profiles))
+    private val calificar = CalificarCitaUseCase(
+        ObtenerUsuarioActualUseCase(users),
+        bookings,
+        RecalcularCalificacionDelProveedorUseCase(bookings, profiles),
+    )
+
+    // booking() defaults to customerId = "customer-1": the signed-in user owns every seeded Booking.
+    private val me = User("customer-1", "Ana", "ana@example.com", isEmailVerified = true)
+
+    init {
+        users.seedSignedIn(me)
+    }
 
     private suspend fun provider() = profiles.activateProviderMode("user-1").value().id
 
@@ -122,5 +135,45 @@ class CalificarCitaUseCaseTest {
         calificar("booking-1", 5).assertNotFound()
 
         assertEquals(Rating(5), bookings.stored("booking-1").rating)
+    }
+
+    @Test
+    fun `someone else's booking is Unauthorized and nothing is saved or recalculated`() = runTest {
+        val providerId = provider()
+        bookings.seed(booking(id = "booking-1", providerId = providerId, status = BookingStatus.COMPLETED, customerId = "customer-2"))
+
+        calificar("booking-1", 5, "No es mía").assertUnauthorized()
+
+        assertEquals(0, bookings.writeCount)
+        assertNull(bookings.stored("booking-1").rating)
+        assertEquals(0, profiles.getProfile(providerId).value().ratingCount)
+    }
+
+    @Test
+    fun `ownership wins over the business rules so a stranger learns nothing about the booking`() = runTest {
+        val providerId = provider()
+        // Someone else's booking that is also not completed, and one that is already rated.
+        bookings.seed(booking(id = "pending", providerId = providerId, status = BookingStatus.CONFIRMED, customerId = "customer-2"))
+        bookings.seed(
+            booking(id = "rated", providerId = providerId, status = BookingStatus.COMPLETED, customerId = "customer-2", rating = Rating(4)),
+        )
+
+        calificar("pending", 5).assertUnauthorized()
+        calificar("rated", 1).assertUnauthorized()
+        calificar("rated", 9).assertUnauthorized()
+
+        assertEquals(0, bookings.writeCount)
+        assertEquals(Rating(4), bookings.stored("rated").rating)
+    }
+
+    @Test
+    fun `without a session rating is Unauthorized and nothing is saved`() = runTest {
+        users.signOut()
+        completed("booking-1", provider())
+
+        calificar("booking-1", 5).assertUnauthorized()
+
+        assertEquals(0, bookings.writeCount)
+        assertNull(bookings.stored("booking-1").rating)
     }
 }

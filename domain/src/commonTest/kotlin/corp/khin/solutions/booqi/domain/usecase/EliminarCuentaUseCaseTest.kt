@@ -151,8 +151,11 @@ class EliminarCuentaUseCaseTest {
                 completedAt = REQUESTED_AT,
             ),
         )
-        CalificarCitaUseCase(bookings, RecalcularCalificacionDelProveedorUseCase(bookings, profiles))("b-1", 5, "Excelente")
-            .value()
+        CalificarCitaUseCase(
+            ObtenerUsuarioActualUseCase(users),
+            bookings,
+            RecalcularCalificacionDelProveedorUseCase(bookings, profiles),
+        )("b-1", 5, "Excelente").value()
         val ratingBefore = profiles.getProfile(providerId).value()
 
         assertEquals(AccountDeletionResult.Deleted, deleted())

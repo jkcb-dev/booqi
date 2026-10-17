@@ -2,6 +2,7 @@ package corp.khin.solutions.booqi.domain.usecase
 
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.Rating
+import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,10 +15,11 @@ import kotlin.test.assertNull
  */
 class RecalcularCalificacionDelProveedorUseCaseTest {
 
+    private val users = FakeUserRepository()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
     private val recalcular = RecalcularCalificacionDelProveedorUseCase(bookings, profiles)
-    private val calificar = CalificarCitaUseCase(bookings, recalcular)
+    private val calificar = CalificarCitaUseCase(ObtenerUsuarioActualUseCase(users), bookings, recalcular)
 
     private suspend fun provider(user: String = "user-1") = profiles.activateProviderMode(user).value().id
 
@@ -63,6 +65,7 @@ class RecalcularCalificacionDelProveedorUseCaseTest {
 
     @Test
     fun `successive ratings keep the average equal to the mean of everything rated so far`() = runTest {
+        users.seedSignedIn(User("customer-1", "Ana", "ana@example.com", isEmailVerified = true)) // owns the seeded bookings
         val providerId = provider()
         for ((index, stars) in listOf(5, 4, 3, 2).withIndex()) {
             bookings.seed(booking(id = "b$index", providerId = providerId, status = BookingStatus.COMPLETED))
