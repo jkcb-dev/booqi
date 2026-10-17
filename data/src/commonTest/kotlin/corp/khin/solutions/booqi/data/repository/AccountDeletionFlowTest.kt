@@ -9,14 +9,17 @@ import corp.khin.solutions.booqi.data.datasource.FakeServiceRemoteDataSource
 import corp.khin.solutions.booqi.data.dto.BookingDto
 import corp.khin.solutions.booqi.data.dto.ServiceDto
 import corp.khin.solutions.booqi.domain.model.AccountDeletionResult
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Registration
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.AgregarDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.BuscarServiciosUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarPerfilDeProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.EliminarCuentaUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerMiDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerMiPerfilDeProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import corp.khin.solutions.booqi.domain.usecase.RegistrarUsuarioUseCase
@@ -153,6 +156,19 @@ class AccountDeletionFlowTest {
         assertTrue(shown.isDeleted)
         // The Provider is still visible in search.
         assertEquals(1, buscar().ok().size)
+    }
+
+    @Test
+    fun `a deleted Customer loses the saved address and it is not readable by anyone`() = runTest {
+        val customer = signUp("Beto", "beto@example.com")
+        AgregarDireccionUseCase(users)(Address("Av. Corrientes 1234", -34.6, -58.4)).ok()
+        assertEquals(Address("Av. Corrientes 1234", -34.6, -58.4), ObtenerMiDireccionUseCase(users)().ok())
+
+        assertEquals(AccountDeletionResult.Deleted, eliminar().ok())
+
+        assertEquals(null, users.getUser(customer.id).ok().address)
+        assertEquals(null, auth.findUserById(customer.id)!!.addressLine)
+        assertEquals(DomainError.Unauthorized, (ObtenerMiDireccionUseCase(users)() as DomainResult.Failure).error)
     }
 
     @Test

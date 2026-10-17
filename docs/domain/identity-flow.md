@@ -118,7 +118,8 @@ What implementing revealed, so the decisions above stay honest:
   (`Deleted` / `Blocked(activeBookings by role)`) instead of a `DomainError`; a `Failure` means
   something actually broke.
 - **"Personal data" on Bookings:** besides the name/photo (which live on the `User`), the Customer's
-  delivery-address snapshot and free-text note on their Bookings are erased on deletion; status and
+  delivery-address snapshot and free-text note on their Bookings, and their saved address (#22,
+  `User.address`), are erased on deletion; status and
   rating stay.
 - **Hiding the Provider** reuses the Catalog's existing visibility gate (`isComplete = false` plus
   erasing the profile's personal data) instead of a new "deleted" flag on `ProviderProfile`; the

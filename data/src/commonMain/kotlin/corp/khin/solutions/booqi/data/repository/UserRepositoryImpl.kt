@@ -8,6 +8,7 @@ import corp.khin.solutions.booqi.data.datasource.AuthRemoteDataSource
 import corp.khin.solutions.booqi.data.mapper.toDomain
 import corp.khin.solutions.booqi.data.mapper.toDto
 import corp.khin.solutions.booqi.data.mapper.toStorageCode
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.UserRepository
@@ -18,6 +19,9 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * `NotFound`. The anonymized shape of a deleted account is decided here from the domain's
  * [User.anonymized], so there is one definition of it.
  */
+// Mirrors UserRepository one-to-one (account + session + profile columns of a single `profiles` row);
+// splitting it only to get under the function-count threshold would scatter that row.
+@Suppress("TooManyFunctions")
 class UserRepositoryImpl(
     private val auth: AuthRemoteDataSource,
 ) : UserRepository {
@@ -59,6 +63,11 @@ class UserRepositoryImpl(
 
     override suspend fun updateProfile(displayName: String, photoUrl: String?): DomainResult<User> = guarded {
         auth.updateProfile(displayName, photoUrl)?.toDomain()?.asSuccess() ?: DomainError.Unauthorized.asFailure()
+    }
+
+    override suspend fun saveAddress(address: Address): DomainResult<User> = guarded {
+        auth.updateAddress(address.line, address.latitude, address.longitude)?.toDomain()?.asSuccess()
+            ?: DomainError.Unauthorized.asFailure()
     }
 
     override suspend fun deleteAccount(): DomainResult<Unit> = guarded {

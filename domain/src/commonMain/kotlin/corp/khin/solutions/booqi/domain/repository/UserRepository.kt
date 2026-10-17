@@ -1,6 +1,7 @@
 package corp.khin.solutions.booqi.domain.repository
 
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
 
@@ -16,6 +17,9 @@ import corp.khin.solutions.booqi.domain.model.User
  * already happened; the repository only reports what storage can know — an email already taken is
  * `InvalidInput`, wrong credentials are `Unauthorized`.
  */
+// One cohesive contract for one aggregate (account + session + profile data); splitting it only to
+// get under the function-count threshold would scatter the single `profiles` row across interfaces.
+@Suppress("TooManyFunctions")
 interface UserRepository {
 
     /** The signed-in user, or `null` while browsing without an account (a normal state). */
@@ -58,9 +62,17 @@ interface UserRepository {
     suspend fun updateProfile(displayName: String, photoUrl: String?): DomainResult<User>
 
     /**
+     * Sets the current user's single saved address, replacing any previous one (already validated
+     * and normalized — see `AgregarDireccion`/`ActualizarDireccion`). `Unauthorized` without a
+     * session. Reading it back is `getCurrentUser().address`; deleting the account erases it
+     * ([deleteAccount]).
+     */
+    suspend fun saveAddress(address: Address): DomainResult<User>
+
+    /**
      * Anonymizes the current user (see [User.anonymized]), removes their login credentials and
-     * ends the session. The id stays, as a tombstone. Callers have already checked that no active
-     * Bookings block it.
+     * ends the session. The id stays, as a tombstone; name, photo, email and saved address are
+     * erased. Callers have already checked that no active Bookings block it.
      */
     suspend fun deleteAccount(): DomainResult<Unit>
 }

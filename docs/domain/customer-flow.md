@@ -183,7 +183,43 @@ Escenario: El Cliente actualiza su dirección guardada
   Cuando la actualiza desde su perfil
   Entonces la nueva dirección reemplaza a la anterior para reservas futuras
   Y las reservas ya solicitadas conservan la dirección que tenían al momento de solicitarse
+
+Escenario: El Cliente intenta guardar una dirección incompleta
+  Dado que el Cliente está agregando o actualizando su dirección
+  Cuando la dirección no tiene texto, o su ubicación en el mapa no es válida
+  Entonces el sistema rechaza el guardado y le pide completarla
+  Y su dirección guardada no cambia
+
+Escenario: Solo se guarda una dirección
+  Dado que el Cliente ya tiene una dirección guardada
+  Cuando intenta agregar otra en lugar de actualizar la existente
+  Entonces el sistema rechaza la operación: solo hay una dirección y se cambia actualizándola
+
+Escenario: Un visitante sin sesión intenta usar la dirección guardada
+  Dado que no hay una sesión iniciada
+  Cuando intenta agregar, actualizar o consultar la dirección guardada
+  Entonces el sistema responde que debe iniciar sesión
+
+Escenario: El Cliente elimina su cuenta con una dirección guardada
+  Dado que el Cliente tiene una dirección guardada y puede eliminar su cuenta
+  Cuando elimina su cuenta
+  Entonces su dirección guardada se borra junto con el resto de sus datos personales
 ```
+
+### Notas de implementación (#22, domain & data)
+
+- La dirección guardada es `User.address: Address?` (mismo value object `Address` del snapshot de
+  `Booking`; columnas `profiles.address_line/lat/lng`). **Ambas coordenadas son obligatorias**:
+  la dirección siempre sale de una búsqueda de Google Maps o de un pin en el mapa, y ambos traen
+  posición. El texto en blanco o una posición fuera de rango / no numérica es `InvalidInput`.
+  El selector de mapa y el geocoding son #23/#24.
+- Se mantienen **dos comandos** porque son dos eventos distintos del dominio (6 y 13) y tienen
+  precondiciones opuestas: `AgregarDireccion` falla con `InvalidInput` si ya hay una (solo hay
+  una); `ActualizarDireccion` falla con `NotFound` si no hay ninguna. `ObtenerMiDireccion`
+  devuelve `Address?` (`null` = "pedirla"), y todos fallan con `Unauthorized` sin sesión.
+- Usar la dirección guardada como snapshot por defecto al solicitar una reserva a domicilio
+  (escenarios 1 y 2 del lado de la solicitud) es de **#26**; `Booking` y `SolicitarReserva` no se
+  tocan aquí.
 
 ---
 

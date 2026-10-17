@@ -26,7 +26,7 @@ enough to justify the ceremony.
 | **Availability** | A Provider's recurring weekly schedule (one range per day of the week) plus specific blocked dates/times. Value object, references its Provider by `providerId`. The optional "paused" date range (vacation mode) lives on `ProviderProfile.pausedRange` and is passed in alongside when TimeSlots are generated from this. |
 | **Booking** | A Customer's request to reserve a Provider's TimeSlot for a specific Service. Aggregate root for the Scheduling context. Goes through a request→accept/reject lifecycle — see `docs/domain/provider-flow.md` and `docs/domain/customer-flow.md` for the full state machine. |
 | **BookingStatus** | `Requested → Confirmed → Completed`, or `Requested → Rejected` / `Requested → Expired` (24h no response), or `Confirmed → CancelledByProvider` / `Confirmed → CancelledByCustomer` (up to 3h before the appointment). No other transitions are valid. In code (`BookingStatus`: `REQUESTED`, `CONFIRMED`, …) the transition table lives in `BookingStatus` and every change goes through `Booking`'s transition functions, which reject invalid ones with `InvalidInput`. |
-| **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). In code it is the small `Address` value object (display line + latitude/longitude), introduced by `Booking` (#18) for the delivery-address *snapshot*; the Customer's saved address (#22) reuses it. |
+| **Dirección (Address)** | A single saved address on `User`, used for `Domicilio`-modality bookings. Added via Google Maps search or map-pin selection — proactively from the profile, or reactively the first time it's needed at booking time. Only one is kept (not a list of saved places). In code it is the small `Address` value object (display line + latitude/longitude), introduced by `Booking` (#18) for the delivery-address *snapshot*; the Customer's saved address is `User.address` (#22, `profiles.address_*`) and reuses it. Both coordinates are required; `AgregarDireccion` / `ActualizarDireccion` / `ObtenerMiDireccion` manage it, and account deletion erases it. |
 | **Reason** | Why a Booking was rejected or cancelled: a predefined code + optional free text. The list of codes depends on who acts — `ProviderReasonCode` today, a Customer list in #25, both under the sealed `ReasonCode`. |
 | **Rating** | A Customer's 1–5 stars + optional comment on a completed Booking. Embedded in `Booking`, not an aggregate. |
 
@@ -48,7 +48,7 @@ sub-tickets of #50). **Account deletion** never removes the `User`: it is kept a
 tombstone (`User.anonymized()` — name, photo and email erased, `isDeleted = true`), and
 `User.publicName` is the one place that renders it as "Usuario eliminado". Completed Bookings and
 their ratings stay (so a Provider's rating aggregate never changes), the personal data on the
-Customer's Bookings (delivery-address snapshot, free-text note) is erased, and a ProviderProfile is
+Customer's Bookings (delivery-address snapshot, free-text note) and the User's saved address (#22) are erased, and a ProviderProfile is
 anonymized and set `isComplete = false` — the existing gate that removes it and its Services from
 Catalog search and public pages. It is refused while a Booking is `REQUESTED`/`CONFIRMED` as Customer
 (`customerId == user.id`) or as Provider (`providerId ==` the user's ProviderProfile id).

@@ -9,8 +9,9 @@ package corp.khin.solutions.booqi.domain.model
  * display [line] plus the map pin ([latitude]/[longitude], Google Maps search or pin selection,
  * docs/domain/customer-flow.md § Grupo 2).
  *
- * The Customer's single *saved* address (`User`/`profiles` address columns, ticket #22) is not
- * built yet; #22 should reuse this class for it rather than defining a second address shape.
+ * The Customer's single *saved* address ([User.address], `profiles.address_*`, ticket #22) reuses
+ * this same class rather than defining a second address shape. Both coordinates are required:
+ * the address always comes from a Google Maps search result or a map pin, which carry a position.
  */
 data class Address(
     val line: String,

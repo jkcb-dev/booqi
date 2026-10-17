@@ -12,6 +12,9 @@ import corp.khin.solutions.booqi.data.dto.UserDto
  * *in* to this boundary** (sign-up, sign-in) — they are never part of a [UserDto] and never come
  * back out.
  */
+// Mirrors UserRepository one-to-one (account + session + profile columns of a single `profiles` row);
+// splitting it only to get under the function-count threshold would scatter that row.
+@Suppress("TooManyFunctions")
 interface AuthRemoteDataSource {
 
     /** The user of the current session, or `null` when signed out. */
@@ -45,6 +48,12 @@ interface AuthRemoteDataSource {
 
     /** Updates the current user's name and photo; `null` when signed out. */
     suspend fun updateProfile(displayName: String, photoUrl: String?): UserDto?
+
+    /**
+     * Sets the current user's saved address (`address_line`/`address_lat`/`address_lng`, replacing
+     * any previous one); `null` when signed out.
+     */
+    suspend fun updateAddress(line: String, latitude: Double, longitude: Double): UserDto?
 
     /**
      * Replaces the current user's row with [tombstone] (the anonymized account — the row survives so

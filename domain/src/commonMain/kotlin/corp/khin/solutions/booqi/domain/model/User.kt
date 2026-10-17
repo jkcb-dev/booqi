@@ -18,6 +18,10 @@ package corp.khin.solutions.booqi.domain.model
  * - [isDeleted]: the account was deleted. A deleted User is never removed — it is kept as an
  *   anonymized tombstone ([anonymized]) so completed Bookings and ratings that reference its id
  *   keep their history; it can no longer sign in. Use [publicName] to show it.
+ * - [address]: the Customer's single saved address (docs/domain/customer-flow.md § Grupo 2,
+ *   `profiles.address_*`), `null` until they add one. It is personal data, so it is erased by
+ *   [anonymized]. A Booking never points at it: `Booking.deliveryAddress` is a *copy* taken at
+ *   request time.
  */
 data class User(
     val id: String,
@@ -27,6 +31,7 @@ data class User(
     val isEmailVerified: Boolean = false,
     val socialProvider: SocialProvider? = null,
     val isDeleted: Boolean = false,
+    val address: Address? = null,
 ) {
     /**
      * The name to show to *other* people (a Provider's inbox, a review): [DELETED_USER_NAME] for a
@@ -42,7 +47,7 @@ data class User(
     fun toPublic(): PublicUser = PublicUser(id, publicName, if (isDeleted) null else photoUrl, isDeleted)
 
     /**
-     * The tombstone left by account deletion: name, photo, email and sign-in method erased,
+     * The tombstone left by account deletion: name, photo, email, saved address and sign-in method erased,
      * [isDeleted] set. Only the [id] survives, so history keeps pointing at *something*.
      */
     fun anonymized(): User = User(
@@ -53,6 +58,7 @@ data class User(
         isEmailVerified = false,
         socialProvider = null,
         isDeleted = true,
+        address = null,
     )
 
     companion object {
