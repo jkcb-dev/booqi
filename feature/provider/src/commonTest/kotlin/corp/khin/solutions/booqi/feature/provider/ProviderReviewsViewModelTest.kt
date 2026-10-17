@@ -6,7 +6,9 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.domain.model.Booking
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.Rating
+import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -34,6 +36,7 @@ class ProviderReviewsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val repository = FakeBookingRepository()
+    private val users = FakeUserRepository()
 
     @BeforeTest
     fun setUp() {
@@ -46,7 +49,11 @@ class ProviderReviewsViewModelTest {
     }
 
     private fun started(): ProviderReviewsViewModel =
-        ProviderReviewsViewModel(ObtenerCalificacionesDelProveedorUseCase(repository)).also {
+        ProviderReviewsViewModel(
+            obtenerCalificaciones = ObtenerCalificacionesDelProveedorUseCase(repository),
+            obtenerUsuarioPublico = ObtenerUsuarioPublicoUseCase(users),
+            currentProvider = testCurrentProvider(users = users),
+        ).also {
             it.onAction(ProviderReviewsAction.Start)
             testDispatcher.scheduler.advanceUntilIdle()
         }
@@ -56,7 +63,7 @@ class ProviderReviewsViewModelTest {
         stars: Int,
         comment: String? = null,
         completedAt: String = "2026-09-30T10:00:00Z",
-        providerId: String = TEMPORARY_PROVIDER_ID,
+        providerId: String = TEST_PROVIDER_ID,
     ) = Booking(
         id = id,
         providerId = providerId,
@@ -87,6 +94,32 @@ class ProviderReviewsViewModelTest {
         assertEquals(3, state.count)
         assertEquals(4.0, state.average)
         assertEquals(listOf("Normal", null, "Excelente"), state.reviews.map { it.rating?.comment })
+    }
+
+    /** Escenario: "Los nombres reales reemplazan a Cliente" (#58) — reviews carry their author's name. */
+    @Test
+    fun `reviews carry the real name of the author and a deleted account reads Usuario eliminado`() =
+        runTest(testDispatcher) {
+            users.add(testUser(id = "customer-1", name = "Camila Torres"))
+            users.add(User(id = "customer-2", displayName = "", email = null, isDeleted = true))
+            repository.seed(rated("one", 5))
+            repository.seed(rated("two", 4).copy(customerId = "customer-2"))
+
+            val viewModel = started()
+
+            val names = viewModel.state.value.authorNames
+            assertEquals("Camila Torres", names["customer-1"])
+            assertEquals("Usuario eliminado", names["customer-2"])
+        }
+
+    @Test
+    fun `the ratings are those of the profile id and not of the user id`() = runTest(testDispatcher) {
+        repository.seed(rated("mine", 5))
+        repository.seed(rated("by-user-id", 1, providerId = TEST_USER_ID))
+
+        val viewModel = started()
+
+        assertEquals(listOf("mine"), viewModel.state.value.reviews.map { it.id })
     }
 
     @Test
@@ -134,11 +167,11 @@ class ProviderReviewsViewModelTest {
 
     @Test
     fun `a review maps to the design system model with a neutral author and the completion date`() {
-        val review = assertNotNull(rated("one", 5, "Genial").toRatingReview(TimeZone.UTC))
+        val review = assertNotNull(rated("one", 5, "Genial").toRatingReview(TimeZone.UTC, "Camila Torres"))
 
         assertEquals(5, review.stars)
         assertEquals("Genial", review.comment)
-        assertEquals("Cliente", review.author)
+        assertEquals("Camila Torres", review.author)
         assertEquals("30 de septiembre de 2026", review.dateLabel)
     }
 }

@@ -34,7 +34,7 @@ internal fun ProviderPublicProfileContent(
                     actionLabel = "Reintentar",
                     onAction = { onAction(ProviderPublicProfileAction.Retry) },
                 )
-                profile != null -> ProviderPublicProfileBody(profile = profile, onAction = onAction)
+                profile != null -> ProviderPublicProfileBody(profile, state.bookingError, onAction)
                 else -> LoadingContent()
             }
         }

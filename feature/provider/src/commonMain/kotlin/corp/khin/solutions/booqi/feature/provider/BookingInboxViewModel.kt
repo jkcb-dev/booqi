@@ -33,14 +33,15 @@ import kotlinx.datetime.TimeZone
  * has passed on the injected [clock] in [timeZone], and the screen shows the button disabled
  * until then ([BookingInboxAction.Tick] keeps `now` fresh).
  *
- * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]).
+ * The inbox is the signed-in User's Provider profile's ([CurrentProvider], resolved on every load).
+ * Each row shows the Customer's real name, read with `ObtenerUsuarioPublico`.
  */
 class BookingInboxViewModel(
     private val queries: BookingInboxQueries,
     private val commands: BookingInboxCommands,
+    private val currentProvider: CurrentProvider,
     private val clock: Clock = Clock.System,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
 ) : ViewModel() {
 
     private var loadJob: Job? = null
@@ -83,9 +84,19 @@ class BookingInboxViewModel(
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, loadError = null, now = clock.now()) }
+            val providerId = when (val resolved = currentProvider.profileId()) {
+                is DomainResult.Success -> resolved.value
+                is DomainResult.Failure -> {
+                    _state.update { it.copy(isLoading = false, loadError = resolved.error) }
+                    return@launch
+                }
+            }
             val pending = queries.pendingRequests(providerId)
             val confirmed = queries.agenda(providerId, setOf(BookingStatus.CONFIRMED))
             val services = queries.services(providerId)
+            val bookings = ((pending as? DomainResult.Success)?.value.orEmpty()) +
+                ((confirmed as? DomainResult.Success)?.value.orEmpty())
+            val names = queries.users.namesOf(bookings.map { it.customerId }.toSet())
             val failure = (pending as? DomainResult.Failure) ?: (confirmed as? DomainResult.Failure)
             _state.update { current ->
                 current.copy(
@@ -96,6 +107,7 @@ class BookingInboxViewModel(
                     // Titles are a nicety: if the services can't be read the rows say "Servicio".
                     serviceTitles = (services as? DomainResult.Success)
                         ?.value?.associate { it.id to it.title } ?: current.serviceTitles,
+                    customerNames = current.customerNames + names,
                 )
             }
         }

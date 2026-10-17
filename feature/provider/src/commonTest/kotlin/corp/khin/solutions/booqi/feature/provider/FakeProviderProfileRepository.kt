@@ -20,6 +20,9 @@ class FakeProviderProfileRepository : ProviderProfileRepository {
     private val profilesById = mutableMapOf<String, ProviderProfile>()
     private var nextId = 1
 
+    /** Stores a ready-made profile (keeps its own id). */
+    fun seed(profile: ProviderProfile): ProviderProfile = profile.also { profilesById[it.id] = it }
+
     override suspend fun activateProviderMode(userId: String): DomainResult<ProviderProfile> {
         val existing = profilesById.values.firstOrNull { it.userId == userId }
         val profile = existing ?: ProviderProfile(id = "profile-${nextId++}", userId = userId)

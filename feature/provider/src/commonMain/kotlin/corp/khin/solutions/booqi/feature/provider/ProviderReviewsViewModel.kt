@@ -3,7 +3,9 @@ package corp.khin.solutions.booqi.feature.provider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,11 +21,14 @@ import kotlinx.coroutines.launch
  * docs/DEVELOPMENT.md), so the section sends [ProviderReviewsAction.Start] every time it enters
  * composition; a rating left since then shows up. There are no one-shot effects, hence no Event.
  *
- * [providerId] defaults to the TEMPORARY placeholder (see [TEMPORARY_PROVIDER_ID]).
+ * The ratings are the signed-in User's Provider profile's ([CurrentProvider], resolved on every
+ * load). Each review carries its author's real name from [ObtenerUsuarioPublicoUseCase] ("Usuario
+ * eliminado" for a deleted account).
  */
 class ProviderReviewsViewModel(
     private val obtenerCalificaciones: ObtenerCalificacionesDelProveedorUseCase,
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
+    private val obtenerUsuarioPublico: ObtenerUsuarioPublicoUseCase,
+    private val currentProvider: CurrentProvider,
 ) : ViewModel() {
 
     private var loadJob: Job? = null
@@ -43,9 +48,10 @@ class ProviderReviewsViewModel(
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = obtenerCalificaciones(providerId)) {
-                is DomainResult.Success -> _state.update {
-                    it.copy(isLoading = false, reviews = result.value)
+            when (val result = currentProvider.profileId().flatMap { obtenerCalificaciones(it) }) {
+                is DomainResult.Success -> {
+                    val names = obtenerUsuarioPublico.namesOf(result.value.map { it.customerId }.toSet())
+                    _state.update { it.copy(isLoading = false, reviews = result.value, authorNames = names) }
                 }
                 is DomainResult.Failure -> _state.update { it.copy(isLoading = false, error = result.error) }
             }

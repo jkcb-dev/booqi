@@ -17,11 +17,16 @@ import corp.khin.solutions.booqi.data.dto.UserDto
  * provider, with the email already verified. Sent emails are recorded in [verificationEmailsSentTo]
  * so tests can observe them. Not thread-safe by design (single process, single writer), like the
  * other fakes.
+ *
+ * [seed] pre-loads accounts (an account with a password can sign in with it; one without is only a
+ * name other records point at), the same way the other fakes take a seed. It starts signed out.
  */
 // Mirrors UserRepository one-to-one (account + session + profile columns of a single `profiles` row);
-// splitting it only to get under the function-count threshold would scatter that row.
+// splitting it only to get under the function-count threshold would scatter that row (see #61).
 @Suppress("TooManyFunctions")
-class FakeAuthRemoteDataSource : AuthRemoteDataSource {
+class FakeAuthRemoteDataSource(
+    seed: List<SeedAccount> = emptyList(),
+) : AuthRemoteDataSource {
 
     private val usersById = mutableMapOf<String, UserDto>()
     private val fingerprintsByEmail = mutableMapOf<String, Long>()
@@ -30,6 +35,16 @@ class FakeAuthRemoteDataSource : AuthRemoteDataSource {
     private var nextId = 1
 
     private val sentVerificationEmails = mutableListOf<String>()
+
+    init {
+        seed.forEach { account ->
+            usersById[account.user.id] = account.user
+            val email = account.user.email
+            if (account.password != null && email != null) {
+                fingerprintsByEmail[email] = fingerprint(email, account.password)
+            }
+        }
+    }
 
     /** Addresses a verification email was sent to, in order (sign-up and re-sends). */
     val verificationEmailsSentTo: List<String> get() = sentVerificationEmails
@@ -112,6 +127,12 @@ class FakeAuthRemoteDataSource : AuthRemoteDataSource {
     }
 
 }
+
+/**
+ * An account to pre-load into [FakeAuthRemoteDataSource]. [password] is the plaintext sign-in
+ * password for [user]'s email, or `null` for an account nobody can sign in to. Test data only.
+ */
+class SeedAccount(val user: UserDto, val password: String? = null)
 
 private const val FNV_OFFSET = -3750763034362895579L // 64-bit FNV-1a offset basis (0xcbf29ce484222325)
 private const val FNV_PRIME = 1099511628211L

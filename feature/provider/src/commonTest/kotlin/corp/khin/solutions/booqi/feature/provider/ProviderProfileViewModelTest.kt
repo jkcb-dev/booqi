@@ -2,10 +2,15 @@
 
 package corp.khin.solutions.booqi.feature.provider
 
+import corp.khin.solutions.booqi.core.common.DomainError
+import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarPerfilDeProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerMiPerfilDeProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.PausarPerfilUseCase
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -44,11 +49,15 @@ class ProviderProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private val users = FakeUserRepository()
+
     private fun newViewModel(repository: FakeProviderProfileRepository = FakeProviderProfileRepository()) =
         ProviderProfileViewModel(
             activarModoProveedor = ActivarModoProveedorUseCase(repository),
             completarPerfil = CompletarPerfilDeProveedorUseCase(repository),
             pausarPerfil = PausarPerfilUseCase(repository),
+            obtenerMiPerfil = ObtenerMiPerfilDeProveedorUseCase(users, repository),
+            requerirCuentaVerificada = RequerirCuentaVerificadaUseCase(users),
         )
 
     /** Dispatches [action] and suspends until the single event it emits is collected. A fresh
@@ -168,5 +177,91 @@ class ProviderProfileViewModelTest {
         assertTrue(profile != null)
         assertEquals(false, profile.isPaused)
         assertNull(profile.pausedRange)
+    }
+
+    // --- Identity (#58): whose profile, and the access guard before activating -------------------
+
+    /** Escenario: "Un usuario activa el modo Proveedor" — the profile belongs to the signed-in User. */
+    @Test
+    fun `activating creates the profile of the signed-in user not a placeholder`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+
+        viewModel.onAction(ProviderProfileAction.ActivateProviderMode)
+        advanceUntilIdle()
+
+        assertEquals(TEST_USER_ID, viewModel.state.value.profile?.userId)
+    }
+
+    /** Escenario: "Un visitante intenta reservar sin cuenta" applied to Provider mode — no session. */
+    @Test
+    fun `activating without a session is refused and no profile is created`() = runTest(testDispatcher) {
+        users.current = null
+        val repository = FakeProviderProfileRepository()
+        val viewModel = newViewModel(repository)
+
+        val event = performAndAwaitEvent(viewModel, ProviderProfileAction.ActivateProviderMode)
+
+        assertEquals(DomainError.Unauthorized, viewModel.state.value.error)
+        assertNull(viewModel.state.value.profile)
+        assertEquals(false, viewModel.state.value.isLoading)
+        assertTrue(event is ProviderProfileEvent.ShowError)
+        assertNull(repository.findByUserId(TEST_USER_ID).let { (it as DomainResult.Success).value })
+    }
+
+    /** Escenario: "Un Usuario con correo sin verificar intenta ... activar el modo Proveedor". */
+    @Test
+    fun `activating with an unverified email is refused with the verification message`() = runTest(testDispatcher) {
+        users.current = testUser(isEmailVerified = false)
+        val repository = FakeProviderProfileRepository()
+        val viewModel = newViewModel(repository)
+
+        viewModel.onAction(ProviderProfileAction.ActivateProviderMode)
+        advanceUntilIdle()
+
+        val error = viewModel.state.value.error
+        assertTrue(error is DomainError.InvalidInput)
+        assertEquals(RequerirCuentaVerificadaUseCase.EMAIL_NOT_VERIFIED_MESSAGE, error.message)
+        assertNull(viewModel.state.value.profile)
+    }
+
+    @Test
+    fun `entering shows the profile the user already has`() = runTest(testDispatcher) {
+        val repository = FakeProviderProfileRepository()
+        repository.seed(ProviderProfile(id = "profile-9", userId = TEST_USER_ID, name = "Estudio Ana"))
+        val viewModel = newViewModel(repository)
+
+        viewModel.onAction(ProviderProfileAction.Start)
+        advanceUntilIdle()
+
+        assertEquals("profile-9", viewModel.state.value.profile?.id)
+        assertEquals("Estudio Ana", viewModel.state.value.nameInput)
+        assertEquals(false, viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun `entering without a profile shows the activation call to action`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+
+        viewModel.onAction(ProviderProfileAction.Start)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.profile)
+        assertNull(viewModel.state.value.error)
+        assertEquals(false, viewModel.state.value.isLoading)
+    }
+
+    /** The instance outlives a visit: another account entering must not see the previous profile. */
+    @Test
+    fun `entering again as another user does not show the previous users profile`() = runTest(testDispatcher) {
+        val viewModel = newViewModel()
+        viewModel.onAction(ProviderProfileAction.ActivateProviderMode)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.profile != null)
+
+        users.current = testUser(id = "user-other")
+        viewModel.onAction(ProviderProfileAction.Start)
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.profile)
     }
 }

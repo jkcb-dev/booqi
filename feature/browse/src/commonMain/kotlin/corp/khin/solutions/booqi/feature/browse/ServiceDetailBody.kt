@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.designsystem.component.ModalityBadge
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiCornerRadius
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
@@ -28,7 +29,11 @@ import corp.khin.solutions.booqi.domain.model.ServiceDetail
 /** C3's loaded body: title, price, duration, modality, description, the Provider block (-> C4)
  * and "Reservar". Scrolls as a whole so a long description never pushes the button off screen. */
 @Composable
-internal fun ServiceDetailBody(detail: ServiceDetail, onAction: (ServiceDetailAction) -> Unit) {
+internal fun ServiceDetailBody(
+    detail: ServiceDetail,
+    bookingError: DomainError?,
+    onAction: (ServiceDetailAction) -> Unit,
+) {
     val service = detail.service
     val ink2 = LocalBooqiExtendedColors.current.ink2
     Column(
@@ -54,6 +59,13 @@ internal fun ServiceDetailBody(detail: ServiceDetail, onAction: (ServiceDetailAc
         ProviderBlock(provider = detail.provider, onClick = { onAction(ServiceDetailAction.ProviderClicked) })
         Button(onClick = { onAction(ServiceDetailAction.BookClicked) }, modifier = Modifier.fillMaxWidth()) {
             Text("Reservar")
+        }
+        bookingError?.let {
+            Text(
+                text = it.describe(notFound = "No pudimos iniciar la reserva"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }

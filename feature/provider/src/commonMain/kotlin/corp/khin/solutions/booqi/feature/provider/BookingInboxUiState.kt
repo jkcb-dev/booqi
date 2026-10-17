@@ -18,7 +18,9 @@ enum class ReasonIntent { REJECT, CANCEL }
  * Provider opened a row, the in-screen [detail] (P9 / P10) that replaces them.
  *
  * [serviceTitles] maps `Booking.serviceId` to its title (a Booking only references its Service);
- * a missing entry renders as a generic "Servicio". [now]/[timeZone] drive the "Completar only
+ * a missing entry renders as a generic "Servicio". [customerNames] does the same for
+ * `Booking.customerId` ("Usuario eliminado" for a deleted account; a missing entry reads "Cliente").
+ * [now]/[timeZone] drive the "Completar only
  * after the appointment ends" rule — [now] is refreshed on every load and on a periodic
  * [BookingInboxAction.Tick], so the button enables itself while the Provider is looking at it.
  */
@@ -31,13 +33,22 @@ data class BookingInboxUiState(
     val requests: List<Booking> = emptyList(),
     val confirmed: List<Booking> = emptyList(),
     val serviceTitles: Map<String, String> = emptyMap(),
+    val customerNames: Map<String, String> = emptyMap(),
     val loadError: DomainError? = null,
     /** Result of the last accept/reject/complete/cancel ("Solicitud aceptada"), shown over the list. */
     val notice: BookingNotice? = null,
     /** Id of the booking whose transition is in flight (buttons disabled meanwhile), if any. */
     val submittingBookingId: String? = null,
     val detail: BookingDetailUiState? = null,
-)
+) {
+    fun labelsOf(booking: Booking) = BookingLabels(
+        serviceTitle = serviceTitles[booking.serviceId] ?: SERVICE_FALLBACK_LABEL,
+        customerName = customerNames[booking.customerId] ?: CLIENT_LABEL,
+    )
+}
+
+/** The two names a row or the detail shows for [booking]: its Service and its Customer. */
+class BookingLabels(val serviceTitle: String, val customerName: String)
 
 /** A message over the lists: the outcome of an action, or why a row action failed. */
 data class BookingNotice(val message: String, val isError: Boolean = false)

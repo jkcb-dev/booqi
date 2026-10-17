@@ -10,9 +10,9 @@ import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.Reason
 
 /**
- * What every row and the detail call the Customer. There is no Identity context yet, so a Booking
- * only holds a `customerId` and no display name exists to show; replace with the real name once
- * Identity lands (same for reviewers on the received-ratings list).
+ * What a row, the detail or a review calls the Customer when their name could not be read (a
+ * Booking only holds a `customerId`; the name comes from `ObtenerUsuarioPublico`, which also answers
+ * "Usuario eliminado" for a deleted account). Only a fallback for a failed lookup.
  */
 internal const val CLIENT_LABEL = "Cliente"
 

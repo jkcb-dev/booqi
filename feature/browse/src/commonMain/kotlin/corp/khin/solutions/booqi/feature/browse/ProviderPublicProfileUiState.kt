@@ -12,4 +12,6 @@ data class ProviderPublicProfileUiState(
     val isLoading: Boolean = true,
     val profile: ProviderPublicProfile? = null,
     val error: DomainError? = null,
+    /** Why the last "Reservar ›" tap could not even reach the access answer (shown over the list). */
+    val bookingError: DomainError? = null,
 )

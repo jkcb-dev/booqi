@@ -22,12 +22,12 @@ import corp.khin.solutions.booqi.domain.model.Booking
 /**
  * One row of the P8 inbox / P10 agenda: service, client, date/time and price. A pending request
  * ([showRequestActions]) also carries the Aceptar / Rechazar buttons Figma P8 shows; tapping the
- * row opens its detail. The Customer's name does not exist yet, see [CLIENT_LABEL].
+ * row opens its detail. The Customer's name is the real one, see [BookingInboxUiState.customerNames].
  */
 @Composable
 internal fun BookingListItem(
     booking: Booking,
-    serviceTitle: String,
+    labels: BookingLabels,
     showRequestActions: Boolean,
     isSubmitting: Boolean,
     onAction: (BookingInboxAction) -> Unit,
@@ -43,10 +43,10 @@ internal fun BookingListItem(
             verticalArrangement = Arrangement.spacedBy(BooqiSpacing.xs),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(serviceTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(labels.serviceTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Text(booking.priceText(), style = MaterialTheme.typography.titleMedium)
             }
-            Text(CLIENT_LABEL, style = MaterialTheme.typography.bodyMedium, color = ink2)
+            Text(labels.customerName, style = MaterialTheme.typography.bodyMedium, color = ink2)
             Text(booking.whenText(), style = MaterialTheme.typography.bodyMedium, color = ink2)
             if (!showRequestActions) BookingStatusChip(booking.status)
             if (showRequestActions) {

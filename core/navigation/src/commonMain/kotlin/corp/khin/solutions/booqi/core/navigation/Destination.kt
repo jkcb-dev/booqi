@@ -27,6 +27,22 @@ sealed interface Destination {
      * detail ([ServiceDetail]). Reached by tapping the Provider's name/photo from there. */
     data class ProviderProfileView(val providerId: String) : Destination
 
+    // --- feature:account — Identity (any user, with or without a session) ---------------------
+
+    /** Perfil de usuario (docs/domain/identity-flow.md): the signed-in User's name and photo,
+     * sign-out, account deletion and the "Convertirme en Proveedor" entry. For a visitor without a
+     * session it offers to sign in or sign up instead. The "Perfil" tab of the Cliente shell. */
+    data object Profile : Destination
+
+    /** Iniciar sesión / crear cuenta, one destination hosting both forms ([startOnSignUp] picks
+     * the first one). Pushed on top of wherever the visitor was when an account became necessary
+     * ("Reservar", "Convertirme en Proveedor"), so going back returns them there. */
+    data class Auth(val startOnSignUp: Boolean = false) : Destination
+
+    /** Aviso de correo sin verificar, con reenvío (identity-flow.md: verification before booking or
+     * activating Provider mode). Pushed over wherever the User was, like [Auth]. */
+    data object VerifyEmail : Destination
+
     // --- feature:booking — Scheduling + address (Customer) ------------------------------------
 
     data class Booking(val providerId: String) : Destination

@@ -46,11 +46,14 @@ class ServiceListViewModelTest {
     }
 
     /** Builds the ViewModel and sends the Refresh [ServiceListScreen] sends on every entry. */
-    private fun newViewModel(providerId: String = TEMPORARY_PROVIDER_ID) = ServiceListViewModel(
+    private fun newViewModel(
+        providerId: String = TEST_PROVIDER_ID,
+        currentProvider: CurrentProvider = testCurrentProvider(providerId),
+    ) = ServiceListViewModel(
         obtenerServicios = ObtenerServiciosDelProveedorUseCase(repository),
         deshabilitarServicio = DeshabilitarServicioUseCase(repository),
         habilitarServicio = HabilitarServicioUseCase(repository),
-        providerId = providerId,
+        currentProvider = currentProvider,
     ).also { it.onAction(ServiceListAction.Refresh) }
 
     private fun details(title: String) = ServiceDetails(
@@ -82,9 +85,9 @@ class ServiceListViewModelTest {
     @Test
     fun `list shows own services including disabled ones in creation order and hides other providers`() =
         runTest(testDispatcher) {
-            seed(TEMPORARY_PROVIDER_ID, "corte")
+            seed(TEST_PROVIDER_ID, "corte")
             seed("otro-proveedor", "ajeno")
-            seed(TEMPORARY_PROVIDER_ID, "barba")
+            seed(TEST_PROVIDER_ID, "barba")
             repository.disableService("service-3")
             val viewModel = newViewModel()
 
@@ -95,6 +98,31 @@ class ServiceListViewModelTest {
             assertEquals(listOf("corte", "barba"), state.services.map { it.title })
             assertEquals(listOf(true, false), state.services.map { it.isActive })
             assertNull(state.error)
+        }
+
+    /** providerId contract (#58): the list is the one keyed by the profile id, not by the user id. */
+    @Test
+    fun `list reads the services of the profile id and not those keyed by the user id`() =
+        runTest(testDispatcher) {
+            seed("provider-profile-42", "del perfil")
+            seed(TEST_USER_ID, "del usuario")
+            val viewModel = newViewModel(providerId = "provider-profile-42")
+
+            advanceUntilIdle()
+
+            assertEquals(listOf("del perfil"), viewModel.state.value.services.map { it.title })
+        }
+
+    @Test
+    fun `a user who has not activated Provider mode gets an explanation and no list`() =
+        runTest(testDispatcher) {
+            val viewModel = newViewModel(currentProvider = currentProviderWithoutProfile())
+
+            advanceUntilIdle()
+
+            assertEquals(NoProviderProfile, viewModel.state.value.error)
+            assertTrue(viewModel.state.value.services.isEmpty())
+            assertFalse(viewModel.state.value.isLoading)
         }
 
     @Test
@@ -125,7 +153,7 @@ class ServiceListViewModelTest {
 
     @Test
     fun `refresh after a failed load recovers`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         repository.listFailure = DomainError.NoConnection
         val viewModel = newViewModel()
         advanceUntilIdle() // init load fails; its ShowError send stays suspended (no collector)
@@ -142,8 +170,8 @@ class ServiceListViewModelTest {
     /** Escenario: "El Proveedor deshabilita un Servicio". */
     @Test
     fun `disabling a service flips it to inactive in state but keeps it listed`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
-        seed(TEMPORARY_PROVIDER_ID, "barba")
+        seed(TEST_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "barba")
         val viewModel = newViewModel()
         advanceUntilIdle()
 
@@ -160,7 +188,7 @@ class ServiceListViewModelTest {
     /** Escenario: "El Proveedor re-habilita un Servicio deshabilitado". */
     @Test
     fun `re-enabling a disabled service makes it active again and keeps its data`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         repository.disableService("service-1")
         val viewModel = newViewModel()
         advanceUntilIdle()
@@ -180,7 +208,7 @@ class ServiceListViewModelTest {
     /** Escenario: "El Proveedor habilita un Servicio que ya estaba activo". */
     @Test
     fun `enabling an already active service is a harmless no-op`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         val viewModel = newViewModel()
         advanceUntilIdle()
         val before = viewModel.state.value.services
@@ -195,7 +223,7 @@ class ServiceListViewModelTest {
     /** Escenario: "El Proveedor consulta o habilita un Servicio que no existe". */
     @Test
     fun `toggling an unknown service reports not found and leaves the list untouched`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         val viewModel = newViewModel()
         advanceUntilIdle()
         val before = viewModel.state.value.services
@@ -214,7 +242,7 @@ class ServiceListViewModelTest {
 
     @Test
     fun `add and edit clicks emit navigation events`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         val viewModel = newViewModel()
         advanceUntilIdle()
 
@@ -236,7 +264,7 @@ class ServiceListViewModelTest {
         advanceUntilIdle()
         assertTrue(viewModel.state.value.services.isEmpty())
 
-        seed(TEMPORARY_PROVIDER_ID, "corte") // what the editor does between two list visits
+        seed(TEST_PROVIDER_ID, "corte") // what the editor does between two list visits
         viewModel.onAction(ServiceListAction.Refresh) // what ServiceListScreen sends on entry
         advanceUntilIdle()
 
@@ -246,7 +274,7 @@ class ServiceListViewModelTest {
 
     @Test
     fun `a refresh picks up edits made elsewhere to an already listed service`() = runTest(testDispatcher) {
-        seed(TEMPORARY_PROVIDER_ID, "corte")
+        seed(TEST_PROVIDER_ID, "corte")
         val viewModel = newViewModel()
         advanceUntilIdle()
 
@@ -265,6 +293,7 @@ class ServiceListViewModelTest {
             obtenerServicios = ObtenerServiciosDelProveedorUseCase(repository),
             deshabilitarServicio = DeshabilitarServicioUseCase(repository),
             habilitarServicio = HabilitarServicioUseCase(repository),
+            currentProvider = testCurrentProvider(),
         )
 
         assertTrue(viewModel.state.value.isLoading)

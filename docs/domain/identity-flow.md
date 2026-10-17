@@ -128,6 +128,23 @@ What implementing revealed, so the decisions above stay honest:
   `InvalidInput` with a fixed message (unverified email). A dedicated `DomainError` variant was
   considered and left out because it breaks the exhaustive `when (error)` in `feature:*`.
 
+## Implementation notes (#58, UI)
+
+- **Sign-in is pushed, not a tab.** `Auth` (sign in and sign up share one destination) and
+  `VerifyEmail` are pushed over the screen that needed an account, so "volver a donde estaba" is a
+  plain back. After "Reservar" the visitor lands on the same Service/Provider page; the tap itself is
+  not replayed (the booking flow is #26 and will decide whether to resume with the chosen TimeSlot).
+- **Verification flow:** a new email account goes sign-up → verification notice → back. Signing in
+  with an unverified account does not push the notice; the guard does it at the first "Reservar" /
+  "Convertirme en Proveedor" instead, and the profile shows a "Verificar correo" card.
+- **Deletion is confirm-then-check:** the use case has no dry run (it deletes or refuses), so the
+  dialog asks for confirmation first and, if refused, replaces itself with the blocking Bookings.
+- **Validation messages are field-less** (`InvalidInput(message)`), so the forms attach each to its
+  field by the subject the use cases put first in the text (`fieldOf`); an unknown message falls back
+  to the form level.
+- **Photo** is a link in a text field for now; picking one from the device needs the platform
+  pickers and an image loader (Platform Integration). Social buttons run against the fake.
+
 ## Open questions (resolve when implementing, not now)
 
 - Whether a deleted Provider's still-public reviews should keep showing on their (now hidden)

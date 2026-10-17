@@ -26,8 +26,8 @@ private const val LOAD_ERROR_MESSAGE = "No pudimos cargar tus calificaciones"
 /**
  * P11 — "Calificaciones recibidas" on the completed profile: the shared `RatingDisplay`
  * (average + count + histogram + individual reviews) as Customers see it. Loads fresh every time
- * it enters composition. Reviewers' names don't exist yet (no Identity context), so each review
- * reads "Cliente", see [CLIENT_LABEL].
+ * it enters composition. Each review shows its author's real name, see
+ * [ProviderReviewsUiState.authorNames].
  */
 @Composable
 internal fun ProviderReviewsSection(viewModel: ProviderReviewsViewModel = koinViewModel()) {
@@ -48,7 +48,10 @@ internal fun ProviderReviewsContent(state: ProviderReviewsUiState, onRetry: () -
             else -> RatingDisplay(
                 average = state.average,
                 count = state.count,
-                reviews = state.reviews.mapNotNull { it.toRatingReview(TimeZone.currentSystemDefault()) },
+                reviews = state.reviews.mapNotNull { booking ->
+                    val author = state.authorNames[booking.customerId] ?: CLIENT_LABEL
+                    booking.toRatingReview(TimeZone.currentSystemDefault(), author)
+                },
             )
         }
     }
@@ -65,12 +68,12 @@ private fun ReviewsLoadError(error: DomainError, onRetry: () -> Unit) {
 }
 
 /** One review row: the stars and optional comment of a rated Booking, dated by its completion. */
-internal fun Booking.toRatingReview(timeZone: TimeZone): RatingReview? {
+internal fun Booking.toRatingReview(timeZone: TimeZone, authorName: String): RatingReview? {
     val rating = rating ?: return null
     return RatingReview(
         id = id,
         stars = rating.stars,
-        author = CLIENT_LABEL,
+        author = authorName,
         comment = rating.comment,
         dateLabel = completedAt?.toLocalDateTime(timeZone)?.date?.spanishText(),
     )

@@ -31,7 +31,7 @@ internal fun ServiceDetailContent(state: ServiceDetailUiState, onAction: (Servic
                     actionLabel = "Reintentar",
                     onAction = { onAction(ServiceDetailAction.Retry) },
                 )
-                detail != null -> ServiceDetailBody(detail = detail, onAction = onAction)
+                detail != null -> ServiceDetailBody(detail, state.bookingError, onAction)
                 else -> LoadingContent()
             }
         }

@@ -1,116 +1,65 @@
 package corp.khin.solutions.booqi
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiTheme
 import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
 import corp.khin.solutions.booqi.core.navigation.Navigator
 import corp.khin.solutions.booqi.feature.browse.BrowseScreen
-import corp.khin.solutions.booqi.feature.browse.ProviderPublicProfileScreen
-import corp.khin.solutions.booqi.feature.browse.ServiceDetailScreen
-import corp.khin.solutions.booqi.feature.provider.BookingRequestInboxScreen
-import corp.khin.solutions.booqi.feature.provider.ProviderProfileScreen
-import corp.khin.solutions.booqi.feature.provider.ScheduleManagementScreen
-import corp.khin.solutions.booqi.feature.provider.ServiceEditorScreen
-import corp.khin.solutions.booqi.feature.provider.ServiceListScreen
 
 /**
- * App root: theme + the single [DefaultNavigator] instance for the whole app.
- * [Destination.Browse] (`feature:browse`) and [Destination.ProviderProfileSetup]
- * (`feature:provider`) are wired for real — the rest land with their own feature modules as those
- * tickets ship. Navigator/Destination already account for all of them so wiring a new one in is
- * additive here, not a rewrite.
+ * App root: theme + the single [DefaultNavigator] instance for the whole app, the current
+ * destination, and the bottom navigation of whichever session shell (Cliente or Proveedor) it
+ * belongs to (see [AppNavigationBar]). Destinations are grouped by feature module in
+ * `CustomerDestinations.kt`, `AccountDestinations.kt` and `ProviderDestinations.kt`; the ones whose
+ * module is not built yet (`feature:booking`, #26) land with their own tickets — wiring a new one in
+ * is additive here, not a rewrite.
  */
 @Composable
 fun App() {
     BooqiTheme {
         val navigator = remember { DefaultNavigator() }
         val backStack by navigator.backStack.collectAsState()
+        val destination = backStack.last()
 
         // Insets are applied once here, for every screen, so no feature draws under the status
         // bar/Dynamic Island, the home indicator, or the keyboard.
-        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            DestinationContent(destination = backStack.last(), navigator = navigator)
-
-            // TEMPORARY: there is no "become a Provider" entry point in the product yet (that's
-            // normally reached from a User's own profile/settings, which doesn't exist — Identity
-            // bounded context isn't built, see docs/DOMAIN.md). This button switches between
-            // Browse and the Provider flow so both are reachable for manual verification ahead of
-            // that real entry point. Remove once a real navigation trigger exists.
-            val onProviderScreen = backStack.last() is Destination.ProviderProfileSetup
-            FilledTonalButton(
-                onClick = {
-                    navigator.navigateTo(
-                        if (onProviderScreen) Destination.Browse else Destination.ProviderProfileSetup,
-                    )
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(BooqiSpacing.md),
-            ) {
-                Text(if (onProviderScreen) "Volver a Browse" else "Modo Proveedor")
+        Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            Box(modifier = Modifier.weight(1f)) {
+                DestinationContent(destination = destination, navigator = navigator)
             }
+            AppNavigationBar(destination = destination, navigator = navigator)
         }
     }
 }
 
-/** Renders the screen for [destination]; one branch per wired [Destination]. */
+/** Renders the screen for [destination], delegating to the group of its feature module. */
 @Composable
 private fun DestinationContent(destination: Destination, navigator: Navigator) {
     when (destination) {
-        is Destination.Browse -> BrowseScreen(
-            onProviderSelected = { serviceId ->
-                navigator.navigateTo(Destination.ServiceDetail(serviceId))
-            },
-        )
-        is Destination.ServiceDetail -> ServiceDetailScreen(
-            serviceId = destination.serviceId,
-            onProviderSelected = { id -> navigator.navigateTo(Destination.ProviderProfileView(id)) },
-            // TEMPORARY no-op: the Customer booking flow is #26 (feature:booking not built yet).
-            onBook = { _, _ -> },
-            onFinished = { navigator.navigateBack() },
-        )
-        is Destination.ProviderProfileView -> ProviderPublicProfileScreen(
-            providerId = destination.providerId,
-            onServiceSelected = { id -> navigator.navigateTo(Destination.ServiceDetail(id)) },
-            // TEMPORARY no-op until #26, same as above.
-            onBook = { _, _ -> },
-            onFinished = { navigator.navigateBack() },
-        )
-        is Destination.ProviderProfileSetup -> ProviderProfileScreen(
-            onManageServices = { navigator.navigateTo(Destination.ServiceList) },
-            onManageSchedule = { navigator.navigateTo(Destination.ScheduleManagement) },
-            onManageBookings = { navigator.navigateTo(Destination.BookingRequestInbox) },
-        )
-        is Destination.ServiceList -> ServiceListScreen(
-            onAddService = { navigator.navigateTo(Destination.ServiceEditor()) },
-            onEditService = { id -> navigator.navigateTo(Destination.ServiceEditor(id)) },
-        )
-        is Destination.BookingRequestInbox -> BookingRequestInboxScreen(
-            onFinished = { navigator.navigateBack() },
-        )
-        is Destination.ScheduleManagement -> ScheduleManagementScreen(
-            onFinished = { navigator.navigateBack() },
-        )
-        is Destination.ServiceEditor -> ServiceEditorScreen(
-            serviceId = destination.serviceId,
-            onFinished = { navigator.navigateBack() },
-        )
-        // Remaining destinations land with their own feature modules as those tickets
-        // ship: Booking,
-        // BookingConfirmation, MyBookings, AddressSelection (feature:booking).
+        is Destination.Browse,
+        is Destination.ServiceDetail,
+        is Destination.ProviderProfileView,
+        -> CustomerDestination(destination, navigator)
+        is Destination.Profile,
+        is Destination.Auth,
+        is Destination.VerifyEmail,
+        -> AccountDestination(destination, navigator)
+        is Destination.ProviderProfileSetup,
+        is Destination.ServiceList,
+        is Destination.ServiceEditor,
+        is Destination.ScheduleManagement,
+        is Destination.BookingRequestInbox,
+        -> ProviderDestination(destination, navigator)
+        // Booking, BookingConfirmation, MyBookings, AddressSelection land with feature:booking (#26).
         else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
     }
 }

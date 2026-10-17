@@ -21,6 +21,10 @@ class DefaultNavigator(startDestination: Destination = Destination.Browse) : Nav
         stack.value = stack.value + destination
     }
 
+    override fun navigateToRoot(destination: Destination) {
+        stack.value = listOf(destination)
+    }
+
     override fun navigateBack(): Boolean {
         if (stack.value.size <= 1) return false
         stack.value = stack.value.dropLast(1)

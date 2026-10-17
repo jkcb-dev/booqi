@@ -8,6 +8,7 @@ import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.ProviderReasonCode
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.ServiceModality
+import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.usecase.AceptarReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CancelarReservaAceptadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarCitaUseCase
@@ -15,6 +16,7 @@ import corp.khin.solutions.booqi.domain.usecase.ObtenerReservaUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerReservasDelProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerServiciosDelProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.ObtenerSolicitudesPendientesUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import corp.khin.solutions.booqi.domain.usecase.RechazarReservaUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -57,6 +59,7 @@ class BookingInboxViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val bookings = FakeBookingRepository()
     private val services = FakeServiceRepository()
+    private val users = FakeUserRepository()
 
     // Saturday 3 October 2026, midday UTC (the provider's wall clock too: the tests use TimeZone.UTC).
     private val now = Instant.parse("2026-10-03T12:00:00Z")
@@ -78,6 +81,7 @@ class BookingInboxViewModelTest {
             agenda = ObtenerReservasDelProveedorUseCase(bookings),
             booking = ObtenerReservaUseCase(bookings),
             services = ObtenerServiciosDelProveedorUseCase(services),
+            users = ObtenerUsuarioPublicoUseCase(users),
         ),
         commands = BookingInboxCommands(
             accept = AceptarReservaUseCase(bookings, clock),
@@ -85,6 +89,7 @@ class BookingInboxViewModelTest {
             complete = CompletarCitaUseCase(bookings, clock),
             cancel = CancelarReservaAceptadaUseCase(bookings),
         ),
+        currentProvider = testCurrentProvider(users = users),
         clock = clock,
         timeZone = TimeZone.UTC,
     )
@@ -101,7 +106,7 @@ class BookingInboxViewModelTest {
         status: BookingStatus = BookingStatus.REQUESTED,
         scheduledAt: LocalDateTime = LocalDateTime(2026, 10, 4, 10, 0),
         requestedAt: Instant = now - 1.hours,
-        providerId: String = TEMPORARY_PROVIDER_ID,
+        providerId: String = TEST_PROVIDER_ID,
         customerNote: String? = null,
     ) = Booking(
         id = id,
@@ -118,7 +123,7 @@ class BookingInboxViewModelTest {
 
     private suspend fun seedService() {
         services.addService(
-            TEMPORARY_PROVIDER_ID,
+            TEST_PROVIDER_ID,
             ServiceDetails("Corte de pelo", "https://example.com/c.jpg", "Corte", 1250, 60, ServiceModality.LOCAL),
         )
     }
@@ -157,6 +162,66 @@ class BookingInboxViewModelTest {
         assertEquals(listOf("confirmed"), state.confirmed.map { it.id })
         assertEquals("Corte de pelo", state.serviceTitles["service-1"])
     }
+
+    /** Escenario: "Los nombres reales reemplazan a Cliente" (#58) — the Customer's real name. */
+    @Test
+    fun `rows show the real name of the customer and a deleted account reads Usuario eliminado`() =
+        runTest(testDispatcher) {
+            users.add(testUser(id = "customer-1", name = "Camila Torres"))
+            users.add(User(id = "customer-2", displayName = "", email = null, isDeleted = true))
+            bookings.seed(booking("a"))
+            bookings.seed(booking("b").copy(customerId = "customer-2"))
+            bookings.seed(booking("c").copy(customerId = "customer-unknown"))
+
+            val viewModel = started()
+
+            val state = viewModel.state.value
+            assertEquals("Camila Torres", state.labelsOf(state.requests.single { it.id == "a" }).customerName)
+            assertEquals("Usuario eliminado", state.labelsOf(state.requests.single { it.id == "b" }).customerName)
+            // A name that cannot be read is a nicety lost, not a failed inbox.
+            assertEquals("Cliente", state.labelsOf(state.requests.single { it.id == "c" }).customerName)
+            assertNull(state.loadError)
+        }
+
+    /** providerId contract (#58): the inbox is the one of the profile id, not of the user id. */
+    @Test
+    fun `the inbox reads the bookings of the profile id and not those keyed by the user id`() =
+        runTest(testDispatcher) {
+            bookings.seed(booking("mine"))
+            bookings.seed(booking("by-user-id", providerId = TEST_USER_ID))
+
+            val viewModel = started()
+
+            assertEquals(listOf("mine"), viewModel.state.value.requests.map { it.id })
+        }
+
+    @Test
+    fun `a user who has not activated Provider mode gets an explanation instead of an inbox`() =
+        runTest(testDispatcher) {
+            val viewModel = BookingInboxViewModel(
+                queries = BookingInboxQueries(
+                    pendingRequests = ObtenerSolicitudesPendientesUseCase(bookings, clock),
+                    agenda = ObtenerReservasDelProveedorUseCase(bookings),
+                    booking = ObtenerReservaUseCase(bookings),
+                    services = ObtenerServiciosDelProveedorUseCase(services),
+                    users = ObtenerUsuarioPublicoUseCase(users),
+                ),
+                commands = BookingInboxCommands(
+                    accept = AceptarReservaUseCase(bookings, clock),
+                    reject = RechazarReservaUseCase(bookings, clock),
+                    complete = CompletarCitaUseCase(bookings, clock),
+                    cancel = CancelarReservaAceptadaUseCase(bookings),
+                ),
+                currentProvider = currentProviderWithoutProfile(),
+                clock = clock,
+                timeZone = TimeZone.UTC,
+            )
+
+            viewModel.send(BookingInboxAction.Start)
+
+            assertEquals(NoProviderProfile, viewModel.state.value.loadError)
+            assertFalse(viewModel.state.value.isLoading)
+        }
 
     @Test
     fun `a provider without requests gets empty lists and no error`() = runTest(testDispatcher) {

@@ -32,6 +32,7 @@ internal fun BookingDetailContent(
     onAction: (BookingInboxAction) -> Unit,
 ) {
     val booking = detail.booking
+    val labels = state.labelsOf(booking)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -41,13 +42,13 @@ internal fun BookingDetailContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = state.serviceTitles[booking.serviceId] ?: SERVICE_FALLBACK_LABEL,
+                text = labels.serviceTitle,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f),
             )
             BookingStatusChip(booking.status)
         }
-        BookingFactsCard(booking)
+        BookingFactsCard(booking, labels.customerName)
         CustomerNote(booking.customerNote)
         booking.reason?.let { reason ->
             LabeledValue(label = "Motivo", value = reason.text())
@@ -57,13 +58,13 @@ internal fun BookingDetailContent(
 }
 
 @Composable
-private fun BookingFactsCard(booking: Booking) {
+private fun BookingFactsCard(booking: Booking, customerName: String) {
     Card(shape = RoundedCornerShape(BooqiCornerRadius.medium), modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(BooqiSpacing.md),
             verticalArrangement = Arrangement.spacedBy(BooqiSpacing.sm),
         ) {
-            LabeledValue(label = "Cliente", value = CLIENT_LABEL)
+            LabeledValue(label = "Cliente", value = customerName)
             LabeledValue(label = "Fecha y hora", value = booking.whenText())
             LabeledValue(label = "Duración", value = "${booking.durationMinutesSnapshot} min")
             LabeledValue(label = "Precio", value = booking.priceText())

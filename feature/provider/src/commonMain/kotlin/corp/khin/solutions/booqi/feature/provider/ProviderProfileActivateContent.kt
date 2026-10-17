@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiCornerRadius
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColors
@@ -27,7 +28,7 @@ private val PROVIDER_MODE_BENEFITS = listOf(
 
 /** P1 — "activar modo Proveedor": CTA + "¿Qué incluye?" list. */
 @Composable
-internal fun ActivateProviderModeContent(onAction: (ProviderProfileAction) -> Unit) {
+internal fun ActivateProviderModeContent(error: DomainError?, onAction: (ProviderProfileAction) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(BooqiSpacing.md),
         verticalArrangement = Arrangement.spacedBy(BooqiSpacing.lg),
@@ -46,6 +47,15 @@ internal fun ActivateProviderModeContent(onAction: (ProviderProfileAction) -> Un
         }
 
         WhatsIncludedCard(items = PROVIDER_MODE_BENEFITS)
+
+        // Escenarios "...sin sesión" / "...con correo sin verificar": the guard's refusal, in words.
+        error?.let {
+            Text(
+                text = it.describe(notFound = "No se encontró el perfil"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
 
         Button(
             onClick = { onAction(ProviderProfileAction.ActivateProviderMode) },

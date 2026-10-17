@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Availability
 import corp.khin.solutions.booqi.domain.model.BlockedPeriod
 import corp.khin.solutions.booqi.domain.model.TimeRange
@@ -39,7 +40,7 @@ class DateBlockingViewModel(
     private val obtenerHorario: ObtenerHorarioUseCase,
     private val bloquearFechaHora: BloquearFechaHoraUseCase,
     private val desbloquearFechaHora: DesbloquearFechaHoraUseCase,
-    private val providerId: String = TEMPORARY_PROVIDER_ID,
+    private val currentProvider: CurrentProvider,
     private val clock: Clock = Clock.System,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) : ViewModel() {
@@ -58,7 +59,8 @@ class DateBlockingViewModel(
             DateBlockingAction.PreviousMonth -> shiftMonth(-1)
             DateBlockingAction.NextMonth -> shiftMonth(1)
             is DateBlockingAction.DateTapped -> toggleWholeDay(action.date)
-            is DateBlockingAction.Unblock -> submit { desbloquearFechaHora(providerId, action.period) }
+            is DateBlockingAction.Unblock ->
+                submit { currentProvider.profileId().flatMap { desbloquearFechaHora(it, action.period) } }
             DateBlockingAction.ShowRangeForm ->
                 _state.update { it.copy(rangeForm = BlockRangeFormState(date = it.today)) }
             DateBlockingAction.DismissRangeForm -> _state.update { it.copy(rangeForm = null) }
@@ -80,7 +82,7 @@ class DateBlockingViewModel(
         loadJob?.cancel()
         _state.value = initialState()
         loadJob = viewModelScope.launch {
-            when (val result = obtenerHorario(providerId)) {
+            when (val result = currentProvider.profileId().flatMap { obtenerHorario(it) }) {
                 is DomainResult.Success -> _state.update {
                     it.copy(isLoading = false, blockedPeriods = result.value.blockedPeriods)
                 }
@@ -110,10 +112,12 @@ class DateBlockingViewModel(
         if (current.isLoading || current.loadError != null) return
         val period = BlockedPeriod(date)
         submit {
-            if (period in current.blockedPeriods) {
-                desbloquearFechaHora(providerId, period)
-            } else {
-                bloquearFechaHora(providerId, period)
+            currentProvider.profileId().flatMap { providerId ->
+                if (period in current.blockedPeriods) {
+                    desbloquearFechaHora(providerId, period)
+                } else {
+                    bloquearFechaHora(providerId, period)
+                }
             }
         }
     }
@@ -130,7 +134,9 @@ class DateBlockingViewModel(
             return
         }
         submit(formRule = FormRule.ClosesOnSuccess) {
-            bloquearFechaHora(providerId, BlockedPeriod(form.date, TimeRange(start, end)))
+            currentProvider.profileId().flatMap {
+                bloquearFechaHora(it, BlockedPeriod(form.date, TimeRange(start, end)))
+            }
         }
     }
 
@@ -170,7 +176,7 @@ class DateBlockingViewModel(
     private suspend fun onFailed(error: DomainError, formRule: FormRule) {
         val message = error.describe(NOT_FOUND_MESSAGE)
         _state.update { it.copy(isUpdating = false) }
-        if (error is DomainError.InvalidInput && formRule == FormRule.ClosesOnSuccess) {
+        if (error is DomainError.InvalidInput && error != NoProviderProfile && formRule == FormRule.ClosesOnSuccess) {
             editFormError(message)
         } else {
             _state.update { it.copy(actionError = message) }

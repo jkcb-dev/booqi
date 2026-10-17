@@ -33,13 +33,13 @@ class FakeAvailabilityRepository : AvailabilityRepository {
         private set
 
     /** What is stored for [providerId], bypassing failures — for assertions and seeding. */
-    fun stored(providerId: String = TEMPORARY_PROVIDER_ID): Availability = snapshot(providerId)
+    fun stored(providerId: String = TEST_PROVIDER_ID): Availability = snapshot(providerId)
 
-    fun seedWeekly(hours: List<DayHours>, providerId: String = TEMPORARY_PROVIDER_ID) {
+    fun seedWeekly(hours: List<DayHours>, providerId: String = TEST_PROVIDER_ID) {
         weeklyByProvider[providerId] = hours
     }
 
-    fun seedBlocked(periods: List<BlockedPeriod>, providerId: String = TEMPORARY_PROVIDER_ID) {
+    fun seedBlocked(periods: List<BlockedPeriod>, providerId: String = TEST_PROVIDER_ID) {
         blockedByProvider[providerId] = periods
     }
 

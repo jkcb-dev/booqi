@@ -4,6 +4,8 @@ package corp.khin.solutions.booqi.feature.browse
 
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.domain.model.ServiceCategory
+import corp.khin.solutions.booqi.domain.model.User
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerDetalleServicioUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,7 +54,12 @@ class ServiceDetailViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun newViewModel() = ServiceDetailViewModel(VerDetalleServicioUseCase(services, profiles))
+    private val users = FakeUserRepository()
+
+    private fun newViewModel() = ServiceDetailViewModel(
+        verDetalleServicio = VerDetalleServicioUseCase(services, profiles),
+        requerirCuentaVerificada = RequerirCuentaVerificadaUseCase(users),
+    )
 
     private fun TestScope.start(viewModel: ServiceDetailViewModel, serviceId: String) {
         viewModel.onAction(ServiceDetailAction.Start(serviceId))
@@ -121,7 +128,10 @@ class ServiceDetailViewModelTest {
         val orphan = FakeServiceRepository(
             listOf(CatalogFixture.service("s-x", "p-incomplete", "X", ServiceCategory.OTRO)),
         )
-        val viewModel = ServiceDetailViewModel(VerDetalleServicioUseCase(orphan, profiles))
+        val viewModel = ServiceDetailViewModel(
+            VerDetalleServicioUseCase(orphan, profiles),
+            RequerirCuentaVerificadaUseCase(users),
+        )
 
         start(viewModel, "s-x")
 
@@ -167,6 +177,57 @@ class ServiceDetailViewModelTest {
         val event = performAndAwaitEvent(viewModel, ServiceDetailAction.ProviderClicked)
 
         assertEquals(ServiceDetailEvent.NavigateToProvider(CatalogFixture.CASA_ID), event)
+    }
+
+    /** Escenario: "Un visitante intenta reservar sin cuenta" — sign in first, then back on this screen. */
+    @Test
+    fun `reservar without a session asks to sign in and does not reach the booking flow`() =
+        runTest(testDispatcher) {
+            users.current = null
+            val viewModel = newViewModel()
+            start(viewModel, "s3")
+
+            val event = performAndAwaitEvent(viewModel, ServiceDetailAction.BookClicked)
+
+            assertEquals(ServiceDetailEvent.SignInRequired, event)
+            assertEquals("s3", viewModel.state.value.detail?.service?.id)
+            assertNull(viewModel.state.value.bookingError)
+        }
+
+    /** Escenario: "Un Usuario con correo sin verificar intenta reservar". */
+    @Test
+    fun `reservar with an unverified email asks to verify it and does not reach the booking flow`() =
+        runTest(testDispatcher) {
+            users.current = User(id = "u", displayName = "Ana", email = "ana@booqi.test", isEmailVerified = false)
+            val viewModel = newViewModel()
+            start(viewModel, "s3")
+
+            val event = performAndAwaitEvent(viewModel, ServiceDetailAction.BookClicked)
+
+            assertEquals(ServiceDetailEvent.VerificationRequired, event)
+        }
+
+    @Test
+    fun `reservar with a deleted account asks to sign in`() = runTest(testDispatcher) {
+        users.current = User(id = "u", displayName = "", email = null, isDeleted = true)
+        val viewModel = newViewModel()
+        start(viewModel, "s3")
+
+        val event = performAndAwaitEvent(viewModel, ServiceDetailAction.BookClicked)
+
+        assertEquals(ServiceDetailEvent.SignInRequired, event)
+    }
+
+    /** Escenario: "Un visitante explora sin cuenta" — the detail loads and shows without a session. */
+    @Test
+    fun `a visitor without a session can still see the whole detail`() = runTest(testDispatcher) {
+        users.current = null
+        val viewModel = newViewModel()
+
+        start(viewModel, "s3")
+
+        assertEquals(CatalogFixture.limpieza, viewModel.state.value.detail?.service)
+        assertNull(viewModel.state.value.error)
     }
 
     @Test

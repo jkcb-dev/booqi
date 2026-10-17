@@ -113,7 +113,7 @@ Complete, self-sufficient UI sections combining molecules/atoms.
 | `RatingDisplay` | rating summary + histogram + individual reviews |
 | `AddressPicker` | search field + map + confirm button |
 | `EmptyState` | 4 confirmed variants: sin servicios, sin solicitudes, sin reservas, sin resultados |
-| `BottomNavigation` | 2 variants: Cliente (Inicio/Buscar/Reservas/Perfil), Proveedor (Inicio/Solicitudes/Servicios/Perfil) |
+| `BottomNavigation` | 2 variants: Cliente (Inicio/Buscar/Reservas/Perfil), Proveedor (Inicio/Solicitudes/Servicios/Perfil). Built in `core:designsystem` (#58) as text tabs (no icon set yet); the app shows only the tabs whose screen exists, see `docs/ARCHITECTURE.md` § Navigation shell |
 
 ## Templates
 
@@ -136,7 +136,7 @@ imports), so it moves up to `core:designsystem`.
 | Layer | Component | Owner | Why |
 |---|---|---|---|
 | Atom | Button, Input field, StatusBadgeES, Category chip, Modality badge | `core:designsystem` | used across every feature module |
-| Organism | `EmptyState` | `core:designsystem` | all three feature modules need an empty state |
+| Organism | `EmptyState` | `core:designsystem` | every feature module needs an empty state |
 | Organism | `BottomNavigation` | `core:designsystem` | both Cliente and Proveedor session shells need it |
 | Organism | `RatingDisplay` | `core:designsystem` | shown in both `feature:browse` (C4) and `feature:provider` (P11) |
 | Organism | `ReasonPicker` | `core:designsystem` | Provider picks the reason (P9), Customer sees it read-only (C10) — cross-module |

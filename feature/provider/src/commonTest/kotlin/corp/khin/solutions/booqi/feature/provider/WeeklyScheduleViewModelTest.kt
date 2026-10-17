@@ -52,6 +52,7 @@ class WeeklyScheduleViewModelTest {
         obtenerHorario = ObtenerHorarioUseCase(repository),
         definirHorario = DefinirHorarioSemanalUseCase(repository),
         modificarHorario = ModificarHorarioSemanalUseCase(repository),
+        currentProvider = testCurrentProvider(),
     ).also { it.onAction(WeeklyScheduleAction.Start) }
 
     private fun hours(day: DayOfWeek, startHour: Int, endHour: Int, isActive: Boolean = true) =
@@ -126,6 +127,7 @@ class WeeklyScheduleViewModelTest {
             obtenerHorario = ObtenerHorarioUseCase(repository),
             definirHorario = DefinirHorarioSemanalUseCase(repository),
             modificarHorario = ModificarHorarioSemanalUseCase(repository),
+            currentProvider = testCurrentProvider(),
         )
 
         assertTrue(viewModel.state.value.isLoading)

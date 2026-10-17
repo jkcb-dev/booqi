@@ -15,10 +15,10 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   `customer-flow.md`) — read the BDD scenarios for your ticket's group; they describe the exact
   UI behavior expected (what's disabled when, what validation errors look like, what happens on
   success/failure).
-- `docs/ARCHITECTURE.md` — **the feature-module policy**: there are exactly three `feature:*`
-  modules (`feature:browse`, `feature:booking`, `feature:provider`), grouped by which user session
-  they serve, not one module per screen or per ticket. Figure out which of the three your ticket's
-  screen belongs to before creating anything — don't invent a fourth module.
+- `docs/ARCHITECTURE.md` — **the feature-module policy**: there are exactly four `feature:*`
+  modules (`feature:account`, `feature:browse`, `feature:booking`, `feature:provider`), grouped by
+  which user session they serve, not one module per screen or per ticket. Figure out which of them
+  your ticket's screen belongs to before creating anything — don't invent a fifth module.
 - `docs/design/SCREENS.md` — maps your ticket to its Figma screen(s) and the confirmed UI
   structure (what fields, what components, what states) from the full design review. This is your
   visual reference — you don't have Figma access yourself, this doc stands in for it. If your
@@ -69,8 +69,9 @@ through `UseCase` classes injected via Koin — never a repository or datasource
   `docs/design/DESIGN_SYSTEM.md`'s atom/molecule/organism catalog for one that already covers it
   (e.g. `StatusBadgeES`, `EmptyState`) — extend or compose existing components rather than
   reimplementing their look inline.
-- **No auth/session exists yet.** If a use case needs the current user's id, use a constant
-  marked `TEMPORARY` (see `ProviderProfileViewModel`) — don't build auth ahead of its ticket.
+- **Identity exists (#56/#58).** Never a constant user/provider id: the current user comes from
+  `ObtenerUsuarioActual`, a `providerId` from `ObtenerMiPerfilDeProveedor` (see `CurrentProvider` in
+  `feature:provider`), and booking / Provider mode go through `RequerirCuentaVerificada`.
 - **Validation errors** (`DomainError.InvalidInput`) render as a form error on the field, never a
   crash and never a generic error event.
 - **Split multi-step screens one file per step** — detekt's function-count/length limits apply to

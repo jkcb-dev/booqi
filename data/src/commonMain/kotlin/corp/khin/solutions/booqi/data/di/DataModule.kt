@@ -37,7 +37,8 @@ val dataModule = module {
     single<CatalogRepository> { CatalogRepositoryImpl(get(), get()) }
     single<BookingRemoteDataSource> { FakeBookingRemoteDataSource(seed = SampleData.bookings()) }
     single<BookingRepository> { BookingRepositoryImpl(get()) }
-    // Identity (#56): TEMPORARY in-memory auth until Supabase Auth (#27). Starts signed out.
-    single<AuthRemoteDataSource> { FakeAuthRemoteDataSource() }
+    // Identity (#56): TEMPORARY in-memory auth until Supabase Auth (#27). Starts signed out; the seeded
+    // accounts include the demo account (see SampleData).
+    single<AuthRemoteDataSource> { FakeAuthRemoteDataSource(seed = SampleData.accounts()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
 }

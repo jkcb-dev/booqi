@@ -54,6 +54,7 @@ kotlin {
             implementation(project(":core:navigation"))
             implementation(project(":domain"))
             implementation(project(":data"))
+            implementation(project(":feature:account"))
             implementation(project(":feature:browse"))
             implementation(project(":feature:provider"))
 

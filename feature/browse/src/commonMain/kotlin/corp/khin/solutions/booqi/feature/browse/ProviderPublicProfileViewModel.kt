@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.feature.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
  */
 class ProviderPublicProfileViewModel(
     private val verPerfilProveedor: VerPerfilProveedorUseCase,
+    private val requerirCuentaVerificada: RequerirCuentaVerificadaUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProviderPublicProfileUiState())
@@ -42,15 +44,31 @@ class ProviderPublicProfileViewModel(
             ProviderPublicProfileAction.Retry -> _state.value.providerId?.let(::load)
             is ProviderPublicProfileAction.ServiceClicked ->
                 emit(ProviderPublicProfileEvent.NavigateToService(action.serviceId))
-            is ProviderPublicProfileAction.BookClicked -> _state.value.profile?.let {
-                emit(ProviderPublicProfileEvent.NavigateToBooking(action.serviceId, it.provider.id))
-            }
+            is ProviderPublicProfileAction.BookClicked ->
+                _state.value.profile?.let { book(action.serviceId, it.provider.id) }
             ProviderPublicProfileAction.BackClicked -> emit(ProviderPublicProfileEvent.NavigateBack)
         }
     }
 
     private fun emit(event: ProviderPublicProfileEvent) {
         viewModelScope.launch { _events.send(event) }
+    }
+
+    /** Same guard as C3's "Reservar": no session -> sign in, unverified email -> verify, else on. */
+    private fun book(serviceId: String, providerId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(bookingError = null) }
+            when (val result = requerirCuentaVerificada()) {
+                is DomainResult.Success ->
+                    _events.send(ProviderPublicProfileEvent.NavigateToBooking(serviceId, providerId))
+                is DomainResult.Failure -> when (val access = result.error.toBookingAccess()) {
+                    BookingAccess.SignInRequired -> _events.send(ProviderPublicProfileEvent.SignInRequired)
+                    BookingAccess.VerificationRequired -> _events.send(ProviderPublicProfileEvent.VerificationRequired)
+                    is BookingAccess.Failed -> _state.update { it.copy(bookingError = access.error) }
+                    BookingAccess.Granted -> Unit
+                }
+            }
+        }
     }
 
     private fun load(providerId: String) {

@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.feature.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerDetalleServicioUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
  */
 class ServiceDetailViewModel(
     private val verDetalleServicio: VerDetalleServicioUseCase,
+    private val requerirCuentaVerificada: RequerirCuentaVerificadaUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ServiceDetailUiState())
@@ -43,15 +45,30 @@ class ServiceDetailViewModel(
             ServiceDetailAction.ProviderClicked -> _state.value.detail?.let {
                 emit(ServiceDetailEvent.NavigateToProvider(it.provider.id))
             }
-            ServiceDetailAction.BookClicked -> _state.value.detail?.let {
-                emit(ServiceDetailEvent.NavigateToBooking(it.service.id, it.provider.id))
-            }
+            ServiceDetailAction.BookClicked -> _state.value.detail?.let { book(it.service.id, it.provider.id) }
             ServiceDetailAction.BackClicked -> emit(ServiceDetailEvent.NavigateBack)
         }
     }
 
     private fun emit(event: ServiceDetailEvent) {
         viewModelScope.launch { _events.send(event) }
+    }
+
+    /** Escenarios: "Un visitante intenta reservar sin cuenta" / "Un Usuario con correo sin verificar
+     * intenta reservar" — the guard decides before the booking flow (#26) is handed anything. */
+    private fun book(serviceId: String, providerId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(bookingError = null) }
+            when (val result = requerirCuentaVerificada()) {
+                is DomainResult.Success -> _events.send(ServiceDetailEvent.NavigateToBooking(serviceId, providerId))
+                is DomainResult.Failure -> when (val access = result.error.toBookingAccess()) {
+                    BookingAccess.SignInRequired -> _events.send(ServiceDetailEvent.SignInRequired)
+                    BookingAccess.VerificationRequired -> _events.send(ServiceDetailEvent.VerificationRequired)
+                    is BookingAccess.Failed -> _state.update { it.copy(bookingError = access.error) }
+                    BookingAccess.Granted -> Unit
+                }
+            }
+        }
     }
 
     private fun load(serviceId: String) {

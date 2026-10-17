@@ -46,11 +46,15 @@ class ServiceEditorViewModelTest {
     }
 
     /** Builds the ViewModel and sends the Start [ServiceEditorScreen] sends on every entry. */
-    private fun newViewModel(serviceId: String? = null) = ServiceEditorViewModel(
+    private fun newViewModel(
+        serviceId: String? = null,
+        currentProvider: CurrentProvider = testCurrentProvider(),
+    ) = ServiceEditorViewModel(
         initialServiceId = serviceId,
         agregarServicio = AgregarServicioUseCase(repository),
         editarServicio = EditarServicioUseCase(repository),
         obtenerServicio = ObtenerServicioUseCase(repository),
+        currentProvider = currentProvider,
     ).also { it.onAction(ServiceEditorAction.Start(serviceId)) }
 
     /** Dispatches [action] and suspends until the single event it emits is collected. */
@@ -82,7 +86,7 @@ class ServiceEditorViewModelTest {
 
     private suspend fun seedService(isActive: Boolean = true) {
         repository.addService(
-            TEMPORARY_PROVIDER_ID,
+            TEST_PROVIDER_ID,
             ServiceDetails(
                 title = "Corte",
                 photoUrl = "https://example.com/original.jpg",
@@ -107,7 +111,7 @@ class ServiceEditorViewModelTest {
 
         assertEquals(ServiceEditorEvent.Saved, event)
         val saved = repository.stored.single()
-        assertEquals(TEMPORARY_PROVIDER_ID, saved.providerId)
+        assertEquals(TEST_PROVIDER_ID, saved.providerId)
         assertEquals("Corte clásico", saved.title)
         assertEquals("Corte con tijera y máquina", saved.description)
         assertEquals("https://example.com/corte.jpg", saved.photoUrl)
@@ -118,6 +122,33 @@ class ServiceEditorViewModelTest {
         assertFalse(viewModel.state.value.isSaving)
         assertNull(viewModel.state.value.photoError)
     }
+
+    /** providerId contract (#58): a service created in the app is keyed by the ProviderProfile id. */
+    @Test
+    fun `a new service is keyed by the profile id and not by the user id`() = runTest(testDispatcher) {
+        val viewModel = newViewModel(currentProvider = testCurrentProvider(profileId = "provider-profile-42"))
+        fillForm(viewModel)
+
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+
+        assertEquals("provider-profile-42", repository.stored.single().providerId)
+        assertTrue(repository.stored.none { it.providerId == TEST_USER_ID })
+    }
+
+    @Test
+    fun `adding a service before activating Provider mode explains it and saves nothing`() =
+        runTest(testDispatcher) {
+            val viewModel = newViewModel(currentProvider = currentProviderWithoutProfile())
+            fillForm(viewModel)
+
+            val event = performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+
+            assertTrue(event is ServiceEditorEvent.ShowError)
+            assertEquals(NoProviderProfile, viewModel.state.value.error)
+            assertNull(viewModel.state.value.photoError)
+            assertTrue(repository.stored.isEmpty())
+            assertFalse(viewModel.state.value.isSaving)
+        }
 
     /** Escenario: "El Proveedor agrega un Servicio sin foto". */
     @Test
@@ -320,7 +351,7 @@ class ServiceEditorViewModelTest {
     fun `switching from editing one service to another shows and saves the second`() = runTest(testDispatcher) {
         seedService()
         repository.addService(
-            TEMPORARY_PROVIDER_ID,
+            TEST_PROVIDER_ID,
             ServiceDetails("Barba", "https://example.com/barba.jpg", "Barba", 500, 15, ServiceModality.LOCAL),
         )
         val viewModel = newViewModel(serviceId = "service-1")

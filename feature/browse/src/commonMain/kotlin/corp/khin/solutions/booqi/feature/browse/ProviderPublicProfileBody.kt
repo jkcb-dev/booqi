@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.designsystem.component.RatingDisplay
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColors
@@ -28,6 +29,7 @@ import kotlinx.datetime.TimeZone
 @Composable
 internal fun ProviderPublicProfileBody(
     profile: ProviderPublicProfile,
+    bookingError: DomainError?,
     onAction: (ProviderPublicProfileAction) -> Unit,
 ) {
     val timeZone = TimeZone.currentSystemDefault()
@@ -37,6 +39,15 @@ internal fun ProviderPublicProfileBody(
         verticalArrangement = Arrangement.spacedBy(BooqiSpacing.md),
     ) {
         item { ProviderIntro(profile.provider) }
+        bookingError?.let { error ->
+            item {
+                Text(
+                    text = error.describe(notFound = "No pudimos iniciar la reserva"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
         item { Text("Servicios", style = MaterialTheme.typography.titleMedium) }
         if (profile.services.isEmpty()) {
             item {

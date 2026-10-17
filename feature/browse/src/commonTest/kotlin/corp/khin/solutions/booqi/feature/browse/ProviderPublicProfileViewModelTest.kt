@@ -4,7 +4,9 @@ package corp.khin.solutions.booqi.feature.browse
 
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.domain.model.ServiceCategory
+import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -61,8 +63,15 @@ class ProviderPublicProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private val users = FakeUserRepository()
+
     private fun newViewModel() = ProviderPublicProfileViewModel(
-        VerPerfilProveedorUseCase(profiles, services, ObtenerCalificacionesDelProveedorUseCase(bookings)),
+        verPerfilProveedor = VerPerfilProveedorUseCase(
+            profiles,
+            services,
+            ObtenerCalificacionesDelProveedorUseCase(bookings),
+        ),
+        requerirCuentaVerificada = RequerirCuentaVerificadaUseCase(users),
     )
 
     private fun TestScope.start(viewModel: ProviderPublicProfileViewModel, providerId: String) {
@@ -117,6 +126,7 @@ class ProviderPublicProfileViewModelTest {
                 FakeServiceRepository(),
                 ObtenerCalificacionesDelProveedorUseCase(FakeBookingRepository()),
             ),
+            RequerirCuentaVerificadaUseCase(users),
         )
 
         start(viewModel, CatalogFixture.CASA_ID)
@@ -177,6 +187,39 @@ class ProviderPublicProfileViewModelTest {
         val event = performAndAwaitEvent(viewModel, ProviderPublicProfileAction.ServiceClicked("s2"))
 
         assertEquals(ProviderPublicProfileEvent.NavigateToService("s2"), event)
+    }
+
+    @Test
+    fun `reservar on a card without a session asks to sign in`() = runTest(testDispatcher) {
+        users.current = null
+        val viewModel = newViewModel()
+        start(viewModel, CatalogFixture.STUDIO_ID)
+
+        val event = performAndAwaitEvent(viewModel, ProviderPublicProfileAction.BookClicked("s2"))
+
+        assertEquals(ProviderPublicProfileEvent.SignInRequired, event)
+    }
+
+    @Test
+    fun `reservar on a card with an unverified email asks to verify it`() = runTest(testDispatcher) {
+        users.current = User(id = "u", displayName = "Ana", email = "ana@booqi.test", isEmailVerified = false)
+        val viewModel = newViewModel()
+        start(viewModel, CatalogFixture.STUDIO_ID)
+
+        val event = performAndAwaitEvent(viewModel, ProviderPublicProfileAction.BookClicked("s2"))
+
+        assertEquals(ProviderPublicProfileEvent.VerificationRequired, event)
+    }
+
+    @Test
+    fun `a visitor without a session can still see the whole public profile`() = runTest(testDispatcher) {
+        users.current = null
+        val viewModel = newViewModel()
+
+        start(viewModel, CatalogFixture.STUDIO_ID)
+
+        assertEquals(3, viewModel.state.value.profile?.services?.size)
+        assertNull(viewModel.state.value.error)
     }
 
     @Test
