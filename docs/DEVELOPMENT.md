@@ -11,6 +11,7 @@ The `.claude/agents/booqi-*.md` files are **not** auto-registered as `subagent_t
 `general-purpose` agent with `model: sonnet`, and paste into the prompt: (1) the role file's full
 content, (2) the issue body, (3) the doc section it references, (4) the existing code patterns to
 match. Brief it on state you have **verified** (see "Dependency state" below), not state you assume.
+To run several roles at once, give each its own worktree (see "Parallel work in git worktrees").
 
 ## Ticket flow and dependencies
 
@@ -22,11 +23,42 @@ match. Brief it on state you have **verified** (see "Dependency state" below), n
   has no compile-time dependency: branch from `main`.
 - **`Closes #N` only fires when the PR merges into `main`.** A stacked PR (base ≠ `main`) won't
   close its issue; close it by hand once the work is on `main`.
+- **Prefer not stacking at all** — wait for the base PR to merge, or put a small follow-up (like an
+  Architect wiring commit) on the *same* PR. Stacking bit us twice: (1) if the base PR is
+  squash-merged first, merging the stacked PR sends it into the dead base branch and it never
+  reaches `main` (#45 → re-done as #46) — **retarget a stacked PR to `main` before merging it**;
+  (2) merging two dependent PRs in the wrong order broke `main` (#47 before #48 → hotfix #49) —
+  merge in dependency order.
+- **Close keywords are greedy.** Any `Closes/Fixes #N` in a PR body closes `#N`, even in a sentence
+  like "doesn't close #50" — write epic references without a close keyword (#57 closed epic #50).
 - Feature wiring is a separate fast-follow PR owned by Architect (see `docs/ARCHITECTURE.md`
   § Wiring a feature in). A `role:compose-ui` PR lists what Architect must add under a
   "For Architect" heading and does not edit those files.
 - Doc/process-only changes (`docs/`, `.claude/agents/`, `README.md`) go straight to `main`; source
   code goes through a PR.
+
+## Parallel work in git worktrees
+
+Several tickets can run at once, **one agent per git worktree** — never two agents in the same
+checkout (they switch branches under each other). With the Agent tool, pass
+`isolation: "worktree"`; by hand: `git worktree add ../Booqi-wt/<issue> -b feature/<issue>-<slug> origin/main`.
+
+- **Pick a batch that doesn't touch the same files.** Fine: append-only registration lines
+  (`domainModule`, `dataModule`, `providerModule`) and different docs sections. Not fine: two
+  tickets on the same screen/feature files, or two tickets both editing `App.kt` / `Destination.kt`
+  / `SampleData.kt` — those go sequentially (Architect wiring always happens after its UI ticket).
+- **Every worktree branches from `origin/main` and its PR targets `main`** — parallel tickets never
+  stack on each other. If B needs A's types, B isn't parallel with A.
+- **Fresh worktree setup:** copy `local.properties` from the main checkout (it is gitignored and
+  holds `sdk.dir`; without it the Android build fails). The first Gradle build in a new worktree is
+  slower (its own `build/` dirs; the `~/.gradle` cache is shared). graphify's git hooks fire in every
+  worktree — harmless (`graphify-out/` is gitignored).
+- **Capacity:** this machine (12 cores, 36 GB) handles ~3 parallel Gradle builds. Kotlin/Native
+  (iOS) compiles are the heaviest — run the iOS test tasks once, at the end of a ticket.
+- **Merging a batch:** merge one PR at a time. After each merge, rebase every remaining PR on
+  `origin/main` (`git rebase origin/main`; registration-line conflicts → keep both sides), rerun its
+  build + tests, and push with `--force-with-lease`. Only then merge the next one.
+- **Cleanup:** `git worktree remove <path>` after the PR merges; `git worktree prune` for leftovers.
 
 ## Verification (a real run, not a self-report)
 
@@ -59,9 +91,11 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   one file per step (`...ActivateContent.kt`, `...CompleteContent.kt`).
 - **Kotlin/Native test names**: no commas inside backticked test names — the iOS target rejects
   them even though the Android target accepts them.
-- **No auth/session yet** (Identity context isn't built). Where a use case needs a user id, use a
-  constant clearly marked `TEMPORARY` (see `ProviderProfileViewModel`) — don't build auth ahead of
-  its ticket.
+- **Current user:** Identity's domain exists (#56): `ObtenerUsuarioActual` (null when browsing
+  without an account), access guard `RequerirCuentaVerificada` before booking / Provider mode.
+  `providerId` everywhere is the **ProviderProfile id** (get it via `ObtenerMiPerfilDeProveedor`),
+  never the user id. Until #58 lands, the Provider screens still use the TEMPORARY placeholder id —
+  don't add new placeholders; use the use cases above.
 - **Date/time: use `kotlin.time.Clock` / `kotlin.time.Instant`, with `kotlinx-datetime` pinned to
   the version Material3 resolves (currently 0.7.1).** Material3 drags its own `kotlinx-datetime`
   onto the iOS classpath of `:shared` and every feature module, so a different pin in the catalog
@@ -80,13 +114,3 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   for a list, `LaunchedEffect(id) { onAction(Start(id)) }` for a form — and must not assume
   init-time loading is enough: "save in the editor, pop back to the list" otherwise shows the
   stale list, and "add → add again" shows the previous form. (Found on #15.)
-- **kotlinx-datetime version skew (open, found on #19).** The repo declares `kotlinx-datetime` 0.6.2,
-  but Compose Material3 1.11.0-alpha07 drags 0.7.1 onto every iOS app/test classpath that includes it
-  (`:shared`, `feature:*`). In 0.7.x `Instant` and `Clock` are typealiases of `kotlin.time.*`, so
-  `domain`'s klib — compiled against 0.6.2 — no longer links on iOS wherever it uses them: **`Booking`
-  cannot be constructed** (`IrLinkageError: No constructor found for symbol 'Booking.<init>'`) and the
-  `Clock`-taking use cases (`Aceptar/Rechazar/CompletarCita`, `ObtenerSolicitudesPendientes`, ...) fail
-  when Koin resolves them. Android is unaffected. It only shows at runtime/in `iosSimulatorArm64Test`,
-  not in `compileKotlinIosSimulatorArm64`. Probe: bumping the catalog to 0.7.1 makes only the six
-  `Clock.System` defaults in `domain` fail to compile on iOS (see `SystemClock`; `data` was not
-  reached), so the likely fix is that bump plus a `kotlin.time.Clock.System`-based default there.
