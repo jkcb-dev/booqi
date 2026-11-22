@@ -2,6 +2,7 @@ package corp.khin.solutions.booqi.domain.repository
 
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 
 /**
@@ -21,7 +22,9 @@ interface ProviderProfileRepository {
 
     /**
      * Escenario: "El Proveedor completa su perfil". Fills in the descriptive fields of the
-     * profile identified by [profileId] and marks it complete. Callers must have already
+     * profile identified by [profileId] and marks it complete.
+     * [location] carries the text and the optional pin; the pin stored is exactly the one passed
+     * (null clears it). Callers must have already
      * validated required fields (see [corp.khin.solutions.booqi.domain.usecase.
      * CompletarPerfilDeProveedorUseCase]) — this method assumes valid input and focuses on
      * persistence.
@@ -31,7 +34,7 @@ interface ProviderProfileRepository {
         name: String,
         photoUrl: String,
         description: String,
-        location: String,
+        location: ProviderLocation,
     ): DomainResult<ProviderProfile>
 
     /**

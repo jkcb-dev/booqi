@@ -33,7 +33,7 @@ no-disponibilidad; que el Proveedor responda a una reseña.)*
 | Evento | Comando | Actor | Agregado |
 |---|---|---|---|
 | Se activó el modo Proveedor | `ActivarModoProveedor` | Usuario | `User` → crea `ProviderProfile` |
-| Se completó el perfil | `CompletarPerfilDeProveedor` | Proveedor | `ProviderProfile` |
+| Se completó el perfil | `CompletarPerfilDeProveedor` (ubicación = texto + `GeoPoint?` opcional) | Proveedor | `ProviderProfile` |
 | Se pausó el perfil | `PausarPerfil` | Proveedor | `ProviderProfile` |
 
 ```gherkin

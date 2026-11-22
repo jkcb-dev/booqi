@@ -5,6 +5,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 
@@ -35,14 +36,15 @@ class FakeProviderProfileRepository : ProviderProfileRepository {
         name: String,
         photoUrl: String,
         description: String,
-        location: String,
+        location: ProviderLocation,
     ): DomainResult<ProviderProfile> {
         val existing = profilesById[profileId] ?: return DomainError.NotFound.asFailure()
         val updated = existing.copy(
             name = name,
             photoUrl = photoUrl,
             description = description,
-            location = location,
+            location = location.text,
+            coordinates = location.coordinates,
             isComplete = true,
         )
         profilesById[profileId] = updated

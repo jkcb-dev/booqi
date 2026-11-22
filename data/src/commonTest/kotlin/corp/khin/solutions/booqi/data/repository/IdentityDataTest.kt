@@ -5,6 +5,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.data.datasource.FakeBookingRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeProviderProfileRemoteDataSource
 import corp.khin.solutions.booqi.data.dto.BookingDraftDto
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import kotlinx.coroutines.test.runTest
@@ -34,7 +35,7 @@ class IdentityDataTest {
     @Test
     fun `anonymizing a profile erases personal data hides it and keeps the rating summary`() = runTest {
         val created = profiles.activateProviderMode("user-1").ok()
-        profiles.completeProfile(created.id, "Studio Ana", "https://example.com/p.jpg", "Manicuría", "Av. Santa Fe 1")
+        profiles.completeProfile(created.id, "Studio Ana", "https://example.com/p.jpg", "Manicuría", ProviderLocation("Av. Santa Fe 1"))
         profiles.updateRating(created.id, 4.5, 2)
 
         val anonymized = profiles.anonymizeProfile(created.id).ok()

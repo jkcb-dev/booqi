@@ -8,6 +8,7 @@ import corp.khin.solutions.booqi.data.datasource.ProviderProfileRemoteDataSource
 import corp.khin.solutions.booqi.data.mapper.toDomain
 import corp.khin.solutions.booqi.data.mapper.toDto
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 
@@ -33,7 +34,7 @@ class ProviderProfileRepositoryImpl(
         name: String,
         photoUrl: String,
         description: String,
-        location: String,
+        location: ProviderLocation,
     ): DomainResult<ProviderProfile> = try {
         val existing = remoteDataSource.findById(profileId)
             ?: return DomainError.NotFound.asFailure()
@@ -41,7 +42,8 @@ class ProviderProfileRepositoryImpl(
             name = name,
             photoUrl = photoUrl,
             description = description,
-            location = location,
+            location = location.text,
+            coordinates = location.coordinates,
             isComplete = true,
         )
         remoteDataSource.save(updated.toDto()).toDomain().asSuccess()

@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.domain.usecase
 
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.BlockedPeriod
 import corp.khin.solutions.booqi.domain.model.BookingStatus
@@ -205,7 +206,7 @@ class SolicitarReservaUseCaseTest {
     @Test
     fun `the booking copies the service title and the provider name`() = runTest {
         val service = ready()
-        f.profiles.completeProfile(f.providerId, " Studio Booqi ", "https://example.com/p.jpg", "desc", "Calle 1")
+        f.profiles.completeProfile(f.providerId, " Studio Booqi ", "https://example.com/p.jpg", "desc", ProviderLocation("Calle 1"))
 
         val booking = f.solicitar("customer-1", service.id, f.slot(9)).value()
 
