@@ -6,6 +6,7 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.DateRange
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.CompletarPerfilDeProveedorUseCase
@@ -139,7 +140,7 @@ class ProviderProfileViewModel(
                     name = current.nameInput,
                     photoUrl = current.photoUrlInput,
                     description = current.descriptionInput,
-                    location = current.locationInput,
+                    location = ProviderLocation(current.locationInput),
                 )
             ) {
                 is DomainResult.Success -> {

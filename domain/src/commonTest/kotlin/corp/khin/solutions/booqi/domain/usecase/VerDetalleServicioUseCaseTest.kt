@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.domain.usecase
 
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
@@ -18,7 +19,7 @@ class VerDetalleServicioUseCaseTest {
 
     private suspend fun completeProvider(userId: String = "user-1"): String {
         val id = profiles.activateProviderMode(userId).value().id
-        profiles.completeProfile(id, "Jane's Nails", "https://example.com/jane.jpg", "Bio", "Calle 1")
+        profiles.completeProfile(id, "Jane's Nails", "https://example.com/jane.jpg", "Bio", ProviderLocation("Calle 1"))
         profiles.updateRating(id, 4.5, 8)
         return id
     }

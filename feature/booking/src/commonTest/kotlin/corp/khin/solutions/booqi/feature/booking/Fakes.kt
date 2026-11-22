@@ -12,6 +12,7 @@ import corp.khin.solutions.booqi.domain.model.BookingDraft
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.DayHours
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
@@ -140,7 +141,7 @@ class FakeProviderProfileRepository(profiles: List<ProviderProfile> = emptyList(
         name: String,
         photoUrl: String,
         description: String,
-        location: String,
+        location: ProviderLocation,
     ) = NOT_USED.asFailure()
 
     override suspend fun setPausedRange(profileId: String, pausedRange: DateRange?) = NOT_USED.asFailure()

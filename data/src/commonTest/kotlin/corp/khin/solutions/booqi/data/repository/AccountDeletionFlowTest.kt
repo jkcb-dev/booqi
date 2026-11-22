@@ -10,6 +10,7 @@ import corp.khin.solutions.booqi.data.dto.BookingDto
 import corp.khin.solutions.booqi.data.dto.ServiceDto
 import corp.khin.solutions.booqi.domain.model.AccountDeletionResult
 import corp.khin.solutions.booqi.domain.model.Address
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.Registration
 import corp.khin.solutions.booqi.domain.model.User
@@ -90,7 +91,7 @@ class AccountDeletionFlowTest {
             "Studio ${user.displayName}",
             "https://example.test/p.jpg",
             "Descripción",
-            "Av. Santa Fe 1",
+            ProviderLocation("Av. Santa Fe 1"),
         ).ok()
         serviceSource.save(
             ServiceDto(

@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.domain.usecase
 
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.AccountDeletionResult
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.BookingStatus
@@ -192,7 +193,7 @@ class EliminarCuentaUseCaseTest {
     fun `a Provider profile is anonymized and hidden but keeps its rating summary`() = runTest {
         signedIn()
         val profileId = myProfileId()
-        profiles.completeProfile(profileId, "Studio Ana", "https://example.com/p.jpg", "Manicuría", "Av. Santa Fe 1")
+        profiles.completeProfile(profileId, "Studio Ana", "https://example.com/p.jpg", "Manicuría", ProviderLocation("Av. Santa Fe 1"))
         profiles.updateRating(profileId, 4.5, 2)
 
         deleted()

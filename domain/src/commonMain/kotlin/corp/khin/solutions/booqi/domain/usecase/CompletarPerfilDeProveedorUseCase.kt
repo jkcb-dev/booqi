@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.domain.usecase
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 
@@ -28,11 +29,9 @@ class CompletarPerfilDeProveedorUseCase(
         name: String,
         photoUrl: String,
         description: String,
-        location: String,
+        location: ProviderLocation,
     ): DomainResult<ProviderProfile> {
-        if (location.isBlank()) {
-            return DomainError.InvalidInput("La ubicación es obligatoria").asFailure()
-        }
+        validate(location)?.let { return it.asFailure() }
         return repository.completeProfile(
             profileId = profileId,
             name = name,
@@ -40,5 +39,12 @@ class CompletarPerfilDeProveedorUseCase(
             description = description,
             location = location,
         )
+    }
+
+    private fun validate(location: ProviderLocation): DomainError.InvalidInput? = when {
+        location.text.isBlank() -> DomainError.InvalidInput("La ubicación es obligatoria")
+        location.coordinates?.isValid == false ->
+            DomainError.InvalidInput("Las coordenadas de la ubicación no son válidas")
+        else -> null
     }
 }

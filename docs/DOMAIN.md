@@ -75,9 +75,9 @@ chip list (`ServiceCategory.filterable`). They return read models (`ServiceSearc
 `ServiceDetail`, `ProviderPublicProfile`, ...) and read through `CatalogRepository`, which joins
 `Service.providerId == ProviderProfile.id` — see "providerId contract" below. The Customer's
 search/detail/profile UI is #21 (`feature:browse`; it searches from a TEMPORARY fixed location until
-platform location exists, #24). **Not built:** a category picker in the Servicios editor and a way for a Provider to set `coordinates` (follow-ups
-of #20 — until then every Service is `OTRO` and every profile has no coordinates, so category and
-distance filters only find sample data).
+platform location exists, #24). **Not built:** a category picker in the Servicios editor and the P2 UI to pick `coordinates` (follow-ups
+of #20/#53 — until then every Service is `OTRO` and the form sends no pin, so category and distance filters only find sample data).
+`CompletarPerfilDeProveedor` already takes a `ProviderLocation` (text + optional `GeoPoint`): the pin must be `GeoPoint.isValid` (else `InvalidInput`) and the pin passed is the pin stored — `null` clears an old one (#53).
 
 **providerId contract (#50, settled in #56).** `Service`/`Availability`/`TimeSlot`/`Booking`.`providerId`
 **is** a `ProviderProfile.id`, never a `User.id`; `Booking.customerId` and `ProviderProfile.userId`

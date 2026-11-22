@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.domain.usecase
 
+import corp.khin.solutions.booqi.domain.model.ProviderLocation
 import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.DateRange
 import corp.khin.solutions.booqi.domain.model.ProviderReview
@@ -23,7 +24,7 @@ class VerPerfilProveedorUseCaseTest {
 
     private suspend fun completeProvider(userId: String = "user-1"): String {
         val id = profiles.activateProviderMode(userId).value().id
-        profiles.completeProfile(id, "Jane's Nails", "https://example.com/jane.jpg", "Bio de Jane", "Calle 1")
+        profiles.completeProfile(id, "Jane's Nails", "https://example.com/jane.jpg", "Bio de Jane", ProviderLocation("Calle 1"))
         return id
     }
 
