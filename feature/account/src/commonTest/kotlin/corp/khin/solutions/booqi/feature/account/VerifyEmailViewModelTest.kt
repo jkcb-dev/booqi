@@ -31,7 +31,7 @@ import kotlin.test.assertTrue
 class VerifyEmailViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val users = FakeUserRepository().apply {
+    private val users = FakeUserAccounts().apply {
         seed(User(id = "u1", displayName = "Ana", email = "ana@booqi.test"), signedIn = true)
     }
 

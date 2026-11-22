@@ -20,10 +20,10 @@ import kotlin.test.assertTrue
  */
 class EliminarCuentaUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
-    private val eliminar = EliminarCuentaUseCase(users, bookings, profiles)
+    private val eliminar = EliminarCuentaUseCase(users, users, bookings, profiles)
 
     private val me = User("user-1", "Ana", "ana@example.com", photoUrl = "https://example.com/ana.jpg", isEmailVerified = true)
 

@@ -7,7 +7,7 @@ import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 import corp.khin.solutions.booqi.feature.booking.di.bookingModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +40,7 @@ class BookingModuleTest {
             bookingModule,
             module {
                 single<BookingRepository> { FakeBookingRepository() }
-                single<UserRepository> { FakeUserRepository() }
+                single<SessionRepository> { FakeUserAccounts() }
                 single<AvailabilityRepository> { FakeAvailabilityRepository() }
                 single<ProviderProfileRepository> { FakeProviderProfileRepository() }
                 single<ServiceRepository> { FakeServiceRepository() }

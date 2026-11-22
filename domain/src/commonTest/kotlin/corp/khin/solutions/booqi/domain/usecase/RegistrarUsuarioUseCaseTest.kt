@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
  */
 class RegistrarUsuarioUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val registrar = RegistrarUsuarioUseCase(users)
 
     private fun email(name: String = "Ana", email: String = "ana@example.com", password: String = "secreto123") =
@@ -45,7 +45,7 @@ class RegistrarUsuarioUseCaseTest {
     @Test
     fun `registering with a social provider prefills name and photo and counts the email as verified`() = runTest {
         for (provider in SocialProvider.entries) {
-            val user = FakeUserRepository().let { RegistrarUsuarioUseCase(it)(Registration.WithSocial(provider)) }
+            val user = FakeUserAccounts().let { RegistrarUsuarioUseCase(it)(Registration.WithSocial(provider)) }
                 .value()
 
             assertTrue(user.displayName.isNotBlank(), "$provider name")

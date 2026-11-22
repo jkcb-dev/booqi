@@ -54,7 +54,7 @@ class ServiceDetailViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
 
     private fun newViewModel() = ServiceDetailViewModel(
         verDetalleServicio = VerDetalleServicioUseCase(services, profiles),

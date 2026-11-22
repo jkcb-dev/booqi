@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
  */
 class RequerirCuentaVerificadaUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val guard = RequerirCuentaVerificadaUseCase(users)
 
     @Test

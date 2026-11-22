@@ -40,8 +40,8 @@ email verification, account deletion with anonymized history) are specified in
 `IniciarSesion`, `CerrarSesion`, `ObtenerUsuarioActual` (`null` while browsing), `VerificarCorreo` +
 `ReenviarCorreoDeVerificacion`, `ActualizarPerfilDeUsuario`, `EliminarCuenta`, `ObtenerUsuarioPublico`
 and the access guard `RequerirCuentaVerificada` (booking and Provider mode need a session **and** a
-verified email: no session -> `Unauthorized`, unverified -> `InvalidInput`). Persistence is a
-TEMPORARY in-memory fake auth (`FakeAuthRemoteDataSource`) until Supabase Auth (#27) — real
+verified email: no session -> `Unauthorized`, unverified -> `InvalidInput`). Two repositories split the Identity contract by capability (ISP, #61): `SessionRepository` (register, sign in/out, email verification, current user) and `UserProfileRepository` (read a user, update profile, saved address, delete account). Persistence is a
+TEMPORARY in-memory fake auth (`FakeAuthRemoteDataSource` + `FakeUserProfileRemoteDataSource` over one `InMemoryAccountStore`) until Supabase Auth (#27) — real
 authentication is Supabase's job. **UI built (#58, `feature:account`):** sign in / sign up
 (email + the three social buttons, run against the fake — real SDKs are Platform Integration's),
 verification notice with resend, user profile (name, photo, sign out, delete account listing the

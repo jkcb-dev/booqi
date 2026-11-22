@@ -21,10 +21,10 @@ import kotlin.test.assertNull
  */
 class DireccionDelClienteUseCasesTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val bookings = FakeBookingRepository()
-    private val agregar = AgregarDireccionUseCase(users)
-    private val actualizar = ActualizarDireccionUseCase(users)
+    private val agregar = AgregarDireccionUseCase(users, users)
+    private val actualizar = ActualizarDireccionUseCase(users, users)
     private val obtener = ObtenerMiDireccionUseCase(users)
 
     private val me = User("user-1", "Ana", "ana@example.com", isEmailVerified = true)
@@ -175,7 +175,7 @@ class DireccionDelClienteUseCasesTest {
     @Test
     fun `deleting the account erases the saved address from the tombstone`() = runTest {
         users.seedSignedIn(me.copy(address = casa))
-        val eliminar = EliminarCuentaUseCase(users, bookings, FakeProviderProfileRepository())
+        val eliminar = EliminarCuentaUseCase(users, users, bookings, FakeProviderProfileRepository())
 
         assertEquals(AccountDeletionResult.Deleted, eliminar().value())
 
@@ -187,7 +187,7 @@ class DireccionDelClienteUseCasesTest {
     fun `a blocked deletion keeps the saved address`() = runTest {
         users.seedSignedIn(me.copy(address = casa))
         bookings.seed(booking(id = "b-1", customerId = me.id, status = BookingStatus.CONFIRMED))
-        val eliminar = EliminarCuentaUseCase(users, bookings, FakeProviderProfileRepository())
+        val eliminar = EliminarCuentaUseCase(users, users, bookings, FakeProviderProfileRepository())
 
         assertIs<AccountDeletionResult.Blocked>(eliminar().value())
 

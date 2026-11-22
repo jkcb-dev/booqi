@@ -26,7 +26,7 @@ internal class SchedulingFixture {
     val availableSlots = ObtenerTimeSlotsDisponiblesUseCase(
         availability, profiles, bookings, GenerarTimeSlotsUseCase(), clock, TimeZone.UTC,
     )
-    val users = FakeUserRepository()
+    val users = FakeUserAccounts()
 
     /** The real use case, resolving the signed-in user itself: arrange the session with [signInCustomer]. */
     val solicitarUseCase = SolicitarReservaUseCase(

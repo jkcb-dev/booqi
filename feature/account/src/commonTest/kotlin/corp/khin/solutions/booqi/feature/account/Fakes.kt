@@ -17,7 +17,8 @@ import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import kotlin.time.Instant
 
 // In-memory fakes scoped to feature:account's reducer tests. commonTest sourceSets aren't shared
@@ -32,7 +33,7 @@ private val NOT_USED = DomainError.Unknown("not used by feature:account")
  * [emailLinkFollowed] decides what `confirmEmail` finds: `true` = the User opened the link (the
  * account becomes verified), `false` = they did not (it stays unverified).
  */
-class FakeUserRepository : UserRepository {
+class FakeUserAccounts : SessionRepository, UserProfileRepository {
 
     private val byId = mutableMapOf<String, User>()
     private val passwords = mutableMapOf<String, String>()

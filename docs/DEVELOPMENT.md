@@ -79,7 +79,7 @@ checkout (they switch branches under each other). With the Agent tool, pass
   build + tests, and push with `--force-with-lease`. Only then merge the next one.
 - **A clean textual rebase is not enough — compile the test sources too.** Parallel tickets break
   each other *semantically*: when one adds a method to a repository interface (e.g. #22's
-  `UserRepository.saveAddress`), the hand-written test fakes another ticket wrote against the old
+  `saveAddress`, then on the since-split `UserRepository`), the hand-written test fakes another ticket wrote against the old
   interface stop compiling (#58's three `FakeUserRepository`s). After every rebase run the affected
   modules' `testAndroidHostTest` (which compiles tests), not just `assembleDebug`.
 - **Cleanup:** `git worktree remove <path>` after the PR merges; `git worktree prune` for leftovers.

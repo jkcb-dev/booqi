@@ -52,7 +52,7 @@ class TestClock(var instant: Instant) : Clock {
 class BookingFixture {
     val clock = TestClock(NOW)
     val bookings = FakeBookingRepository()
-    val users = FakeUserRepository()
+    val users = FakeUserAccounts()
     val availability = FakeAvailabilityRepository()
     val profiles = FakeProviderProfileRepository(listOf(PROVIDER))
     val services = FakeServiceRepository(listOf(LOCAL, HOME, BOTH))

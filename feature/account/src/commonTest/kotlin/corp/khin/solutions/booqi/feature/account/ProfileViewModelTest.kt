@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
 class ProfileViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val profiles = FakeProviderProfileRepository()
     private val ana = User(id = "u1", displayName = "Ana Pérez", email = "ana@booqi.test", isEmailVerified = true)
 

@@ -27,7 +27,7 @@ import kotlin.test.assertNull
 class SignInViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val users = FakeUserRepository().apply {
+    private val users = FakeUserAccounts().apply {
         seed(User(id = "u1", displayName = "Ana Pérez", email = "ana@booqi.test", isEmailVerified = true), "secreto123")
     }
 

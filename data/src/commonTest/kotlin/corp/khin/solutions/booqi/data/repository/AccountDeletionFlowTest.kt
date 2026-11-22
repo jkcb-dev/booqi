@@ -3,6 +3,8 @@ package corp.khin.solutions.booqi.data.repository
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.data.datasource.FakeAuthRemoteDataSource
+import corp.khin.solutions.booqi.data.datasource.FakeUserProfileRemoteDataSource
+import corp.khin.solutions.booqi.data.datasource.InMemoryAccountStore
 import corp.khin.solutions.booqi.data.datasource.FakeBookingRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeProviderProfileRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeServiceRemoteDataSource
@@ -39,16 +41,18 @@ import kotlin.test.assertTrue
  */
 class AccountDeletionFlowTest {
 
-    private val auth = FakeAuthRemoteDataSource()
-    private val users = UserRepositoryImpl(auth)
+    private val store = InMemoryAccountStore()
+    private val auth = FakeAuthRemoteDataSource(store)
+    private val session = SessionRepositoryImpl(auth)
+    private val userProfiles = UserProfileRepositoryImpl(FakeUserProfileRemoteDataSource(store), auth)
     private val profileSource = FakeProviderProfileRemoteDataSource()
     private val profiles = ProviderProfileRepositoryImpl(profileSource)
     private val serviceSource = FakeServiceRemoteDataSource()
     private val bookingSource = FakeBookingRemoteDataSource()
     private val bookings = BookingRepositoryImpl(bookingSource)
 
-    private val registrar = RegistrarUsuarioUseCase(users)
-    private val eliminar = EliminarCuentaUseCase(users, bookings, profiles)
+    private val registrar = RegistrarUsuarioUseCase(session)
+    private val eliminar = EliminarCuentaUseCase(session, userProfiles, bookings, profiles)
     private val buscar = BuscarServiciosUseCase(CatalogRepositoryImpl(serviceSource, profileSource))
 
     private fun <T> DomainResult<T>.ok(): T = (this as DomainResult.Success<T>).value
@@ -113,7 +117,7 @@ class AccountDeletionFlowTest {
     @Test
     fun `a deleted Provider no longer appears in search or on public pages but their rating stays`() = runTest {
         val provider = signUp("Ana", "ana@example.com")
-        VerificarCorreoUseCase(users)().ok()
+        VerificarCorreoUseCase(session)().ok()
         val profile = becomeCompleteProvider(provider)
         val verPerfil = VerPerfilProveedorUseCase(
             profiles,
@@ -151,7 +155,7 @@ class AccountDeletionFlowTest {
         // ...the customer's personal data on it is gone, and the name reads "Usuario eliminado".
         assertEquals(null, booking.deliveryAddress)
         assertEquals(null, booking.customerNote)
-        val shown = ObtenerUsuarioPublicoUseCase(users)(booking.customerId).ok()
+        val shown = ObtenerUsuarioPublicoUseCase(userProfiles)(booking.customerId).ok()
         assertEquals("Usuario eliminado", shown.displayName)
         assertTrue(shown.isDeleted)
         // The Provider is still visible in search.
@@ -161,14 +165,14 @@ class AccountDeletionFlowTest {
     @Test
     fun `a deleted Customer loses the saved address and it is not readable by anyone`() = runTest {
         val customer = signUp("Beto", "beto@example.com")
-        AgregarDireccionUseCase(users)(Address("Av. Corrientes 1234", -34.6, -58.4)).ok()
-        assertEquals(Address("Av. Corrientes 1234", -34.6, -58.4), ObtenerMiDireccionUseCase(users)().ok())
+        AgregarDireccionUseCase(session, userProfiles)(Address("Av. Corrientes 1234", -34.6, -58.4)).ok()
+        assertEquals(Address("Av. Corrientes 1234", -34.6, -58.4), ObtenerMiDireccionUseCase(session)().ok())
 
         assertEquals(AccountDeletionResult.Deleted, eliminar().ok())
 
-        assertEquals(null, users.getUser(customer.id).ok().address)
-        assertEquals(null, auth.findUserById(customer.id)!!.addressLine)
-        assertEquals(DomainError.Unauthorized, (ObtenerMiDireccionUseCase(users)() as DomainResult.Failure).error)
+        assertEquals(null, userProfiles.getUser(customer.id).ok().address)
+        assertEquals(null, FakeUserProfileRemoteDataSource(store).findUserById(customer.id)!!.addressLine)
+        assertEquals(DomainError.Unauthorized, (ObtenerMiDireccionUseCase(session)() as DomainResult.Failure).error)
     }
 
     @Test
@@ -182,7 +186,7 @@ class AccountDeletionFlowTest {
         val result = assertIs<AccountDeletionResult.Blocked>(eliminar().ok())
 
         assertEquals(listOf("booking-2"), result.activeBookings.asCustomer.map { it.id })
-        assertEquals(customer, users.getCurrentUser().ok())
+        assertEquals(customer, session.getCurrentUser().ok())
         assertEquals("Piso 3", bookings.getBooking("booking-1").ok().customerNote)
     }
 
@@ -197,19 +201,19 @@ class AccountDeletionFlowTest {
 
         assertEquals(listOf("booking-1"), result.activeBookings.asProvider.map { it.id })
         assertEquals(1, buscar().ok().size)
-        assertEquals(provider, users.getCurrentUser().ok())
+        assertEquals(provider, session.getCurrentUser().ok())
     }
 
     @Test
     fun `the user to profile path and the guard work together`() = runTest {
         val user = signUp("Ana", "ana@example.com")
-        val guard = RequerirCuentaVerificadaUseCase(users)
-        val miPerfil = ObtenerMiPerfilDeProveedorUseCase(users, profiles)
+        val guard = RequerirCuentaVerificadaUseCase(session)
+        val miPerfil = ObtenerMiPerfilDeProveedorUseCase(session, profiles)
 
         assertEquals(null, miPerfil().ok())
         val unverified = (guard() as DomainResult.Failure).error
         assertEquals(DomainError.InvalidInput(RequerirCuentaVerificadaUseCase.EMAIL_NOT_VERIFIED_MESSAGE), unverified)
-        VerificarCorreoUseCase(users)().ok()
+        VerificarCorreoUseCase(session)().ok()
         val verified = guard().ok()
         val profile = ActivarModoProveedorUseCase(profiles)(verified.id).ok()
 

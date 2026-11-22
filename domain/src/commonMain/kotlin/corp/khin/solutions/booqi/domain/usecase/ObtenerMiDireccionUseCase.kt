@@ -6,7 +6,7 @@ import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Address
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * Query `ObtenerMiDireccion` (docs/domain/customer-flow.md § Grupo 2): the signed-in user's saved
@@ -15,10 +15,10 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * (scenarios 1 and 2; wiring it into the request is #26). `Unauthorized` without a session.
  */
 class ObtenerMiDireccionUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
     suspend operator fun invoke(): DomainResult<Address?> =
-        users.getCurrentUser().flatMap { user ->
+        session.getCurrentUser().flatMap { user ->
             if (user == null || user.isDeleted) DomainError.Unauthorized.asFailure() else user.address.asSuccess()
         }
 }

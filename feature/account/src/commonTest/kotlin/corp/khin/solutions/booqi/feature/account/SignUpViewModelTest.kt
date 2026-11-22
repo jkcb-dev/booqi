@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
 class SignUpViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
 
     @BeforeTest
     fun setUp() {

@@ -4,7 +4,6 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
-import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.Availability
 import corp.khin.solutions.booqi.domain.model.BlockedPeriod
 import corp.khin.solutions.booqi.domain.model.Booking
@@ -21,7 +20,7 @@ import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 import kotlin.time.Instant
 
 // Minimal in-memory fakes, scoped to feature:booking's reducer tests. commonTest sourceSets aren't
@@ -91,7 +90,7 @@ class FakeBookingRepository : BookingRepository {
 }
 
 /** The session: [signedIn] is the current user (`null` = a visitor); [stored] is read back. */
-class FakeUserRepository : UserRepository {
+class FakeUserAccounts : SessionRepository {
 
     var signedIn: User? = null
 
@@ -99,16 +98,12 @@ class FakeUserRepository : UserRepository {
 
     override suspend fun getCurrentUser(): DomainResult<User?> = signedIn.asSuccess()
 
-    override suspend fun getUser(userId: String) = NOT_USED.asFailure()
     override suspend fun registerWithEmail(name: String, email: String, password: String) = NOT_USED.asFailure()
     override suspend fun signInWithSocial(provider: SocialProvider) = NOT_USED.asFailure()
     override suspend fun signInWithEmail(email: String, password: String) = NOT_USED.asFailure()
     override suspend fun signOut() = NOT_USED.asFailure()
     override suspend fun confirmEmail() = NOT_USED.asFailure()
     override suspend fun resendVerificationEmail() = NOT_USED.asFailure()
-    override suspend fun updateProfile(displayName: String, photoUrl: String?) = NOT_USED.asFailure()
-    override suspend fun saveAddress(address: Address) = NOT_USED.asFailure()
-    override suspend fun deleteAccount() = NOT_USED.asFailure()
 }
 
 class FakeAvailabilityRepository : AvailabilityRepository {

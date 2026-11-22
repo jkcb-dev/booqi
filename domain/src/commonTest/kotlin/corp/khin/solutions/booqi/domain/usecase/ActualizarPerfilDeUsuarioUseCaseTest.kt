@@ -9,7 +9,7 @@ import kotlin.test.assertNull
 /** Escenario: "El Usuario actualiza su perfil" (docs/domain/identity-flow.md). */
 class ActualizarPerfilDeUsuarioUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val actualizar = ActualizarPerfilDeUsuarioUseCase(users)
 
     private suspend fun signedIn() =

@@ -1,7 +1,7 @@
 package corp.khin.solutions.booqi.domain.usecase
 
 import corp.khin.solutions.booqi.core.common.DomainResult
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * Escenario: "El Usuario cierra sesión" (docs/domain/identity-flow.md). Ends the session; the app
@@ -9,7 +9,7 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * [RequerirCuentaVerificadaUseCase] refuses to book until the next sign-in. Idempotent.
  */
 class CerrarSesionUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
-    suspend operator fun invoke(): DomainResult<Unit> = users.signOut()
+    suspend operator fun invoke(): DomainResult<Unit> = session.signOut()
 }

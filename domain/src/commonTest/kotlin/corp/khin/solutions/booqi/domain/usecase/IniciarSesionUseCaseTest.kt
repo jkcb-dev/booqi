@@ -12,7 +12,7 @@ import kotlin.test.assertNull
 /** The sign-in command of docs/domain/identity-flow.md (event "Se inició sesión"). */
 class IniciarSesionUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val registrar = RegistrarUsuarioUseCase(users)
     private val iniciarSesion = IniciarSesionUseCase(users)
     private val cerrarSesion = CerrarSesionUseCase(users)

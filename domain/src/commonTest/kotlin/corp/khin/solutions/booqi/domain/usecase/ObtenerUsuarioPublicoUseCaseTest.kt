@@ -9,7 +9,7 @@ import kotlin.test.assertNull
 /** The display rule for people other than the signed-in user, including deleted accounts. */
 class ObtenerUsuarioPublicoUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val obtener = ObtenerUsuarioPublicoUseCase(users)
 
     @Test

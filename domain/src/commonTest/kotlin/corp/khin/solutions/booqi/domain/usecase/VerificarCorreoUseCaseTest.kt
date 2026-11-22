@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 /** "Se verificó el correo" and the resend option of the unverified-email scenario. */
 class VerificarCorreoUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val verificar = VerificarCorreoUseCase(users)
     private val reenviar = ReenviarCorreoDeVerificacionUseCase(users)
 

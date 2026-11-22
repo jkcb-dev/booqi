@@ -95,11 +95,11 @@ val domainModule = module {
     factory { ActualizarPerfilDeUsuarioUseCase(get()) }
     factory { RequerirCuentaVerificadaUseCase(get()) }
     factory { ObtenerMiPerfilDeProveedorUseCase(get(), get()) }
-    factory { EliminarCuentaUseCase(get(), get(), get()) }
+    factory { EliminarCuentaUseCase(get(), get(), get(), get()) }
     // Cliente · Dirección (#22): the User's single saved address. Using it as the default Domicilio
     // snapshot at booking time is #26.
-    factory { AgregarDireccionUseCase(get()) }
-    factory { ActualizarDireccionUseCase(get()) }
+    factory { AgregarDireccionUseCase(get(), get()) }
+    factory { ActualizarDireccionUseCase(get(), get()) }
     factory { ObtenerMiDireccionUseCase(get()) }
     // Cliente · Reservas (#25). SolicitarReserva resolves the user via RequerirCuentaVerificada;
     // CancelarReservaCliente uses its Clock.System / system-zone defaults.

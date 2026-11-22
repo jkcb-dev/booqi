@@ -7,18 +7,20 @@ import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 /**
- * Hand-written in-memory [UserRepository] for the Identity use case tests, honoring the contract
- * documented on the interface (session-bound methods fail `Unauthorized` when signed out, a taken
+ * Hand-written in-memory [SessionRepository] + [UserProfileRepository] for the Identity use case tests
+ * (one object, one state, so a test can use it as whichever interface the use case under test takes),
+ * honoring the contracts documented on the interfaces (session-bound methods fail `Unauthorized` when signed out, a taken
  * email is `InvalidInput`, a deleted account stays as a tombstone). [writeCount] lets a test assert
  * that a rejected action never reached storage; [verificationEmailsSentTo] records sent emails.
  * Test-only: plaintext passwords here never leave the test.
  */
-class FakeUserRepository : UserRepository {
+class FakeUserAccounts : SessionRepository, UserProfileRepository {
 
     private val usersById = mutableMapOf<String, User>()
     private val passwordsByEmail = mutableMapOf<String, String>()

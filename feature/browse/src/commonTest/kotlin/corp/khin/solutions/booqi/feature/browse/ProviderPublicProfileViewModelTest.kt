@@ -64,7 +64,7 @@ class ProviderPublicProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val users = FakeUserRepository(
+    private val users = FakeUserAccounts(
         others = mapOf(
             "c1" to User("c1", "Camila Torres", "camila@booqi.test", isEmailVerified = true),
             "c2" to User("c2", "Luis", "luis@booqi.test", isEmailVerified = true).anonymized(),

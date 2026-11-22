@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 class CancelarReservaClienteUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val repository = FakeBookingRepository()
     private val clock = FakeClock(REQUESTED_AT)
     private val cancelar = CancelarReservaClienteUseCase(

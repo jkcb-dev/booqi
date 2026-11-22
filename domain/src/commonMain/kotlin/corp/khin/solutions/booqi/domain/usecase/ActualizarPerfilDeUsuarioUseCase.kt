@@ -3,7 +3,7 @@ package corp.khin.solutions.booqi.domain.usecase
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Escenario: "El Usuario actualiza su perfil" (docs/domain/identity-flow.md): changes the signed-in
@@ -17,9 +17,9 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * touch the user's `ProviderProfile`, which has its own name.
  */
 class ActualizarPerfilDeUsuarioUseCase(
-    private val users: UserRepository,
+    private val profiles: UserProfileRepository,
 ) {
     suspend operator fun invoke(name: String, photoUrl: String? = null): DomainResult<User> =
         validateDisplayName(name)?.asFailure()
-            ?: users.updateProfile(name.trim(), photoUrl?.trim()?.takeIf { it.isNotEmpty() })
+            ?: profiles.updateProfile(name.trim(), photoUrl?.trim()?.takeIf { it.isNotEmpty() })
 }

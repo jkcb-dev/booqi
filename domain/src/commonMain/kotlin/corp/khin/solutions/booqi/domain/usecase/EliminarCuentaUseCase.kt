@@ -13,7 +13,8 @@ import corp.khin.solutions.booqi.domain.model.BookingStatus
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Escenarios: "El Usuario intenta eliminar su cuenta con reservas activas" / "...elimina su cuenta
@@ -43,12 +44,13 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * `Unauthorized` without a session.
  */
 class EliminarCuentaUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
+    private val userProfiles: UserProfileRepository,
     private val bookings: BookingRepository,
     private val profiles: ProviderProfileRepository,
 ) {
     suspend operator fun invoke(): DomainResult<AccountDeletionResult> =
-        users.getCurrentUser().flatMap { user ->
+        session.getCurrentUser().flatMap { user ->
             if (user == null) return DomainError.Unauthorized.asFailure()
             profiles.findByUserId(user.id).flatMap { profile ->
                 bookings.getBookingsByCustomer(user.id).flatMap { asCustomer ->
@@ -77,7 +79,7 @@ class EliminarCuentaUseCase(
     ): DomainResult<AccountDeletionResult> =
         scrubPersonalData(customerBookings)
             .flatMap { if (profile == null) Unit.asSuccess() else profiles.anonymizeProfile(profile.id).map { } }
-            .flatMap { users.deleteAccount() }
+            .flatMap { userProfiles.deleteAccount() }
             .map { AccountDeletionResult.Deleted }
 
     private suspend fun scrubPersonalData(customerBookings: List<Booking>): DomainResult<Unit> {

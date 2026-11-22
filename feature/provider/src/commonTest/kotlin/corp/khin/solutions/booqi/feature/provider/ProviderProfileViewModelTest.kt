@@ -49,7 +49,7 @@ class ProviderProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
 
     private fun newViewModel(repository: FakeProviderProfileRepository = FakeProviderProfileRepository()) =
         ProviderProfileViewModel(
