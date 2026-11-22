@@ -5,6 +5,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.domain.model.Service
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 
@@ -34,6 +35,7 @@ class FakeServiceRepository : ServiceRepository {
             durationMinutes = details.durationMinutes,
             modality = details.modality,
             isActive = true,
+            category = details.category ?: ServiceCategory.OTRO,
         )
         servicesById[service.id] = service
         return service.asSuccess()
@@ -48,6 +50,7 @@ class FakeServiceRepository : ServiceRepository {
             priceCents = details.priceCents,
             durationMinutes = details.durationMinutes,
             modality = details.modality,
+            category = details.category ?: existing.category,
         )
         servicesById[serviceId] = updated
         return updated.asSuccess()

@@ -3,6 +3,7 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import corp.khin.solutions.booqi.core.common.DomainError
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
@@ -75,6 +76,7 @@ class ServiceEditorViewModelTest {
         photoUrl: String = "https://example.com/corte.jpg",
         price: String = "12.50",
         duration: String = "45",
+        category: ServiceCategory? = ServiceCategory.BARBERIA,
     ) {
         viewModel.onAction(ServiceEditorAction.PhotoUrlChanged(photoUrl))
         viewModel.onAction(ServiceEditorAction.TitleChanged("Corte clásico"))
@@ -82,9 +84,10 @@ class ServiceEditorViewModelTest {
         viewModel.onAction(ServiceEditorAction.PriceChanged(price))
         viewModel.onAction(ServiceEditorAction.DurationChanged(duration))
         viewModel.onAction(ServiceEditorAction.ModalityChanged(ServiceModality.AMBOS))
+        category?.let { viewModel.onAction(ServiceEditorAction.CategoryChanged(it)) }
     }
 
-    private suspend fun seedService(isActive: Boolean = true) {
+    private suspend fun seedService(isActive: Boolean = true, category: ServiceCategory? = null) {
         repository.addService(
             TEST_PROVIDER_ID,
             ServiceDetails(
@@ -94,6 +97,7 @@ class ServiceEditorViewModelTest {
                 priceCents = 1000,
                 durationMinutes = 30,
                 modality = ServiceModality.DOMICILIO,
+                category = category,
             ),
         )
         if (!isActive) repository.disableService("service-1")
@@ -118,6 +122,7 @@ class ServiceEditorViewModelTest {
         assertEquals(1250, saved.priceCents)
         assertEquals(45, saved.durationMinutes)
         assertEquals(ServiceModality.AMBOS, saved.modality)
+        assertEquals(ServiceCategory.BARBERIA, saved.category)
         assertTrue(saved.isActive)
         assertFalse(viewModel.state.value.isSaving)
         assertNull(viewModel.state.value.photoError)
@@ -390,4 +395,70 @@ class ServiceEditorViewModelTest {
         assertNull(viewModel.state.value.error)
         assertEquals("Corte", viewModel.state.value.titleInput)
     }
+
+    @Test
+    fun `adding a service without a category shows Elegi una categoria and saves nothing`() =
+        runTest(testDispatcher) {
+            val viewModel = newViewModel()
+            fillForm(viewModel, category = null)
+
+            viewModel.onAction(ServiceEditorAction.Save)
+            advanceUntilIdle()
+
+            assertEquals("Elegí una categoría", viewModel.state.value.categoryError)
+            assertTrue(repository.stored.isEmpty())
+
+            viewModel.onAction(ServiceEditorAction.CategoryChanged(ServiceCategory.UNAS))
+            assertNull(viewModel.state.value.categoryError)
+            performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+            assertEquals(ServiceCategory.UNAS, repository.stored.single().category)
+        }
+
+    @Test
+    fun `editing preloads the stored category`() = runTest(testDispatcher) {
+        seedService(category = ServiceCategory.MASAJES)
+
+        val viewModel = newViewModel(serviceId = "service-1")
+        advanceUntilIdle()
+
+        assertEquals(ServiceCategory.MASAJES, viewModel.state.value.category)
+    }
+
+    @Test
+    fun `editing keeps the stored category when the provider does not touch it`() = runTest(testDispatcher) {
+        seedService(category = ServiceCategory.TECNICO)
+        val viewModel = newViewModel(serviceId = "service-1")
+        advanceUntilIdle()
+        viewModel.onAction(ServiceEditorAction.PriceChanged("11"))
+
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+
+        assertEquals(ServiceCategory.TECNICO, repository.stored.single().category)
+    }
+
+    @Test
+    fun `editing and changing the category saves the new one`() = runTest(testDispatcher) {
+        seedService(category = ServiceCategory.TECNICO)
+        val viewModel = newViewModel(serviceId = "service-1")
+        advanceUntilIdle()
+        viewModel.onAction(ServiceEditorAction.CategoryChanged(ServiceCategory.LIMPIEZA))
+
+        performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+
+        assertEquals(ServiceCategory.LIMPIEZA, repository.stored.single().category)
+    }
+
+    @Test
+    fun `editing a legacy OTRO service preselects nothing and still saves keeping OTRO`() =
+        runTest(testDispatcher) {
+            seedService() // stored as OTRO
+            val viewModel = newViewModel(serviceId = "service-1")
+            advanceUntilIdle()
+            assertNull(viewModel.state.value.category)
+
+            performAndAwaitEvent(viewModel, ServiceEditorAction.Save)
+
+            assertNull(viewModel.state.value.categoryError)
+            assertEquals(ServiceCategory.OTRO, repository.stored.single().category)
+        }
 }

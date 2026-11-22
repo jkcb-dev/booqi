@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.feature.provider
 
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 
 /** User intents on the add/edit service form. */
@@ -18,5 +19,6 @@ sealed interface ServiceEditorAction {
     data class PriceChanged(val value: String) : ServiceEditorAction
     data class DurationChanged(val value: String) : ServiceEditorAction
     data class ModalityChanged(val modality: ServiceModality) : ServiceEditorAction
+    data class CategoryChanged(val category: ServiceCategory) : ServiceEditorAction
     data object Save : ServiceEditorAction
 }
