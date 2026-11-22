@@ -1,6 +1,7 @@
 package corp.khin.solutions.booqi.feature.provider
 
 import corp.khin.solutions.booqi.core.common.DomainError
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 
 /**
@@ -24,11 +25,18 @@ data class ServiceEditorUiState(
     val priceInput: String = "",
     val durationInput: String = "",
     val modality: ServiceModality = ServiceModality.LOCAL,
+    /**
+     * Chosen category; `null` = none picked yet. Only [ServiceCategory.filterable] values can be
+     * picked (OTRO is not offered), and a stored OTRO preloads as `null`.
+     */
+    val category: ServiceCategory? = null,
 
     /** "La foto es obligatoria" — comes back from the use case as `DomainError.InvalidInput`. */
     val photoError: String? = null,
     val priceError: String? = null,
     val durationError: String? = null,
+    /** "Elegí una categoría" — adding a service without picking one. */
+    val categoryError: String? = null,
 
     /** Non-form failure (e.g. `NotFound` for an unknown service id, no connection). */
     val error: DomainError? = null,

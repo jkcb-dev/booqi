@@ -6,6 +6,7 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Service
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.EditarServicioUseCase
@@ -61,6 +62,8 @@ class ServiceEditorViewModel(
             is ServiceEditorAction.DurationChanged ->
                 _state.update { it.copy(durationInput = action.value, durationError = null) }
             is ServiceEditorAction.ModalityChanged -> _state.update { it.copy(modality = action.modality) }
+            is ServiceEditorAction.CategoryChanged ->
+                _state.update { it.copy(category = action.category, categoryError = null) }
             ServiceEditorAction.Save -> save()
         }
     }
@@ -98,6 +101,8 @@ class ServiceEditorViewModel(
         priceInput = formatPriceInput(service.priceCents),
         durationInput = service.durationMinutes.toString(),
         modality = service.modality,
+        // OTRO is not pickable, so a stored OTRO shows no chip selected (and is kept on save).
+        category = service.category.takeIf { it != ServiceCategory.OTRO },
     )
 
     /** Escenarios: "El Proveedor agrega un nuevo Servicio" / "...sin foto" / "...edita un Servicio
@@ -109,7 +114,9 @@ class ServiceEditorViewModel(
         if (current.isSaving || current.isLoading) return
         val priceCents = parsePriceCents(current.priceInput)
         val durationMinutes = parseDurationMinutes(current.durationInput)
-        if (priceCents == null || durationMinutes == null) {
+        // A new service must get a real category; an edit with none keeps the stored one (null).
+        val categoryMissing = serviceId == null && current.category == null
+        if (priceCents == null || durationMinutes == null || categoryMissing) {
             _state.update {
                 it.copy(
                     // The use case never runs while the numbers are invalid, so to show every
@@ -119,6 +126,7 @@ class ServiceEditorViewModel(
                     photoError = if (current.photoUrlInput.isBlank()) PHOTO_REQUIRED_ERROR else null,
                     priceError = if (priceCents == null) PRICE_ERROR else null,
                     durationError = if (durationMinutes == null) DURATION_ERROR else null,
+                    categoryError = if (categoryMissing) CATEGORY_REQUIRED_ERROR else null,
                 )
             }
             return
@@ -130,10 +138,19 @@ class ServiceEditorViewModel(
             priceCents = priceCents,
             durationMinutes = durationMinutes,
             modality = current.modality,
+            category = current.category,
         )
         val targetId = serviceId
         viewModelScope.launch {
-            _state.update { it.copy(isSaving = true, photoError = null, priceError = null, durationError = null) }
+            _state.update {
+                it.copy(
+                    isSaving = true,
+                    photoError = null,
+                    priceError = null,
+                    durationError = null,
+                    categoryError = null,
+                )
+            }
             val result = if (targetId == null) {
                 currentProvider.profileId().flatMap { agregarServicio(it, details) }
             } else {
@@ -162,6 +179,7 @@ class ServiceEditorViewModel(
     private companion object {
         const val NOT_FOUND_MESSAGE = "No se encontró el servicio"
         const val PHOTO_REQUIRED_ERROR = "La foto es obligatoria"
+        const val CATEGORY_REQUIRED_ERROR = "Elegí una categoría"
         const val PRICE_ERROR = "Ingresá un precio válido, por ejemplo 12.50"
         const val DURATION_ERROR = "Ingresá la duración en minutos, por ejemplo 45"
     }

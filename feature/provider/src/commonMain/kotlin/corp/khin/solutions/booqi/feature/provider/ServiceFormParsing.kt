@@ -1,5 +1,6 @@
 package corp.khin.solutions.booqi.feature.provider
 
+import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.ServiceModality
 
 private const val CENTS_PER_UNIT = 100
@@ -29,6 +30,19 @@ internal fun parseDurationMinutes(input: String): Int? =
 /** Inverse of [parsePriceCents], used to preload the edit form: `1250` -> `"12.50"`. */
 internal fun formatPriceInput(priceCents: Int): String =
     "${priceCents / CENTS_PER_UNIT}.${(priceCents % CENTS_PER_UNIT).toString().padStart(CENTS_DIGITS, '0')}"
+
+/**
+ * Spanish label of a category. Same wording as the C1 chips in `feature:browse`; duplicated here
+ * because that mapping is `internal` to browse and feature modules must not depend on each other.
+ */
+internal fun ServiceCategory.label(): String = when (this) {
+    ServiceCategory.BARBERIA -> "Barbería"
+    ServiceCategory.UNAS -> "Uñas"
+    ServiceCategory.LIMPIEZA -> "Limpieza"
+    ServiceCategory.MASAJES -> "Masajes"
+    ServiceCategory.TECNICO -> "Técnico"
+    ServiceCategory.OTRO -> "Otro"
+}
 
 /** Spanish label shown on the P4 badge and the P5 modality picker. */
 internal fun ServiceModality.label(): String = when (this) {

@@ -10,7 +10,7 @@ import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColors
 
 /** The P5 input fields in Figma order: foto (Requerido), título, descripción, precio, duración,
- * modalidad. */
+ * modalidad, categoría. */
 @Composable
 internal fun ServiceEditorFields(
     state: ServiceEditorUiState,
@@ -58,6 +58,18 @@ internal fun ServiceEditorFields(
             selected = state.modality,
             onSelected = { onAction(ServiceEditorAction.ModalityChanged(it)) },
         )
+        Text(
+            text = "Categoría",
+            style = MaterialTheme.typography.labelLarge,
+            color = LocalBooqiExtendedColors.current.ink2,
+        )
+        ServiceCategoryPicker(
+            selected = state.category,
+            onSelected = { onAction(ServiceEditorAction.CategoryChanged(it)) },
+        )
+        state.categoryError?.let {
+            Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
     }
 }
 
