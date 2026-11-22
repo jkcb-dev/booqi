@@ -1,8 +1,10 @@
 package corp.khin.solutions.booqi.data.di
 
+import corp.khin.solutions.booqi.data.datasource.AddressSearchRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.AuthRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.AvailabilityRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.BookingRemoteDataSource
+import corp.khin.solutions.booqi.data.datasource.FakeAddressSearchRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeAuthRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeAvailabilityRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.FakeBookingRemoteDataSource
@@ -14,6 +16,7 @@ import corp.khin.solutions.booqi.data.datasource.ProviderProfileRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.SampleData
 import corp.khin.solutions.booqi.data.datasource.ServiceRemoteDataSource
 import corp.khin.solutions.booqi.data.datasource.UserProfileRemoteDataSource
+import corp.khin.solutions.booqi.data.repository.AddressSearchRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.AvailabilityRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.BookingRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.CatalogRepositoryImpl
@@ -21,6 +24,7 @@ import corp.khin.solutions.booqi.data.repository.ProviderProfileRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.ServiceRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.SessionRepositoryImpl
 import corp.khin.solutions.booqi.data.repository.UserProfileRepositoryImpl
+import corp.khin.solutions.booqi.domain.repository.AddressSearchRepository
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.CatalogRepository
@@ -50,4 +54,7 @@ val dataModule = module {
     single<UserProfileRemoteDataSource> { FakeUserProfileRemoteDataSource(get()) }
     single<SessionRepository> { SessionRepositoryImpl(get()) }
     single<UserProfileRepository> { UserProfileRepositoryImpl(get(), get()) }
+    // Address search (#23): TEMPORARY in-memory list until Google Places (#24).
+    single<AddressSearchRemoteDataSource> { FakeAddressSearchRemoteDataSource() }
+    single<AddressSearchRepository> { AddressSearchRepositoryImpl(get()) }
 }

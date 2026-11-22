@@ -13,15 +13,14 @@ import corp.khin.solutions.booqi.core.designsystem.theme.BooqiTheme
 import corp.khin.solutions.booqi.core.navigation.DefaultNavigator
 import corp.khin.solutions.booqi.core.navigation.Destination
 import corp.khin.solutions.booqi.core.navigation.Navigator
-import corp.khin.solutions.booqi.feature.browse.BrowseScreen
 
 /**
  * App root: theme + the single [DefaultNavigator] instance for the whole app, the current
  * destination, and the bottom navigation of whichever session shell (Cliente or Proveedor) it
  * belongs to (see [AppNavigationBar]). Destinations are grouped by feature module in
  * `CustomerDestinations.kt`, `BookingDestinations.kt`, `AccountDestinations.kt` and
- * `ProviderDestinations.kt`; the ones whose screen is not built yet (`AddressSelection`, #23) land with
- * their own tickets — wiring a new one in is additive here, not a rewrite.
+ * `ProviderDestinations.kt`; every [Destination] has a screen, and the `when` below is exhaustive, so
+ * wiring a new one in is additive here, not a rewrite.
  */
 @Composable
 fun App() {
@@ -53,6 +52,7 @@ private fun DestinationContent(destination: Destination, navigator: Navigator) {
         is Destination.BookingDetail,
         is Destination.MyBookings,
         is Destination.RateBooking,
+        is Destination.AddressSelection,
         -> BookingDestination(destination, navigator)
         is Destination.Profile,
         is Destination.Auth,
@@ -64,7 +64,5 @@ private fun DestinationContent(destination: Destination, navigator: Navigator) {
         is Destination.ScheduleManagement,
         is Destination.BookingRequestInbox,
         -> ProviderDestination(destination, navigator)
-        // AddressSelection lands with the address screen (#23).
-        else -> BrowseScreen(onProviderSelected = { navigator.navigateTo(Destination.Browse) })
     }
 }

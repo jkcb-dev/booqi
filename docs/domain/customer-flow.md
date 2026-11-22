@@ -212,7 +212,8 @@ Escenario: El Cliente elimina su cuenta con una dirección guardada
   `Booking`; columnas `profiles.address_line/lat/lng`). **Ambas coordenadas son obligatorias**:
   la dirección siempre sale de una búsqueda de Google Maps o de un pin en el mapa, y ambos traen
   posición. El texto en blanco o una posición fuera de rango / no numérica es `InvalidInput`.
-  El selector de mapa y el geocoding son #23/#24.
+  La búsqueda de dirección (`BuscarDireccion`, #23) pasa por el puerto `AddressSearchRepository`
+  (hoy una lista de demostración TEMPORAL en `data`); el pin en el mapa y Google Places son #24.
 - Se mantienen **dos comandos** porque son dos eventos distintos del dominio (6 y 13) y tienen
   precondiciones opuestas: `AgregarDireccion` falla con `InvalidInput` si ya hay una (solo hay
   una); `ActualizarDireccion` falla con `NotFound` si no hay ninguna. `ObtenerMiDireccion`
@@ -375,7 +376,8 @@ Escenario: Un Cliente sin reservas ve su historial vacío
   el paso elegidos (también al volver de agregar la dirección); entrar de cualquier otra forma
   empieza limpio.
 - **Domicilio.** "A domicilio" usa la dirección guardada (`ObtenerMiDireccion`) como snapshot sin
-  volver a pedirla; sin dirección el envío queda bloqueado y se ofrece `onAddAddress` (pantalla #23).
+  volver a pedirla; sin dirección el envío queda bloqueado y se ofrece `onAddAddress`, que abre el selector de dirección (#23, `Destination.AddressSelection`):
+  al volver el flujo retoma el horario elegido y vuelve a leer la dirección guardada.
   Para "Local & Dom." el Cliente elige dónde (local por defecto) y solo "A domicilio" exige dirección.
 - **Horarios.** La grilla muestra todo lo que genera el horario del Proveedor ese día
   (`GenerarTimeSlots`) y tacha lo que ya no está libre (`ObtenerTimeSlotsDisponibles`) o ya pasó

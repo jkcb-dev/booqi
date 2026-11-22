@@ -13,6 +13,9 @@ sealed interface ProfileEvent {
     /** The guard found an unverified email: show the verification notice. */
     data object NavigateToVerifyEmail : ProfileEvent
 
+    /** Open the address picker (add or change the saved address). */
+    data object NavigateToAddress : ProfileEvent
+
     /** The session ended: the app goes back to browsing as a visitor. */
     data object SignedOut : ProfileEvent
 }

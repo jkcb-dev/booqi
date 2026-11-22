@@ -11,6 +11,9 @@ import corp.khin.solutions.booqi.domain.model.ServiceModality
 import corp.khin.solutions.booqi.domain.model.TimeRange
 import corp.khin.solutions.booqi.domain.model.TimeSlot
 import corp.khin.solutions.booqi.domain.model.User
+import corp.khin.solutions.booqi.domain.usecase.ActualizarDireccionUseCase
+import corp.khin.solutions.booqi.domain.usecase.AgregarDireccionUseCase
+import corp.khin.solutions.booqi.domain.usecase.BuscarDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.CalificarCitaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CancelarReservaClienteUseCase
 import corp.khin.solutions.booqi.domain.usecase.GenerarTimeSlotsUseCase
@@ -56,6 +59,7 @@ class BookingFixture {
     val availability = FakeAvailabilityRepository()
     val profiles = FakeProviderProfileRepository(listOf(PROVIDER))
     val services = FakeServiceRepository(listOf(LOCAL, HOME, BOTH))
+    val addressSearch = FakeAddressSearchRepository()
     val customer: User = users.signIn(CUSTOMER)
 
     private val currentUser = ObtenerUsuarioActualUseCase(users)
@@ -92,6 +96,13 @@ class BookingFixture {
         ),
         clock = clock,
         timeZone = TimeZone.UTC,
+    )
+
+    fun addressViewModel() = AddressViewModel(
+        obtenerMiDireccion = ObtenerMiDireccionUseCase(users),
+        agregarDireccion = AgregarDireccionUseCase(users, users),
+        actualizarDireccion = ActualizarDireccionUseCase(users, users),
+        buscarDireccion = BuscarDireccionUseCase(addressSearch),
     )
 
     fun detailViewModel() = BookingDetailViewModel(

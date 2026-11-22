@@ -6,7 +6,8 @@ package corp.khin.solutions.booqi.feature.account
  * this module importing another feature. [onProviderMode] fires only after the access guard passed;
  * [onSignInRequired] / [onSignUpRequested] / [onVerificationRequired] push the sign-in flow or the
  * verification notice over this screen, so finishing them returns here; [onSessionEnded] fires after
- * signing out or deleting the account, when the app goes back to browsing as a visitor.
+ * signing out or deleting the account, when the app goes back to browsing as a visitor;
+ * [onAddress] opens the address picker ("Mi dirección") over this screen, so finishing it returns here.
  */
 class ProfileNavigation(
     val onProviderMode: () -> Unit,
@@ -14,4 +15,5 @@ class ProfileNavigation(
     val onSignUpRequested: () -> Unit,
     val onVerificationRequired: () -> Unit,
     val onSessionEnded: () -> Unit,
+    val onAddress: () -> Unit,
 )

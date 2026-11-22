@@ -96,7 +96,9 @@ stacking screens; everything else pushes. The Provider area is entered from the 
 `RequerirCuentaVerificada` guard) and left through "Volver al modo Cliente" on the Provider's profile.
 `Auth` and `VerifyEmail` are *pushed* over whatever needed an account ("Reservar", "Convertirme en
 Proveedor", the profile) and show no bar, so finishing them is a plain back — that is how the visitor
-"vuelve a donde estaba".
+"vuelve a donde estaba". `AddressSelection` (the address picker of `feature:booking`, #23) is pushed the
+same way, from the booking flow's "Agregar dirección" or the profile's "Mi dirección"; the booking flow
+re-reads the saved address when it is re-entered, keeping the chosen slot.
 
 ## Booking expiry trigger (decision input for #27 / platform work)
 

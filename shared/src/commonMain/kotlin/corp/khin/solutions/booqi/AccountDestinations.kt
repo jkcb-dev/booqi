@@ -25,6 +25,8 @@ internal fun AccountDestination(destination: Destination, navigator: Navigator) 
                 onVerificationRequired = { navigator.navigateTo(Destination.VerifyEmail) },
                 // Signed out or deleted: the app goes back to browsing as a visitor.
                 onSessionEnded = { navigator.navigateToRoot(Destination.Browse) },
+                // Pushed over the profile (no bar): back returns here, which reloads the saved line.
+                onAddress = { navigator.navigateTo(Destination.AddressSelection) },
             ),
         )
         is Destination.Auth -> AuthScreen(

@@ -33,7 +33,7 @@ private val AVAILABLE_TABS: Map<BottomNavigationVariant, Set<BottomNavigationTab
 private class ShellPosition(val variant: BottomNavigationVariant, val selected: BottomNavigationTab)
 
 /** `null` for the screens that show no bar: the sign-in flow, the verification notice, the service
- * editor (a form to finish or abandon, not a tab) and destinations that are not wired yet. */
+ * editor and the address picker (forms to finish or abandon, not tabs). */
 private fun Destination.shellPosition(): ShellPosition? = when (this) {
     is Destination.Browse,
     is Destination.ServiceDetail,
