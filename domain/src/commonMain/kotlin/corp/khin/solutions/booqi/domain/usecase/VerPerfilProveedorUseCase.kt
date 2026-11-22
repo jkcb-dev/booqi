@@ -38,7 +38,9 @@ class VerPerfilProveedorUseCase(
                         services = all.filter { it.isActive },
                         reviews = rated.mapNotNull { booking ->
                             booking.rating?.let {
-                                ProviderReview(booking.id, it.stars, it.comment, booking.completedAt)
+                                ProviderReview(
+                                    booking.id, booking.customerId, it.stars, it.comment, booking.completedAt,
+                                )
                             }
                         },
                     )

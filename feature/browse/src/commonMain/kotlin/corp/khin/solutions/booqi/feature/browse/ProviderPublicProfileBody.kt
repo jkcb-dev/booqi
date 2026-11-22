@@ -30,6 +30,7 @@ import kotlinx.datetime.TimeZone
 internal fun ProviderPublicProfileBody(
     profile: ProviderPublicProfile,
     bookingError: DomainError?,
+    reviewerNames: Map<String, String>,
     onAction: (ProviderPublicProfileAction) -> Unit,
 ) {
     val timeZone = TimeZone.currentSystemDefault()
@@ -70,7 +71,9 @@ internal fun ProviderPublicProfileBody(
             RatingDisplay(
                 average = profile.provider.ratingAverage,
                 count = profile.provider.ratingCount,
-                reviews = profile.reviews.map { it.toRatingReview(timeZone) },
+                reviews = profile.reviews.map {
+                    it.toRatingReview(timeZone, reviewerNames[it.customerId] ?: REVIEWER_LABEL)
+                },
             )
         }
     }

@@ -9,6 +9,7 @@ import corp.khin.solutions.booqi.domain.model.ServiceModality
 import corp.khin.solutions.booqi.domain.model.TimeSlot
 import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
 
 /**
  * A wired-up set of fakes for the Booking-request and availability tests: one Provider who works
@@ -22,12 +23,14 @@ internal class SchedulingFixture {
     val services = FakeServiceRepository()
     val bookings = FakeBookingRepository()
 
-    val availableSlots = ObtenerTimeSlotsDisponiblesUseCase(availability, profiles, bookings, GenerarTimeSlotsUseCase())
+    val availableSlots = ObtenerTimeSlotsDisponiblesUseCase(
+        availability, profiles, bookings, GenerarTimeSlotsUseCase(), clock, TimeZone.UTC,
+    )
     val users = FakeUserRepository()
 
     /** The real use case, resolving the signed-in user itself: arrange the session with [signInCustomer]. */
     val solicitarUseCase = SolicitarReservaUseCase(
-        bookings, services, availableSlots, RequerirCuentaVerificadaUseCase(users), clock,
+        bookings, services, profiles, availableSlots, RequerirCuentaVerificadaUseCase(users), clock,
     )
 
     /** Signs in a verified Customer; [name] is what the booking's name snapshot will copy. */
@@ -49,7 +52,7 @@ internal class SchedulingFixture {
             customerNote: String? = null,
         ): DomainResult<Booking> {
             signInCustomer(customerId)
-            return solicitarUseCase(customerId, serviceId, slot, deliveryAddress, customerNote)
+            return solicitarUseCase(serviceId, slot, deliveryAddress, customerNote)
         }
     }
 

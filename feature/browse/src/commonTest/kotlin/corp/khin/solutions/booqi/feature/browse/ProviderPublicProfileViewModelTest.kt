@@ -6,6 +6,7 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.domain.model.ServiceCategory
 import corp.khin.solutions.booqi.domain.model.User
 import corp.khin.solutions.booqi.domain.usecase.ObtenerCalificacionesDelProveedorUseCase
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +64,12 @@ class ProviderPublicProfileViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserRepository(
+        others = mapOf(
+            "c1" to User("c1", "Camila Torres", "camila@booqi.test", isEmailVerified = true),
+            "c2" to User("c2", "Luis", "luis@booqi.test", isEmailVerified = true).anonymized(),
+        ),
+    )
 
     private fun newViewModel() = ProviderPublicProfileViewModel(
         verPerfilProveedor = VerPerfilProveedorUseCase(
@@ -72,6 +78,7 @@ class ProviderPublicProfileViewModelTest {
             ObtenerCalificacionesDelProveedorUseCase(bookings),
         ),
         requerirCuentaVerificada = RequerirCuentaVerificadaUseCase(users),
+        obtenerUsuarioPublico = ObtenerUsuarioPublicoUseCase(users),
     )
 
     private fun TestScope.start(viewModel: ProviderPublicProfileViewModel, providerId: String) {
@@ -110,6 +117,30 @@ class ProviderPublicProfileViewModelTest {
     }
 
     @Test
+    fun `reviewers are shown by real name and deleted accounts as Usuario eliminado`() =
+        runTest(testDispatcher) {
+            val withReviewers = FakeBookingRepository(
+                listOf(
+                    CatalogFixture.ratedBooking("b1", CatalogFixture.STUDIO_ID, 4, null, "2026-09-10T10:00:00Z"),
+                    CatalogFixture.ratedBooking("b2", CatalogFixture.STUDIO_ID, 5, null, "2026-09-11T10:00:00Z", "c2"),
+                    CatalogFixture.ratedBooking("b3", CatalogFixture.STUDIO_ID, 3, null, "2026-09-12T10:00:00Z", "c-gone"),
+                ),
+            )
+            val viewModel = ProviderPublicProfileViewModel(
+                VerPerfilProveedorUseCase(profiles, services, ObtenerCalificacionesDelProveedorUseCase(withReviewers)),
+                RequerirCuentaVerificadaUseCase(users),
+                ObtenerUsuarioPublicoUseCase(users),
+            )
+
+            start(viewModel, CatalogFixture.STUDIO_ID)
+
+            val names = viewModel.state.value.reviewerNames
+            assertEquals("Camila Torres", names["c1"])
+            assertEquals("Usuario eliminado", names["c2"])
+            assertNull(names["c-gone"])
+        }
+
+    @Test
     fun `disabled services are left out of the servicios section`() = runTest(testDispatcher) {
         val viewModel = newViewModel()
 
@@ -127,6 +158,7 @@ class ProviderPublicProfileViewModelTest {
                 ObtenerCalificacionesDelProveedorUseCase(FakeBookingRepository()),
             ),
             RequerirCuentaVerificadaUseCase(users),
+            ObtenerUsuarioPublicoUseCase(users),
         )
 
         start(viewModel, CatalogFixture.CASA_ID)

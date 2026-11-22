@@ -74,7 +74,7 @@ val domainModule = module {
     factory { RecalcularCalificacionDelProveedorUseCase(get(), get()) }
     factory { CalificarCitaUseCase(get(), get(), get()) }
     factory { ObtenerTimeSlotsDisponiblesUseCase(get(), get(), get(), get()) }
-    factory { SolicitarReservaUseCase(get(), get(), get(), get()) }
+    factory { SolicitarReservaUseCase(get(), get(), get(), get(), get()) }
     factory { ObtenerSolicitudesPendientesUseCase(get()) }
     factory { ObtenerReservaUseCase(get()) }
     factory { ObtenerReservasDelProveedorUseCase(get()) }

@@ -79,11 +79,12 @@ data class ServiceDetail(
 
 /**
  * One review on a Provider's public page: a rated, completed Booking reduced to what is public —
- * [stars], [comment] and when it was completed. Reviewer names need the Identity context (#50);
- * the Booking's note, address and ids are not exposed to the Customer's screens.
+ * [stars], [comment] and when it was completed. [customerId] is the reviewer's user id (resolve the name with
+ * `ObtenerUsuarioPublico`, #67); the Booking's note and address are not exposed to the Customer's screens.
  */
 data class ProviderReview(
     val bookingId: String,
+    val customerId: String,
     val stars: Int,
     val comment: String?,
     val completedAt: Instant?,

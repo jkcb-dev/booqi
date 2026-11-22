@@ -31,6 +31,8 @@ fun BookingDto.toDomain(): Booking = Booking(
     respondedAt = respondedAt?.let(Instant::parse),
     completedAt = completedAt?.let(Instant::parse),
     customerNameSnapshot = customerNameSnapshot,
+    serviceTitleSnapshot = serviceTitleSnapshot,
+    providerNameSnapshot = providerNameSnapshot,
 )
 
 // The three address columns are all set or all null; any other combination is a data
@@ -63,6 +65,8 @@ fun Booking.toDto(): BookingDto = BookingDto(
     respondedAt = respondedAt?.toString(),
     completedAt = completedAt?.toString(),
     customerNameSnapshot = customerNameSnapshot,
+    serviceTitleSnapshot = serviceTitleSnapshot,
+    providerNameSnapshot = providerNameSnapshot,
 )
 
 fun BookingDraft.toDto(): BookingDraftDto = BookingDraftDto(
@@ -78,6 +82,8 @@ fun BookingDraft.toDto(): BookingDraftDto = BookingDraftDto(
     customerNote = customerNote,
     requestedAt = requestedAt.toString(),
     customerNameSnapshot = customerNameSnapshot,
+    serviceTitleSnapshot = serviceTitleSnapshot,
+    providerNameSnapshot = providerNameSnapshot,
 )
 
 // Explicit both ways (not enum names) so the stored strings stay exactly the ones in

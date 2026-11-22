@@ -14,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * Escenarios (docs/domain/provider-flow.md § Grupo 4): "el TimeSlot deja de estar disponible para
@@ -63,6 +64,24 @@ class ObtenerTimeSlotsDisponiblesUseCaseTest {
         assertEquals(listOf(time(9), time(11)), starts())
     }
 
+    // --- Slots in the past (#67): "now" is the injected clock, read in the use case's timezone ---
+
+    @Test
+    fun `slots that already started are not offered`() = runTest {
+        f.givenProvider()
+        f.clock.now = LocalDateTime(MONDAY_DATE, time(10)).toInstant(TimeZone.UTC) + 30.minutes
+
+        assertEquals(listOf(time(11)), starts())
+    }
+
+    @Test
+    fun `a slot starting exactly now is not offered`() = runTest {
+        f.givenProvider()
+        f.clock.now = LocalDateTime(MONDAY_DATE, time(10)).toInstant(TimeZone.UTC)
+
+        assertEquals(listOf(time(11)), starts())
+    }
+
     @Test
     fun `rejected expired cancelled and completed bookings leave the slot available`() = runTest {
         f.givenProvider()
@@ -90,6 +109,7 @@ class ObtenerTimeSlotsDisponiblesUseCaseTest {
         f.clock.now = REQUESTED_AT + 24.hours
 
         ExpirarSolicitudesVencidasUseCase(f.bookings, f.clock)().value()
+        f.clock.now = REQUESTED_AT // the slot is on Monday, i.e. in the past at +24h: isolate the freeing rule
 
         assertEquals(listOf(time(9), time(10), time(11)), starts())
     }

@@ -87,11 +87,18 @@ object CatalogFixture {
     }
 
     /** A completed, rated Booking of [providerId]; [completedAt] orders the reviews. */
-    fun ratedBooking(id: String, providerId: String, stars: Int, comment: String?, completedAt: String) = Booking(
+    fun ratedBooking(
+        id: String,
+        providerId: String,
+        stars: Int,
+        comment: String?,
+        completedAt: String,
+        customerId: String = "c1",
+    ) = Booking(
         id = id,
         providerId = providerId,
         serviceId = "s1",
-        customerId = "c1",
+        customerId = customerId,
         scheduledAt = LocalDateTime.parse("2026-09-01T10:00:00"),
         durationMinutesSnapshot = 60,
         priceCentsSnapshot = 4000,

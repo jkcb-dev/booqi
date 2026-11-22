@@ -81,8 +81,8 @@ class VerPerfilProveedorUseCaseTest {
         assertEquals(2, perfil.provider.ratingCount)
         assertEquals(
             listOf(
-                ProviderReview("new", 3, "Comentario new", Instant.parse("2026-10-26T11:00:00Z")),
-                ProviderReview("old", 5, "Comentario old", Instant.parse("2026-10-12T11:00:00Z")),
+                ProviderReview("new", "customer-1", 3, "Comentario new", Instant.parse("2026-10-26T11:00:00Z")),
+                ProviderReview("old", "customer-1", 5, "Comentario old", Instant.parse("2026-10-12T11:00:00Z")),
             ),
             perfil.reviews,
         )

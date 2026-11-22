@@ -60,7 +60,7 @@ class BookingFixture {
 
     private val currentUser = ObtenerUsuarioActualUseCase(users)
     private val availableSlots = ObtenerTimeSlotsDisponiblesUseCase(
-        availability, profiles, bookings, GenerarTimeSlotsUseCase(),
+        availability, profiles, bookings, GenerarTimeSlotsUseCase(), clock, TimeZone.UTC,
     )
     private val lookups = BookingLookups(
         ObtenerServicioUseCase(services),
@@ -88,7 +88,7 @@ class BookingFixture {
             savedAddress = ObtenerMiDireccionUseCase(users),
         ),
         solicitarReserva = SolicitarReservaUseCase(
-            bookings, services, availableSlots, RequerirCuentaVerificadaUseCase(users), clock,
+            bookings, services, profiles, availableSlots, RequerirCuentaVerificadaUseCase(users), clock,
         ),
         clock = clock,
         timeZone = TimeZone.UTC,
@@ -111,6 +111,7 @@ class BookingFixture {
     fun rateViewModel() = RateBookingViewModel(
         obtenerReserva = ObtenerReservaUseCase(bookings),
         calificarCita = CalificarCitaUseCase(
+            currentUser,
             bookings,
             RecalcularCalificacionDelProveedorUseCase(bookings, profiles),
         ),

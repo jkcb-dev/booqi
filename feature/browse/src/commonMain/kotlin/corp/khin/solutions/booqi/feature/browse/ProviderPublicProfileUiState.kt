@@ -12,6 +12,8 @@ data class ProviderPublicProfileUiState(
     val isLoading: Boolean = true,
     val profile: ProviderPublicProfile? = null,
     val error: DomainError? = null,
+    /** Reviewer display names by `ProviderReview.customerId`; an id missing here reads "Cliente". */
+    val reviewerNames: Map<String, String> = emptyMap(),
     /** Why the last "Reservar ›" tap could not even reach the access answer (shown over the list). */
     val bookingError: DomainError? = null,
 )

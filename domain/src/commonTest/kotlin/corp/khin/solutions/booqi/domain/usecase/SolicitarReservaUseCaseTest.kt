@@ -12,6 +12,8 @@ import corp.khin.solutions.booqi.domain.model.User
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -133,7 +135,7 @@ class SolicitarReservaUseCaseTest {
         val service = ready()
         f.signInCustomer("customer-1", name = "  Ana Pérez ")
 
-        val booking = f.solicitarUseCase("customer-1", service.id, f.slot(9)).value()
+        val booking = f.solicitarUseCase(service.id, f.slot(9)).value()
 
         assertEquals("Ana Pérez", booking.customerNameSnapshot)
         assertEquals("Ana Pérez", f.bookings.stored(booking.id).customerNameSnapshot)
@@ -143,7 +145,7 @@ class SolicitarReservaUseCaseTest {
     fun `a later rename does not change the snapshot`() = runTest {
         val service = ready()
         f.signInCustomer("customer-1", name = "Ana")
-        val booking = f.solicitarUseCase("customer-1", service.id, f.slot(9)).value()
+        val booking = f.solicitarUseCase(service.id, f.slot(9)).value()
 
         ActualizarPerfilDeUsuarioUseCase(f.users)("Ana María", null).value()
 
@@ -155,14 +157,14 @@ class SolicitarReservaUseCaseTest {
         val service = ready()
         f.signInCustomer("customer-1", name = "   ")
 
-        assertNull(f.solicitarUseCase("customer-1", service.id, f.slot(9)).value().customerNameSnapshot)
+        assertNull(f.solicitarUseCase(service.id, f.slot(9)).value().customerNameSnapshot)
     }
 
     @Test
     fun `without a session the request is Unauthorized and nothing is read or written`() = runTest {
         val service = ready()
 
-        f.solicitarUseCase("customer-1", service.id, f.slot(9)).assertUnauthorized()
+        f.solicitarUseCase(service.id, f.slot(9)).assertUnauthorized()
 
         assertEquals(0, f.bookings.writeCount)
     }
@@ -172,20 +174,54 @@ class SolicitarReservaUseCaseTest {
         val service = ready()
         f.users.seedSignedIn(User("customer-1", "Ana", "ana@example.com", isEmailVerified = false))
 
-        val message = f.solicitarUseCase("customer-1", service.id, f.slot(9)).invalidInput()
+        val message = f.solicitarUseCase(service.id, f.slot(9)).invalidInput()
 
         assertEquals(RequerirCuentaVerificadaUseCase.EMAIL_NOT_VERIFIED_MESSAGE, message)
         assertEquals(0, f.bookings.writeCount)
     }
 
-    @Test
-    fun `nobody can book in another user's name`() = runTest {
-        val service = ready()
-        f.signInCustomer("customer-1")
+    // --- Slots in the past (#67) ---
 
-        f.solicitarUseCase("customer-2", service.id, f.slot(9)).assertUnauthorized()
+    @Test
+    fun `a slot that already started is rejected as InvalidInput and nothing is stored`() = runTest {
+        val service = ready()
+        f.clock.now = LocalDateTime(MONDAY_DATE, time(10)).toInstant(TimeZone.UTC) + 1.hours
+
+        f.solicitar("customer-1", service.id, f.slot(10)).invalidInput()
 
         assertEquals(0, f.bookings.writeCount)
+    }
+
+    @Test
+    fun `a slot starting exactly now is rejected`() = runTest {
+        val service = ready()
+        f.clock.now = LocalDateTime(MONDAY_DATE, time(10)).toInstant(TimeZone.UTC)
+
+        f.solicitar("customer-1", service.id, f.slot(10)).invalidInput()
+    }
+
+    // --- Service and Provider snapshots (#67) ---
+
+    @Test
+    fun `the booking copies the service title and the provider name`() = runTest {
+        val service = ready()
+        f.profiles.completeProfile(f.providerId, " Studio Booqi ", "https://example.com/p.jpg", "desc", "Calle 1")
+
+        val booking = f.solicitar("customer-1", service.id, f.slot(9)).value()
+
+        assertEquals("Corte", booking.serviceTitleSnapshot)
+        assertEquals("Studio Booqi", booking.providerNameSnapshot)
+        assertEquals("Corte", f.bookings.stored(booking.id).serviceTitleSnapshot)
+    }
+
+    @Test
+    fun `a later edit of the service title does not change the snapshot`() = runTest {
+        val service = ready()
+        val booking = f.solicitar("customer-1", service.id, f.slot(9)).value()
+
+        f.services.updateService(service.id, ServiceDetails("Otro", service.photoUrl, service.description, service.priceCents, service.durationMinutes, service.modality))
+
+        assertEquals("Corte", f.bookings.stored(booking.id).serviceTitleSnapshot)
     }
 
     // --- Delivery address ---

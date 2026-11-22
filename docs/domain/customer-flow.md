@@ -267,8 +267,17 @@ compensar factores como tráfico en servicios a domicilio).
   `Unauthorized`.
 - **Quién reserva.** `SolicitarReserva` resuelve al usuario por sí mismo con la guarda
   `RequerirCuentaVerificada` (sin sesión `Unauthorized`; correo sin verificar `InvalidInput`) y
-  `customerId` debe ser ese usuario (otro id → `Unauthorized`). De ahí copia el nombre del Cliente
-  como **snapshot** en la `Booking` (`customerNameSnapshot`, ver `identity-flow.md`).
+  no recibe `customerId` (#67): el Cliente es siempre el usuario con sesión. De ahí copia el nombre
+  del Cliente como **snapshot** en la `Booking` (`customerNameSnapshot`, ver `identity-flow.md`).
+- **Horarios pasados (#67).** `SolicitarReserva` rechaza con `InvalidInput` un TimeSlot cuyo inicio
+  no es posterior a "ahora", y `ObtenerTimeSlotsDisponibles` no lo devuelve. "Ahora" es el `Clock`
+  inyectado y el horario (hora de pared) se lee en la zona horaria del dispositivo
+  (`TimeZone.currentSystemDefault()`): no existe zona horaria por Proveedor todavía.
+- **Snapshots del servicio y del Proveedor (#67).** Al solicitar, la `Booking` copia el título del
+  Servicio (`serviceTitleSnapshot`) y el nombre del Proveedor (`providerNameSnapshot`); `null` en
+  reservas anteriores (las pantallas caen a la consulta en vivo).
+- **Reseñas públicas (#67).** `ProviderReview` incluye `customerId` del reseñador; C4 resuelve el
+  nombre con `ObtenerUsuarioPublico` ("Usuario eliminado" para cuentas borradas).
 - **Diferido** (no hay sistema de notificaciones): avisar al Proveedor de la cancelación y su motivo.
 
 ```gherkin
@@ -317,6 +326,29 @@ Escenario: La reserva guarda el nombre del Cliente al momento de solicitarla
   Cuando solicita una reserva
   Entonces la Booking guarda el nombre "Ana" como copia (snapshot)
   Y si después cambia su nombre a "Ana María", la Booking sigue diciendo "Ana"
+
+Escenario: No se puede reservar un horario que ya pasó
+  Dado que un TimeSlot cuyo inicio ya pasó (o es exactamente ahora)
+  Cuando el Cliente intenta solicitar reservarlo
+  Entonces no se crea ninguna Booking
+  Y recibe un error de validación
+
+Escenario: Los horarios pasados no se ofrecen como disponibles
+  Dado que un Proveedor tiene horarios generados para hoy, algunos ya iniciados
+  Cuando el Cliente consulta los TimeSlots disponibles
+  Entonces solo ve los que empiezan después de "ahora"
+
+Escenario: La reserva guarda el título del Servicio y el nombre del Proveedor
+  Dado que el Servicio "Corte" del Proveedor "Studio Booqi" tiene un TimeSlot disponible
+  Cuando el Cliente solicita reservarlo
+  Entonces la Booking guarda "Corte" y "Studio Booqi" como copia (snapshot)
+  Y si después el Servicio se renombra, la Booking sigue diciendo "Corte"
+
+Escenario: Las reseñas del perfil público muestran el nombre real del reseñador
+  Dado que un Cliente "Camila" calificó una cita completada de un Proveedor
+  Cuando otro Cliente ve el perfil público de ese Proveedor
+  Entonces la reseña aparece firmada por "Camila"
+  Y si la cuenta de Camila fue eliminada, aparece "Usuario eliminado"
 
 Escenario: El Cliente consulta su historial de reservas
   Dado que el Cliente tiene reservas en distintos estados (pendiente, confirmada, completada,

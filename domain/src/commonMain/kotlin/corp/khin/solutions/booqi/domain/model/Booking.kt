@@ -47,6 +47,12 @@ import kotlin.time.Duration.Companion.minutes
  * snapshot is erased on account deletion, like the address and note). `null` for Bookings created
  * before the snapshot existed — screens fall back to the live `User` name until they switch to it.
  *
+ * **Service and Provider snapshots (#67).** [serviceTitleSnapshot] and [providerNameSnapshot] are the
+ * Service's title and the Provider's display name copied at request time, so history and detail
+ * screens need no extra lookups and keep showing what was booked after a rename or a disabled
+ * Service. `null` for Bookings created before the snapshots existed — screens fall back to the live
+ * lookup.
+ *
  * Lifecycle and persistence are driven by the Scheduling use cases; see
  * [corp.khin.solutions.booqi.domain.usecase.SolicitarReservaUseCase] for creation.
  */
@@ -70,6 +76,8 @@ data class Booking(
     val respondedAt: Instant? = null,
     val completedAt: Instant? = null,
     val customerNameSnapshot: String? = null,
+    val serviceTitleSnapshot: String? = null,
+    val providerNameSnapshot: String? = null,
 ) {
     /** The TimeSlot this Booking holds (while [BookingStatus.occupiesSlot]). */
     val timeSlot: TimeSlot get() = TimeSlot(providerId, scheduledAt.date, scheduledAt.time)
@@ -202,6 +210,8 @@ data class Booking(
             deliveryAddress = draft.deliveryAddress,
             customerNote = draft.customerNote,
             customerNameSnapshot = draft.customerNameSnapshot,
+            serviceTitleSnapshot = draft.serviceTitleSnapshot,
+            providerNameSnapshot = draft.providerNameSnapshot,
         )
     }
 }
@@ -222,4 +232,6 @@ data class BookingDraft(
     val deliveryAddress: Address? = null,
     val customerNote: String? = null,
     val customerNameSnapshot: String? = null,
+    val serviceTitleSnapshot: String? = null,
+    val providerNameSnapshot: String? = null,
 )

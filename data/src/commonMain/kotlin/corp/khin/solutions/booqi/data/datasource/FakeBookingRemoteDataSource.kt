@@ -44,6 +44,8 @@ class FakeBookingRemoteDataSource(
             respondedAt = null,
             completedAt = null,
             customerNameSnapshot = draft.customerNameSnapshot,
+            serviceTitleSnapshot = draft.serviceTitleSnapshot,
+            providerNameSnapshot = draft.providerNameSnapshot,
         )
         bookingsById[booking.id] = booking
         return booking
