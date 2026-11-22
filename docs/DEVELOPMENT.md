@@ -22,9 +22,13 @@ before opening files** — it answers in a bounded number of tokens instead of r
 - `graphify query "how is a booking requested" --budget 1500` — orient yourself on a topic.
 - `graphify explain "BookingRepository"` — one symbol, its callers/callees and where it lives.
 - `graphify path "SolicitarReservaUseCase" "FakeBookingRemoteDataSource"` — how two pieces connect.
-- `graphify affected "UserRepository"` — **before changing an interface**: everything that depends
-  on it, including test fakes in other modules (this is what broke #58 after #22 added a method).
-  Also use it to pick worktree batches that don't touch the same code.
+- **Who uses a type? Use `grep`, not graphify.** graphify's Kotlin extraction records what a symbol
+  *contains/calls* but misses most *incoming* cross-file references (constructor injection, Koin
+  registrations, test fakes): `graphify affected "SolicitarReservaUseCase"` returned **nothing**
+  while 9 files use it. Before changing an interface or a use case signature, run
+  `grep -rln "TypeName" --include='*.kt' . | grep -v /build/` — that list is authoritative (it is
+  what would have caught #58's broken test fakes). Use the same grep to pick non-overlapping
+  worktree batches.
 
 Then read only the files the graph pointed you to.
 

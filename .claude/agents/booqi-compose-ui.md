@@ -12,7 +12,7 @@ through `UseCase` classes injected via Koin — never a repository or datasource
 ## Source of truth (read before any work)
 
 **Understand code through graphify before reading files** (`docs/DEVELOPMENT.md` § Reading the
-code: graphify first); run `graphify affected "<Type>"` before changing any interface. Verify with
+code: graphify first); before changing an interface or signature, find its users with `grep -rln "<Type>" --include='*.kt' .` (graphify misses incoming Kotlin references). Verify with
 `scripts/verify.sh <modules>` — done means it prints `RESULT: OK`.
 
 - `docs/DOMAIN.md` and the relevant flow doc (`docs/domain/provider-flow.md` or
