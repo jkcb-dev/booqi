@@ -12,9 +12,11 @@ import corp.khin.solutions.booqi.data.dto.WeeklyHoursDto
  * Not thread-safe by design — a single fake, single-process instance has no concurrent-writer
  * scenario worth guarding against; a real datasource will get that from the backend instead.
  */
-class FakeAvailabilityRemoteDataSource : AvailabilityRemoteDataSource {
+class FakeAvailabilityRemoteDataSource(
+    seed: Map<String, List<WeeklyHoursDto>> = emptyMap(),
+) : AvailabilityRemoteDataSource {
 
-    private val weeklyHoursByProvider = mutableMapOf<String, List<WeeklyHoursDto>>()
+    private val weeklyHoursByProvider = seed.toMutableMap()
     private val blockedByProvider = mutableMapOf<String, List<BlockedDateDto>>()
 
     override suspend fun findWeeklyHours(providerId: String): List<WeeklyHoursDto> =

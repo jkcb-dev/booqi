@@ -4,6 +4,7 @@ import corp.khin.solutions.booqi.data.dto.BookingDto
 import corp.khin.solutions.booqi.data.dto.ProviderProfileDto
 import corp.khin.solutions.booqi.data.dto.ServiceDto
 import corp.khin.solutions.booqi.data.dto.UserDto
+import corp.khin.solutions.booqi.data.dto.WeeklyHoursDto
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -38,6 +39,12 @@ import kotlin.time.Instant
  * Provider also make "Eliminar cuenta" answer with the blocking list. To try the unverified flow or
  * a deletable account, sign up with any other email (a new email account starts unverified).
  *
+ * **Demo customer account (fake-only test credentials):** email `cliente@booqi.test`, password
+ * `Demo1234`. Verified, with a saved address (Av. Rivadavia 4500, CABA), so the whole Customer
+ * walkthrough works without the address screen (#23): Buscar -> Servicio -> Reservar -> choose a
+ * slot -> "Enviar solicitud" -> "Mis reservas". Book "Manicure gel"/"Corte a domicilio" (Demo Studio)
+ * or any catalog service: every sample provider has Monday-Saturday weekly hours ([weeklyHours]).
+ *
  * The sample Customer ([SAMPLE_CUSTOMER_ID], "Camila Torres") made the bookings; one completed
  * booking belongs to a deleted account ([DELETED_CUSTOMER_ID]) so "Usuario eliminado" shows too.
  */
@@ -48,12 +55,17 @@ object SampleData {
     const val DEMO_USER_ID = "sample-user-demo"
     const val DEMO_PROVIDER_PROFILE_ID = "sample-provider-profile-demo"
 
+    const val DEMO_CUSTOMER_EMAIL = "cliente@booqi.test"
+    const val DEMO_CUSTOMER_PASSWORD = "Demo1234"
+    const val DEMO_CUSTOMER_ID = "sample-user-demo-customer"
+
     const val SAMPLE_CUSTOMER_ID = "sample-customer"
     const val DELETED_CUSTOMER_ID = "sample-customer-deleted"
 
     const val SAMPLE_PROFILE_ID = "sample-provider-profile-1"
     const val SAMPLE_PROFILE_2_ID = "sample-provider-profile-2"
 
+    private const val SUNDAY = 7
     private const val GEL_ID = "sample-service-gel"
     private const val CUT_ID = "sample-service-cut"
 
@@ -94,6 +106,17 @@ object SampleData {
             ),
         ),
     )
+
+    /**
+     * Weekly availability per ProviderProfile id: Monday-Saturday 09:00-18:00 for the demo Provider
+     * and the catalog profiles, so `ObtenerTimeSlotsDisponibles` returns slots for the next days.
+     */
+    fun weeklyHours(): Map<String, List<WeeklyHoursDto>> {
+        val week = (1..7).map { day ->
+            WeeklyHoursDto(dayOfWeek = day, isActive = day != SUNDAY, startTime = "09:00", endTime = "18:00")
+        }
+        return listOf(DEMO_PROVIDER_PROFILE_ID, SAMPLE_PROFILE_ID, SAMPLE_PROFILE_2_ID).associateWith { week }
+    }
 
     fun services(): List<ServiceDto> = providerSideServices() + catalogServices()
 

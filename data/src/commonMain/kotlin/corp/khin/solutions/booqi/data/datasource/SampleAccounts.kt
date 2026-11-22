@@ -11,6 +11,14 @@ internal fun sampleAccounts(): List<SeedAccount> = listOf(
         user = verifiedAccount(SampleData.DEMO_USER_ID, "Demo Booqi", SampleData.DEMO_EMAIL),
         password = SampleData.DEMO_PASSWORD,
     ),
+    SeedAccount(
+        user = verifiedAccount(SampleData.DEMO_CUSTOMER_ID, "Cliente Demo", SampleData.DEMO_CUSTOMER_EMAIL).copy(
+            addressLine = "Av. Rivadavia 4500, CABA",
+            addressLat = -34.6118,
+            addressLng = -58.4173,
+        ),
+        password = SampleData.DEMO_CUSTOMER_PASSWORD,
+    ),
     SeedAccount(verifiedAccount(SampleData.SAMPLE_CUSTOMER_ID, "Camila Torres", "camila@booqi.test")),
     SeedAccount(
         UserDto(

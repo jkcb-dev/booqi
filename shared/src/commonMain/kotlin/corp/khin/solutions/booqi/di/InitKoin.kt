@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.di
 import corp.khin.solutions.booqi.data.di.dataModule
 import corp.khin.solutions.booqi.domain.di.domainModule
 import corp.khin.solutions.booqi.feature.account.di.accountModule
+import corp.khin.solutions.booqi.feature.booking.di.bookingModule
 import corp.khin.solutions.booqi.feature.browse.di.browseModule
 import corp.khin.solutions.booqi.feature.provider.di.providerModule
 import org.koin.core.context.startKoin
@@ -24,6 +25,7 @@ fun initKoin(platformModule: Module = module {}, appDeclaration: KoinAppDeclarat
             domainModule,
             dataModule,
             accountModule,
+            bookingModule,
             browseModule,
             providerModule,
             platformModule,
