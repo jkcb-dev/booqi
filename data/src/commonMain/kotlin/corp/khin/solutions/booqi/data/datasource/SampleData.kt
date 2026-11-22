@@ -65,6 +65,7 @@ object SampleData {
     const val SAMPLE_PROFILE_ID = "sample-provider-profile-1"
     const val SAMPLE_PROFILE_2_ID = "sample-provider-profile-2"
 
+    private const val MONDAY = 1
     private const val SUNDAY = 7
     private const val GEL_ID = "sample-service-gel"
     private const val CUT_ID = "sample-service-cut"
@@ -112,7 +113,7 @@ object SampleData {
      * and the catalog profiles, so `ObtenerTimeSlotsDisponibles` returns slots for the next days.
      */
     fun weeklyHours(): Map<String, List<WeeklyHoursDto>> {
-        val week = (1..7).map { day ->
+        val week = (MONDAY..SUNDAY).map { day ->
             WeeklyHoursDto(dayOfWeek = day, isActive = day != SUNDAY, startTime = "09:00", endTime = "18:00")
         }
         return listOf(DEMO_PROVIDER_PROFILE_ID, SAMPLE_PROFILE_ID, SAMPLE_PROFILE_2_ID).associateWith { week }
