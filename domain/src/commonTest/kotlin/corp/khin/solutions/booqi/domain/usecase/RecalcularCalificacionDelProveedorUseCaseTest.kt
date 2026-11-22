@@ -15,7 +15,7 @@ import kotlin.test.assertNull
  */
 class RecalcularCalificacionDelProveedorUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
     private val recalcular = RecalcularCalificacionDelProveedorUseCase(bookings, profiles)

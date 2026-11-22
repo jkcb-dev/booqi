@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  */
 class VerHistorialReservasUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val repository = FakeBookingRepository()
     private val historial = VerHistorialReservasUseCase(ObtenerUsuarioActualUseCase(users), repository)
 

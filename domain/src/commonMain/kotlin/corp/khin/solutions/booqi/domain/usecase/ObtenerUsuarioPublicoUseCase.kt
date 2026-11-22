@@ -3,7 +3,7 @@ package corp.khin.solutions.booqi.domain.usecase
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.map
 import corp.khin.solutions.booqi.domain.model.PublicUser
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Resolves how a person is shown to *someone else* — the name a Provider sees for
@@ -13,8 +13,8 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * (callers fall back to their placeholder).
  */
 class ObtenerUsuarioPublicoUseCase(
-    private val users: UserRepository,
+    private val profiles: UserProfileRepository,
 ) {
     suspend operator fun invoke(userId: String): DomainResult<PublicUser> =
-        users.getUser(userId).map { it.toPublic() }
+        profiles.getUser(userId).map { it.toPublic() }
 }

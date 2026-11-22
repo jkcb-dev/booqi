@@ -6,7 +6,7 @@ import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * The user → profile path of the providerId contract (docs/DOMAIN.md): the signed-in user's
@@ -15,11 +15,11 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * their Services, Availability and Bookings — never the user id.
  */
 class ObtenerMiPerfilDeProveedorUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
     private val profiles: ProviderProfileRepository,
 ) {
     suspend operator fun invoke(): DomainResult<ProviderProfile?> =
-        users.getCurrentUser().flatMap { user ->
+        session.getCurrentUser().flatMap { user ->
             if (user == null) DomainError.Unauthorized.asFailure() else profiles.findByUserId(user.id)
         }
 }

@@ -4,7 +4,8 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Command `ActualizarDireccion` (docs/domain/customer-flow.md § Grupo 2): the Customer replaces
@@ -17,10 +18,11 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * [User].
  */
 class ActualizarDireccionUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
+    private val userProfiles: UserProfileRepository,
 ) {
     suspend operator fun invoke(address: Address): DomainResult<User> =
-        users.saveAddressOfCurrentUser(address) { user ->
+        saveAddressOfCurrentUser(session, userProfiles, address) { user ->
             if (user.address == null) DomainError.NotFound else null
         }
 }

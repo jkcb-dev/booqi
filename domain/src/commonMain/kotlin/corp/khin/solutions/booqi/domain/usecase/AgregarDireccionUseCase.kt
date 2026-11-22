@@ -4,7 +4,8 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Command `AgregarDireccion` (docs/domain/customer-flow.md § Grupo 2): the Customer saves the
@@ -18,10 +19,11 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * *copy* of the address (#26).
  */
 class AgregarDireccionUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
+    private val userProfiles: UserProfileRepository,
 ) {
     suspend operator fun invoke(address: Address): DomainResult<User> =
-        users.saveAddressOfCurrentUser(address) { user ->
+        saveAddressOfCurrentUser(session, userProfiles, address) { user ->
             if (user.address != null) DomainError.InvalidInput(ALREADY_HAS_ADDRESS_MESSAGE) else null
         }
 

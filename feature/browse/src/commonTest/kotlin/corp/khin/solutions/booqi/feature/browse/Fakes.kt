@@ -20,7 +20,8 @@ import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.CatalogRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import kotlin.time.Instant
 
 // Minimal in-memory fakes for the Customer's read side, scoped to feature:browse's reducer tests.
@@ -112,10 +113,10 @@ class FakeBookingRepository(private val rated: List<Booking> = emptyList()) : Bo
  * Only [getCurrentUser] is read (the access guard in front of "Reservar"): [current] is the session,
  * `null` meaning a visitor browsing without an account.
  */
-class FakeUserRepository(
+class FakeUserAccounts(
     var current: User? = User(id = "user-1", displayName = "Ana Pérez", email = "ana@booqi.test", isEmailVerified = true),
     private val others: Map<String, User> = emptyMap(),
-) : UserRepository {
+) : SessionRepository, UserProfileRepository {
 
     override suspend fun getCurrentUser(): DomainResult<User?> = current.asSuccess()
     override suspend fun getUser(userId: String): DomainResult<User> =

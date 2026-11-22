@@ -1,32 +1,25 @@
 package corp.khin.solutions.booqi.domain.repository
 
 import corp.khin.solutions.booqi.core.common.DomainResult
-import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
 
 /**
- * Domain-owned contract for the Identity context (docs/domain/identity-flow.md): the `User`
- * account and the current session. The implementation (in `data`) decides how accounts are sourced
- * — today a TEMPORARY in-memory fake, later Supabase Auth + the `profiles` table (#27).
+ * Domain-owned contract for the session side of the Identity context (docs/domain/identity-flow.md):
+ * registering, signing in and out, email verification and the current user. The implementation (in
+ * `data`) decides how accounts are sourced — today a TEMPORARY in-memory fake, later Supabase Auth (#27).
  *
  * **The session is part of the repository**, as with an auth SDK: methods that act "as the current
  * user" take no user id and fail with
  * [corp.khin.solutions.booqi.core.common.DomainError.Unauthorized] when nobody is signed in.
  * Input validation (name required, email shape, password length) is the use cases' job and has
  * already happened; the repository only reports what storage can know — an email already taken is
- * `InvalidInput`, wrong credentials are `Unauthorized`.
+ * `InvalidInput`, wrong credentials are `Unauthorized`. The stored profile is [UserProfileRepository].
  */
-// One cohesive contract for one aggregate (account + session + profile data); splitting it only to
-// get under the function-count threshold would scatter the single `profiles` row across interfaces.
-@Suppress("TooManyFunctions")
-interface UserRepository {
+interface SessionRepository {
 
     /** The signed-in user, or `null` while browsing without an account (a normal state). */
     suspend fun getCurrentUser(): DomainResult<User?>
-
-    /** Any account by id (including a deleted tombstone), or `NotFound`. */
-    suspend fun getUser(userId: String): DomainResult<User>
 
     /**
      * Escenario: "Un visitante se registra con correo y contraseña". Creates the account, starts
@@ -57,22 +50,4 @@ interface UserRepository {
 
     /** Sends the verification email again to the current user. `Unauthorized` without a session. */
     suspend fun resendVerificationEmail(): DomainResult<Unit>
-
-    /** Sets the current user's name and photo (already validated/normalized). */
-    suspend fun updateProfile(displayName: String, photoUrl: String?): DomainResult<User>
-
-    /**
-     * Sets the current user's single saved address, replacing any previous one (already validated
-     * and normalized — see `AgregarDireccion`/`ActualizarDireccion`). `Unauthorized` without a
-     * session. Reading it back is `getCurrentUser().address`; deleting the account erases it
-     * ([deleteAccount]).
-     */
-    suspend fun saveAddress(address: Address): DomainResult<User>
-
-    /**
-     * Anonymizes the current user (see [User.anonymized]), removes their login credentials and
-     * ends the session. The id stays, as a tombstone; name, photo, email and saved address are
-     * erased. Callers have already checked that no active Bookings block it.
-     */
-    suspend fun deleteAccount(): DomainResult<Unit>
 }

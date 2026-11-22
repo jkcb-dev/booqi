@@ -2,7 +2,7 @@ package corp.khin.solutions.booqi.domain.usecase
 
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * Command `VerificarCorreo` (event "Se verificó el correo"): called when the signed-in user has
@@ -12,7 +12,7 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * reads the confirmed state. Sending it again is [ReenviarCorreoDeVerificacionUseCase].
  */
 class VerificarCorreoUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
-    suspend operator fun invoke(): DomainResult<User> = users.confirmEmail()
+    suspend operator fun invoke(): DomainResult<User> = session.confirmEmail()
 }

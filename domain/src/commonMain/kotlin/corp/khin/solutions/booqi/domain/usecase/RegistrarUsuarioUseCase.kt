@@ -4,7 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.domain.model.Registration
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * Escenarios: "Un visitante se registra con correo y contraseña" / "...con Google, Facebook o
@@ -23,10 +23,10 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * The returned [User] is the new account, already signed in.
  */
 class RegistrarUsuarioUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
     suspend operator fun invoke(registration: Registration): DomainResult<User> = when (registration) {
-        is Registration.WithSocial -> users.signInWithSocial(registration.provider)
+        is Registration.WithSocial -> session.signInWithSocial(registration.provider)
         is Registration.WithEmail -> registerWithEmail(registration)
     }
 
@@ -34,6 +34,6 @@ class RegistrarUsuarioUseCase(
         val name = registration.name.trim()
         val email = registration.email.normalizedEmail()
         val invalid = validateDisplayName(name) ?: validateEmail(email) ?: validateNewPassword(registration.password)
-        return invalid?.asFailure() ?: users.registerWithEmail(name, email, registration.password)
+        return invalid?.asFailure() ?: session.registerWithEmail(name, email, registration.password)
     }
 }

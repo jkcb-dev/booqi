@@ -9,7 +9,7 @@ import kotlin.test.assertNull
 /** The user → profile path of the providerId contract (docs/DOMAIN.md). */
 class ObtenerMiPerfilDeProveedorUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val profiles = FakeProviderProfileRepository()
     private val obtener = ObtenerMiPerfilDeProveedorUseCase(users, profiles)
 

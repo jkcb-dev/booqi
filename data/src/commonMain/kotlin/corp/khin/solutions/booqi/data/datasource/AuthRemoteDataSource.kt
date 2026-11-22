@@ -3,8 +3,9 @@ package corp.khin.solutions.booqi.data.datasource
 import corp.khin.solutions.booqi.data.dto.UserDto
 
 /**
- * Source of accounts and the current session — what Supabase Auth plus the `profiles` table will
- * be (#27, docs/DATABASE.md). `data`-only concern; the DTO never crosses into `domain`.
+ * Source of the session side of the Identity context — what Supabase Auth will be (#27,
+ * docs/DATABASE.md): sign-up, sign-in/out, email verification and the current user. `data`-only
+ * concern; the DTO never crosses into `domain`. The profile columns are [UserProfileRemoteDataSource].
  *
  * A "no" that is a normal answer (wrong credentials, email taken, nobody signed in) is `null`, not
  * an exception, so the repository can turn it into the right `DomainError`; exceptions are for
@@ -12,16 +13,10 @@ import corp.khin.solutions.booqi.data.dto.UserDto
  * *in* to this boundary** (sign-up, sign-in) — they are never part of a [UserDto] and never come
  * back out.
  */
-// Mirrors UserRepository one-to-one (account + session + profile columns of a single `profiles` row);
-// splitting it only to get under the function-count threshold would scatter that row.
-@Suppress("TooManyFunctions")
 interface AuthRemoteDataSource {
 
     /** The user of the current session, or `null` when signed out. */
     suspend fun currentUser(): UserDto?
-
-    /** The account with [userId] (a deleted one comes back anonymized), or `null`. */
-    suspend fun findUserById(userId: String): UserDto?
 
     /**
      * Creates an unverified email+password account, signs it in and sends the verification email;
@@ -45,20 +40,4 @@ interface AuthRemoteDataSource {
 
     /** Re-sends the verification email to the current user; `false` when signed out. */
     suspend fun resendVerificationEmail(): Boolean
-
-    /** Updates the current user's name and photo; `null` when signed out. */
-    suspend fun updateProfile(displayName: String, photoUrl: String?): UserDto?
-
-    /**
-     * Sets the current user's saved address (`address_line`/`address_lat`/`address_lng`, replacing
-     * any previous one); `null` when signed out.
-     */
-    suspend fun updateAddress(line: String, latitude: Double, longitude: Double): UserDto?
-
-    /**
-     * Replaces the current user's row with [tombstone] (the anonymized account — the row survives so
-     * history keeps its reference), removes its login credentials and ends the session. `false`
-     * when signed out.
-     */
-    suspend fun deleteCurrentAccount(tombstone: UserDto): Boolean
 }

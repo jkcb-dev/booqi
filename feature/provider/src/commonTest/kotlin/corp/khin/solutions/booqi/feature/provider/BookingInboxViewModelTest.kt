@@ -59,7 +59,7 @@ class BookingInboxViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val bookings = FakeBookingRepository()
     private val services = FakeServiceRepository()
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
 
     // Saturday 3 October 2026, midday UTC (the provider's wall clock too: the tests use TimeZone.UTC).
     private val now = Instant.parse("2026-10-03T12:00:00Z")

@@ -23,7 +23,7 @@ class CurrentProviderTest {
 
     @Test
     fun `follows the account when the session changes between two calls`() = runTest {
-        val users = FakeUserRepository(current = testUser(id = "user-a"))
+        val users = FakeUserAccounts(current = testUser(id = "user-a"))
         val profiles = FakeProviderProfileRepository()
         val provider = testCurrentProvider(profileId = "profile-a", users = users, profiles = profiles)
         assertEquals(DomainResult.Success("profile-a"), provider.profileId())
@@ -36,7 +36,7 @@ class CurrentProviderTest {
 
     @Test
     fun `a user who never activated Provider mode has no provider id`() = runTest {
-        val users = FakeUserRepository(current = testUser())
+        val users = FakeUserAccounts(current = testUser())
         val provider = CurrentProvider(ObtenerMiPerfilDeProveedorUseCase(users, FakeProviderProfileRepository()))
 
         assertEquals(DomainResult.Failure(NoProviderProfile), provider.profileId())
@@ -44,7 +44,7 @@ class CurrentProviderTest {
 
     @Test
     fun `without a session there is no provider id`() = runTest {
-        val provider = testCurrentProvider(users = FakeUserRepository(current = null))
+        val provider = testCurrentProvider(users = FakeUserAccounts(current = null))
 
         assertEquals(DomainResult.Failure(DomainError.Unauthorized), provider.profileId())
     }

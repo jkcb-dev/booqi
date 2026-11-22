@@ -6,7 +6,7 @@ import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * The access guard (docs/domain/identity-flow.md): **requesting a booking and activating Provider
@@ -30,9 +30,9 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * sub-ticket applies it in front of that one.
  */
 class RequerirCuentaVerificadaUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
-    suspend operator fun invoke(): DomainResult<User> = users.getCurrentUser().flatMap { guard(it) }
+    suspend operator fun invoke(): DomainResult<User> = session.getCurrentUser().flatMap { guard(it) }
 
     companion object {
         const val EMAIL_NOT_VERIFIED_MESSAGE = "Verificá tu correo para continuar"

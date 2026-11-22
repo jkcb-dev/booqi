@@ -8,7 +8,8 @@ import corp.khin.solutions.booqi.domain.model.ProviderProfile
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import corp.khin.solutions.booqi.domain.usecase.ObtenerMiPerfilDeProveedorUseCase
 
 /** The ProviderProfile id the Provider screens' tests act for — `Service.providerId`, never the user id. */
@@ -24,14 +25,14 @@ fun testUser(
 ) = User(id = id, displayName = name, email = "$id@booqi.test", isEmailVerified = isEmailVerified)
 
 /**
- * Minimal in-memory fake for [UserRepository], scoped to `feature:provider`'s tests (commonTest
+ * Minimal in-memory fake for [SessionRepository] and [UserProfileRepository], scoped to `feature:provider`'s tests (commonTest
  * sourceSets aren't shared across Gradle modules): [current] is the session (`null` = signed out),
  * [users] the accounts [getUser] can find. Everything the Provider screens never call fails.
  */
-class FakeUserRepository(
+class FakeUserAccounts(
     var current: User? = testUser(),
     users: List<User> = emptyList(),
-) : UserRepository {
+) : SessionRepository, UserProfileRepository {
 
     private val byId = users.associateBy { it.id }.toMutableMap()
 
@@ -59,7 +60,7 @@ class FakeUserRepository(
 
 /** The [CurrentProvider] of a signed-in test User who never activated Provider mode (no profile). */
 fun currentProviderWithoutProfile(): CurrentProvider =
-    CurrentProvider(ObtenerMiPerfilDeProveedorUseCase(FakeUserRepository(), FakeProviderProfileRepository()))
+    CurrentProvider(ObtenerMiPerfilDeProveedorUseCase(FakeUserAccounts(), FakeProviderProfileRepository()))
 
 /**
  * The [CurrentProvider] of a signed-in test User whose ProviderProfile has id [profileId]. Different
@@ -67,7 +68,7 @@ fun currentProviderWithoutProfile(): CurrentProvider =
  */
 fun testCurrentProvider(
     profileId: String = TEST_PROVIDER_ID,
-    users: FakeUserRepository = FakeUserRepository(),
+    users: FakeUserAccounts = FakeUserAccounts(),
     profiles: FakeProviderProfileRepository = FakeProviderProfileRepository(),
 ): CurrentProvider {
     val owner = users.current

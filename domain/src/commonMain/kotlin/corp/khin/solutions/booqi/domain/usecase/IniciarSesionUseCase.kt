@@ -5,7 +5,7 @@ import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.domain.model.Credentials
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
 
 /**
  * Command `IniciarSesion` (docs/domain/identity-flow.md, event "Se inició sesión"): starts the
@@ -17,14 +17,14 @@ import corp.khin.solutions.booqi.domain.repository.UserRepository
  * the same answer for an unknown email and a wrong password). Social sign-in has no input to check.
  */
 class IniciarSesionUseCase(
-    private val users: UserRepository,
+    private val session: SessionRepository,
 ) {
     suspend operator fun invoke(credentials: Credentials): DomainResult<User> = when (credentials) {
-        is Credentials.WithSocial -> users.signInWithSocial(credentials.provider)
+        is Credentials.WithSocial -> session.signInWithSocial(credentials.provider)
         is Credentials.WithEmail -> when {
             credentials.email.isBlank() -> DomainError.InvalidInput("El correo es obligatorio").asFailure()
             credentials.password.isEmpty() -> DomainError.InvalidInput("La contraseña es obligatoria").asFailure()
-            else -> users.signInWithEmail(credentials.email.normalizedEmail(), credentials.password)
+            else -> session.signInWithEmail(credentials.email.normalizedEmail(), credentials.password)
         }
     }
 }

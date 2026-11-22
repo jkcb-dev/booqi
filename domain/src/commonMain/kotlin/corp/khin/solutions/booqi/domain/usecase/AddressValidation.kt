@@ -6,7 +6,8 @@ import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.flatMap
 import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 
 /**
  * Rules shared by `AgregarDireccion` and `ActualizarDireccion`, run *before* any repository call
@@ -28,7 +29,9 @@ internal fun Address.normalized(): Address = copy(line = line.trim())
  * deleted account), checks the command's own [precondition] (an error to refuse with, or `null`)
  * and stores the normalized address — the shared body of add and update.
  */
-internal suspend fun UserRepository.saveAddressOfCurrentUser(
+internal suspend fun saveAddressOfCurrentUser(
+    session: SessionRepository,
+    userProfiles: UserProfileRepository,
     address: Address,
     precondition: (User) -> DomainError?,
 ): DomainResult<User> {
@@ -36,9 +39,9 @@ internal suspend fun UserRepository.saveAddressOfCurrentUser(
     return if (invalid != null) {
         invalid.asFailure()
     } else {
-        getCurrentUser().flatMap { user ->
+        session.getCurrentUser().flatMap { user ->
             val refusal = if (user == null || user.isDeleted) DomainError.Unauthorized else precondition(user)
-            refusal?.asFailure() ?: saveAddress(address.normalized())
+            refusal?.asFailure() ?: userProfiles.saveAddress(address.normalized())
         }
     }
 }

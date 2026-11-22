@@ -36,7 +36,7 @@ import kotlin.time.Instant
 class DeleteAccountViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
     private val services = FakeServiceRepository(
@@ -66,7 +66,7 @@ class DeleteAccountViewModelTest {
     }
 
     private fun newViewModel() = DeleteAccountViewModel(
-        eliminarCuenta = EliminarCuentaUseCase(users, bookings, profiles),
+        eliminarCuenta = EliminarCuentaUseCase(users, users, bookings, profiles),
         obtenerServicio = ObtenerServicioUseCase(services),
     ).also { it.onAction(DeleteAccountAction.Start) }
 

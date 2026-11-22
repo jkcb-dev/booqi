@@ -36,7 +36,7 @@ class ProviderReviewsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private val repository = FakeBookingRepository()
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
 
     @BeforeTest
     fun setUp() {

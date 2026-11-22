@@ -6,7 +6,8 @@ import corp.khin.solutions.booqi.domain.di.domainModule
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
-import corp.khin.solutions.booqi.domain.repository.UserRepository
+import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import corp.khin.solutions.booqi.feature.account.di.accountModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,7 +39,10 @@ class AccountModuleTest {
             domainModule,
             accountModule,
             module {
-                single<UserRepository> { FakeUserRepository() }
+                // One fake backs both interfaces, so the session and the profiles are one state.
+                single { FakeUserAccounts() }
+                single<SessionRepository> { get<FakeUserAccounts>() }
+                single<UserProfileRepository> { get<FakeUserAccounts>() }
                 single<BookingRepository> { FakeBookingRepository() }
                 single<ProviderProfileRepository> { FakeProviderProfileRepository() }
                 single<ServiceRepository> { FakeServiceRepository() }

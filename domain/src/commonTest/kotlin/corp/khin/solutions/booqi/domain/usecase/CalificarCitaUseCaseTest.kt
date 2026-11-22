@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  */
 class CalificarCitaUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val bookings = FakeBookingRepository()
     private val profiles = FakeProviderProfileRepository()
     private val calificar = CalificarCitaUseCase(

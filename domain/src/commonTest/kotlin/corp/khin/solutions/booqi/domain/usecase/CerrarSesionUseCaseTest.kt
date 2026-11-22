@@ -11,7 +11,7 @@ import kotlin.test.assertNull
  */
 class CerrarSesionUseCaseTest {
 
-    private val users = FakeUserRepository()
+    private val users = FakeUserAccounts()
     private val cerrarSesion = CerrarSesionUseCase(users)
     private val usuarioActual = ObtenerUsuarioActualUseCase(users)
     private val guard = RequerirCuentaVerificadaUseCase(users)
