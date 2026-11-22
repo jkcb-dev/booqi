@@ -45,8 +45,16 @@ sealed interface Destination {
 
     // --- feature:booking — Scheduling + address (Customer) ------------------------------------
 
-    data class Booking(val providerId: String) : Destination
-    data object BookingConfirmation : Destination
+    /** Flujo de reserva de un Servicio (C5/C7, `SolicitarReserva`, customer-flow.md Grupo 3):
+     * elegir horario y enviar la solicitud. Per Service, not per Provider. */
+    data class Booking(val serviceId: String) : Destination
+
+    /** Detalle de una reserva en cualquier estado (C8-C10b): pendiente, confirmada (+ cancelar),
+     * rechazada, vencida, completada, cancelada. Replaces the old `BookingConfirmation`. */
+    data class BookingDetail(val bookingId: String) : Destination
+
+    /** Calificar una reserva completada (C12, `CalificarCita`). */
+    data class RateBooking(val bookingId: String) : Destination
 
     /** Historial de reservas (`VerHistorialReservas`, customer-flow.md Grupo 3) — the Customer's
      * Bookings across all `BookingStatus` values (pending, confirmed, completed, cancelled).

@@ -10,14 +10,18 @@ import corp.khin.solutions.booqi.core.navigation.Navigator
 /**
  * Which tabs of the Figma `BottomNavigation` exist today. Only tabs whose screen is built are
  * shown, so no tab leads nowhere:
- * - **Cliente:** Buscar and Perfil. Omitted: *Inicio* (no home screen is designed or built yet) and
- *   *Reservas* (the Customer's booking history lands with `feature:booking`, #26).
+ * - **Cliente:** Buscar, Reservas and Perfil. Omitted: *Inicio* (no home screen is designed or built
+ *   yet).
  * - **Proveedor:** Solicitudes, Servicios and Perfil. Omitted: *Inicio* (same reason). The Provider
  *   area is reached from the Cliente "Perfil" tab ("Convertirme en Proveedor" / "Ir a mi panel"), and
  *   left through its own screen's "Volver al modo Cliente".
  */
 private val AVAILABLE_TABS: Map<BottomNavigationVariant, Set<BottomNavigationTab>> = mapOf(
-    BottomNavigationVariant.Cliente to setOf(BottomNavigationTab.Buscar, BottomNavigationTab.Perfil),
+    BottomNavigationVariant.Cliente to setOf(
+        BottomNavigationTab.Buscar,
+        BottomNavigationTab.Reservas,
+        BottomNavigationTab.Perfil,
+    ),
     BottomNavigationVariant.Proveedor to setOf(
         BottomNavigationTab.Solicitudes,
         BottomNavigationTab.Servicios,
@@ -35,6 +39,9 @@ private fun Destination.shellPosition(): ShellPosition? = when (this) {
     is Destination.ServiceDetail,
     is Destination.ProviderProfileView,
     -> ShellPosition(BottomNavigationVariant.Cliente, BottomNavigationTab.Buscar)
+    is Destination.MyBookings,
+    is Destination.BookingDetail,
+    -> ShellPosition(BottomNavigationVariant.Cliente, BottomNavigationTab.Reservas)
     is Destination.Profile -> ShellPosition(BottomNavigationVariant.Cliente, BottomNavigationTab.Perfil)
     is Destination.BookingRequestInbox ->
         ShellPosition(BottomNavigationVariant.Proveedor, BottomNavigationTab.Solicitudes)
@@ -49,6 +56,7 @@ private fun Destination.shellPosition(): ShellPosition? = when (this) {
 private fun rootOf(variant: BottomNavigationVariant, tab: BottomNavigationTab): Destination? = when (variant) {
     BottomNavigationVariant.Cliente -> when (tab) {
         BottomNavigationTab.Buscar -> Destination.Browse
+        BottomNavigationTab.Reservas -> Destination.MyBookings
         BottomNavigationTab.Perfil -> Destination.Profile
         else -> null
     }

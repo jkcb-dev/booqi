@@ -87,7 +87,7 @@ holds the map):
 
 | Shell | Tabs shown | Omitted until their screen exists |
 |---|---|---|
-| Cliente (`Browse`, `ServiceDetail`, `ProviderProfileView`, `Profile`) | Buscar, Perfil | Inicio (no home screen designed/built), Reservas (`feature:booking`, #26) |
+| Cliente (`Browse`, `ServiceDetail`, `ProviderProfileView`, `MyBookings`, `BookingDetail`, `Profile`) | Buscar, Reservas, Perfil | Inicio (no home screen designed/built) |
 | Proveedor (`ProviderProfileSetup`, `ScheduleManagement`, `BookingRequestInbox`, `ServiceList`) | Solicitudes, Servicios, Perfil | Inicio (same) |
 
 `Navigator.navigateToRoot` switches tabs (and leaves a session: sign-out, account deletion) without

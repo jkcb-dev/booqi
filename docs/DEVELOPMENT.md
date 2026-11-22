@@ -132,7 +132,9 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
   the demo Provider profile "Demo Studio" with two services, sample bookings (one pending, two
   confirmed, two completed with ratings) and sample customers ("Camila Torres", one deleted account →
   "Usuario eliminado"). Its active Provider bookings make "Eliminar cuenta" answer with the blocking
-  list. A new email sign-up starts *unverified* (use "Ya verifiqué mi correo" on the verification
+  list. **Demo customer:** `cliente@booqi.test` / `Demo1234` — verified, with a saved address, to
+  walk Buscar -> Reservar -> Mis reservas without the address screen (#23); all sample providers
+  have Mon-Sat 09:00-18:00 weekly hours so slots exist. A new email sign-up starts *unverified* (use "Ya verifiqué mi correo" on the verification
   notice — the fake confirms at once); a social button creates a verified account. The seed lives
   only in memory and starts signed out on every launch.
 - **Date/time: use `kotlin.time.Clock` / `kotlin.time.Instant`, with `kotlinx-datetime` pinned to

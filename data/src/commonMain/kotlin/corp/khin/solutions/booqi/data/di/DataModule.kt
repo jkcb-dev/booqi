@@ -32,7 +32,7 @@ val dataModule = module {
     single<ProviderProfileRepository> { ProviderProfileRepositoryImpl(get()) }
     single<ServiceRemoteDataSource> { FakeServiceRemoteDataSource(seed = SampleData.services()) }
     single<ServiceRepository> { ServiceRepositoryImpl(get()) }
-    single<AvailabilityRemoteDataSource> { FakeAvailabilityRemoteDataSource() }
+    single<AvailabilityRemoteDataSource> { FakeAvailabilityRemoteDataSource(seed = SampleData.weeklyHours()) }
     single<AvailabilityRepository> { AvailabilityRepositoryImpl(get()) }
     single<CatalogRepository> { CatalogRepositoryImpl(get(), get()) }
     single<BookingRemoteDataSource> { FakeBookingRemoteDataSource(seed = SampleData.bookings()) }
