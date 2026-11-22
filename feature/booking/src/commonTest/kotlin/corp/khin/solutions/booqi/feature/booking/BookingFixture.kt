@@ -111,6 +111,7 @@ class BookingFixture {
     fun rateViewModel() = RateBookingViewModel(
         obtenerReserva = ObtenerReservaUseCase(bookings),
         calificarCita = CalificarCitaUseCase(
+            currentUser,
             bookings,
             RecalcularCalificacionDelProveedorUseCase(bookings, profiles),
         ),
