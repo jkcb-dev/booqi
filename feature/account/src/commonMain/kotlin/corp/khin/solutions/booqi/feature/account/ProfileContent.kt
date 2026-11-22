@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiCornerRadius
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.User
 
 private const val HEADING = "Tu perfil"
@@ -76,6 +77,7 @@ private fun SignedInContent(
     if (!user.isEmailVerified) {
         VerifyEmailCard(onClick = { onAction(ProfileAction.VerifyEmailClicked) })
     }
+    AddressCard(address = user.address, onClick = { onAction(ProfileAction.AddressClicked) })
     ProviderEntryCard(
         hasProviderProfile = state.hasProviderProfile,
         onClick = { onAction(ProfileAction.ProviderEntryClicked) },
@@ -125,6 +127,24 @@ private fun VerifyEmailCard(onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             OutlinedButton(onClick = onClick) { Text("Verificar correo") }
+        }
+    }
+}
+
+/** "Mi dirección": the saved address line (or an invitation to add one) with the way to open the
+ * address picker (customer-flow.md Grupo 2: updated "desde su perfil"). */
+@Composable
+private fun AddressCard(address: Address?, onClick: () -> Unit) {
+    Card(shape = RoundedCornerShape(BooqiCornerRadius.medium), modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(BooqiSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(BooqiSpacing.xs),
+        ) {
+            Text(text = "Mi dirección", style = MaterialTheme.typography.titleSmall)
+            SecondaryText(address?.line ?: "Agregar dirección")
+            OutlinedButton(onClick = onClick) {
+                Text(if (address == null) "Agregar dirección" else "Cambiar dirección")
+            }
         }
     }
 }

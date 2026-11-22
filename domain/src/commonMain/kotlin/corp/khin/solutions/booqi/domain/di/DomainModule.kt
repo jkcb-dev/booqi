@@ -7,6 +7,7 @@ import corp.khin.solutions.booqi.domain.usecase.ObtenerMiDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.ActivarModoProveedorUseCase
 import corp.khin.solutions.booqi.domain.usecase.AgregarServicioUseCase
 import corp.khin.solutions.booqi.domain.usecase.BloquearFechaHoraUseCase
+import corp.khin.solutions.booqi.domain.usecase.BuscarDireccionUseCase
 import corp.khin.solutions.booqi.domain.usecase.BuscarServiciosUseCase
 import corp.khin.solutions.booqi.domain.usecase.CalificarCitaUseCase
 import corp.khin.solutions.booqi.domain.usecase.CancelarReservaAceptadaUseCase
@@ -101,6 +102,8 @@ val domainModule = module {
     factory { AgregarDireccionUseCase(get(), get()) }
     factory { ActualizarDireccionUseCase(get(), get()) }
     factory { ObtenerMiDireccionUseCase(get()) }
+    // Address search for the picker (#23); the map pin is #24.
+    factory { BuscarDireccionUseCase(get()) }
     // Cliente · Reservas (#25). SolicitarReserva resolves the user via RequerirCuentaVerificada;
     // CancelarReservaCliente uses its Clock.System / system-zone defaults.
     factory { CancelarReservaClienteUseCase(get(), get()) }

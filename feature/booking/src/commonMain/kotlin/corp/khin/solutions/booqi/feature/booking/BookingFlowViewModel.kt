@@ -39,7 +39,7 @@ import kotlin.time.Instant
  * **Identity.** Sending first runs the access guard: no session -> [AccessIssue.SIGN_IN_REQUIRED],
  * unverified email -> [AccessIssue.EMAIL_NOT_VERIFIED]. Both set the state *and* emit
  * [BookingFlowEvent.SignInRequired]; never a crash. A Domicilio request uses the saved address as
- * the snapshot; without one it is blocked and [BookingFlowEvent.AddAddress] hands off to #23.
+ * the snapshot; without one it is blocked and [BookingFlowEvent.AddAddress] hands off to the address picker (#23).
  *
  * "Now" comes from the injected [clock] in [timeZone]: slots already in the past today are shown
  * as unavailable (the domain compares no wall-clock slot against now, see

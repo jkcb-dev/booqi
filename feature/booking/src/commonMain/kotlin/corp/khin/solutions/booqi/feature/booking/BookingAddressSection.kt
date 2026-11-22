@@ -15,7 +15,7 @@ import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColor
 /**
  * C7's address block for an appointment at the Customer's home (docs/domain/customer-flow.md
  * § Grupo 2): the saved address is used as is ("sin pedirla de nuevo"); without one a clear
- * blocking state offers "Agregar dirección" (the address screen is #23, reached through the
+ * blocking state offers "Agregar dirección" (the address picker, reached through the
  * `onAddAddress` callback); a visitor is told to sign in, which sending will ask for.
  */
 @Composable

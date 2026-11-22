@@ -30,6 +30,7 @@ fun ProfileScreen(
         viewModel.events.collect { event ->
             when (event) {
                 ProfileEvent.NavigateToProviderMode -> currentNavigation.onProviderMode()
+                ProfileEvent.NavigateToAddress -> currentNavigation.onAddress()
                 ProfileEvent.NavigateToSignIn -> currentNavigation.onSignInRequired()
                 ProfileEvent.NavigateToSignUp -> currentNavigation.onSignUpRequested()
                 ProfileEvent.NavigateToVerifyEmail -> currentNavigation.onVerificationRequired()

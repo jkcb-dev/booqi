@@ -14,7 +14,9 @@ import org.koin.compose.viewmodel.koinViewModel
  * callbacks so this module imports no other feature:
  * - [onSignInRequired]: no session / unverified email — open the sign-in or account screen; coming
  *   back to the same Service resumes the flow with the chosen slot;
- * - [onAddAddress]: a Domicilio request has no saved address — open the address screen (#23);
+ * - [onAddAddress]: a Domicilio request has no saved address — open the address picker
+ *   (`Destination.AddressSelection`); coming back to the same Service resumes the flow with the slot
+ *   kept and the saved address re-read;
  * - [onDone] (the new pending booking's id): the request was sent — show C8 (`BookingDetailScreen`);
  * - [onFinished]: the Customer backed out of the flow.
  */

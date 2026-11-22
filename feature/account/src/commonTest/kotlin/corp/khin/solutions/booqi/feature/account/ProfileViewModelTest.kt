@@ -221,6 +221,17 @@ class ProfileViewModelTest {
         assertEquals(ProfileEvent.NavigateToProviderMode, event)
     }
 
+    /** Grupo 2 del Cliente: la dirección se actualiza "desde su perfil". */
+    @Test
+    fun `the address entry opens the address picker`() = runTest(testDispatcher) {
+        signedIn()
+        val viewModel = started()
+
+        val event = eventAfter(viewModel.events) { viewModel.onAction(ProfileAction.AddressClicked) }
+
+        assertEquals(ProfileEvent.NavigateToAddress, event)
+    }
+
     /** Escenario: "Un visitante intenta reservar sin cuenta" applied to Provider mode. */
     @Test
     fun `the provider entry without a session asks to sign in`() = runTest(testDispatcher) {

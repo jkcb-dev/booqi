@@ -261,6 +261,39 @@ class BookingFlowViewModelTest {
         assertTrue(state.canSubmit)
     }
 
+    /**
+     * Booking -> address picker -> back: the address saved in the picker (the real [AddressViewModel]
+     * over the real use cases) is read again on return, and the slot, note and step survive.
+     */
+    @Test
+    fun `an address added mid-flow is picked up and the selection is kept`() = runTest(testDispatcher) {
+        val viewModel = fixture.flowViewModel()
+        pickNextMondaySlot(viewModel, "s-home", hour = 10)
+        send(viewModel, BookingFlowAction.ContinueClicked, BookingFlowAction.NoteChanged("Timbre roto"))
+        assertEquals(AddressLookup.MISSING, viewModel.state.value.addressLookup)
+        sendAndAwaitEvent(viewModel, BookingFlowAction.AddAddressClicked)
+
+        fixture.addressSearch.results = listOf(BookingFixture.HOME_ADDRESS)
+        val picker = fixture.addressViewModel()
+        picker.onAction(AddressAction.Start)
+        picker.onAction(AddressAction.QueryChanged("Siempre Viva"))
+        advanceUntilIdle()
+        picker.onAction(AddressAction.ResultSelected(BookingFixture.HOME_ADDRESS))
+        picker.onAction(AddressAction.SaveClicked)
+        advanceUntilIdle()
+
+        send(viewModel, BookingFlowAction.Start("s-home"))
+
+        val state = viewModel.state.value
+        assertEquals(BookingFixture.HOME_ADDRESS, state.savedAddress)
+        assertEquals(AddressLookup.FOUND, state.addressLookup)
+        assertEquals(BookingStep.CONFIRM, state.step)
+        assertEquals(BookingFixture.slot(BookingFixture.NEXT_MONDAY, 10), state.selectedSlot)
+        assertEquals("Timbre roto", state.note)
+        sendAndAwaitEvent(viewModel, BookingFlowAction.Submit)
+        assertEquals(BookingFixture.HOME_ADDRESS, fixture.bookings.all.single().deliveryAddress)
+    }
+
     @Test
     fun `a local and domicilio service is local until the customer chooses delivery`() = runTest(testDispatcher) {
         fixture.users.signIn(BookingFixture.CUSTOMER.copy(address = BookingFixture.HOME_ADDRESS))

@@ -15,6 +15,9 @@ sealed interface ProfileAction {
     /** "Convertirme en Proveedor" / "Ir a mi panel de Proveedor": passes the access guard first. */
     data object ProviderEntryClicked : ProfileAction
 
+    /** "Mi dirección": opens the address picker. */
+    data object AddressClicked : ProfileAction
+
     data object VerifyEmailClicked : ProfileAction
     data object SignInClicked : ProfileAction
     data object SignUpClicked : ProfileAction

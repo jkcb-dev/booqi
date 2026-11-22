@@ -3,11 +3,13 @@
 package corp.khin.solutions.booqi.feature.booking
 
 import corp.khin.solutions.booqi.domain.di.domainModule
+import corp.khin.solutions.booqi.domain.repository.AddressSearchRepository
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import corp.khin.solutions.booqi.feature.booking.di.bookingModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,7 +23,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** Proves `bookingModule` resolves all four ViewModels against `domainModule`'s use cases. */
+/** Proves `bookingModule` resolves every ViewModel against `domainModule`'s use cases. */
 class BookingModuleTest {
 
     @BeforeTest
@@ -40,10 +42,14 @@ class BookingModuleTest {
             bookingModule,
             module {
                 single<BookingRepository> { FakeBookingRepository() }
-                single<SessionRepository> { FakeUserAccounts() }
+                FakeUserAccounts().let { users ->
+                    single<SessionRepository> { users }
+                    single<UserProfileRepository> { users }
+                }
                 single<AvailabilityRepository> { FakeAvailabilityRepository() }
                 single<ProviderProfileRepository> { FakeProviderProfileRepository() }
                 single<ServiceRepository> { FakeServiceRepository() }
+                single<AddressSearchRepository> { FakeAddressSearchRepository() }
             },
         )
     }.koin
@@ -51,6 +57,11 @@ class BookingModuleTest {
     @Test
     fun `the request flow view model resolves`() {
         assertTrue(koin.get<BookingFlowViewModel>().state.value.isLoading)
+    }
+
+    @Test
+    fun `the address view model resolves`() {
+        assertTrue(koin.get<AddressViewModel>().state.value.isLoading)
     }
 
     @Test

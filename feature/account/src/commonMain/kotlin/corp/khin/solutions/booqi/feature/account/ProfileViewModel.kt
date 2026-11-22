@@ -63,6 +63,7 @@ class ProfileViewModel(
             ProfileAction.SaveClicked -> save()
             ProfileAction.SignOutClicked -> signOut()
             ProfileAction.ProviderEntryClicked -> routeProviderEntry()
+            ProfileAction.AddressClicked -> emit(ProfileEvent.NavigateToAddress)
             ProfileAction.VerifyEmailClicked -> emit(ProfileEvent.NavigateToVerifyEmail)
             ProfileAction.SignInClicked -> emit(ProfileEvent.NavigateToSignIn)
             ProfileAction.SignUpClicked -> emit(ProfileEvent.NavigateToSignUp)

@@ -4,6 +4,7 @@ import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.common.DomainResult
 import corp.khin.solutions.booqi.core.common.asFailure
 import corp.khin.solutions.booqi.core.common.asSuccess
+import corp.khin.solutions.booqi.domain.model.Address
 import corp.khin.solutions.booqi.domain.model.Availability
 import corp.khin.solutions.booqi.domain.model.BlockedPeriod
 import corp.khin.solutions.booqi.domain.model.Booking
@@ -17,11 +18,13 @@ import corp.khin.solutions.booqi.domain.model.Service
 import corp.khin.solutions.booqi.domain.model.ServiceDetails
 import corp.khin.solutions.booqi.domain.model.SocialProvider
 import corp.khin.solutions.booqi.domain.model.User
+import corp.khin.solutions.booqi.domain.repository.AddressSearchRepository
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
 import corp.khin.solutions.booqi.domain.repository.ServiceRepository
 import corp.khin.solutions.booqi.domain.repository.SessionRepository
+import corp.khin.solutions.booqi.domain.repository.UserProfileRepository
 import kotlin.time.Instant
 
 // Minimal in-memory fakes, scoped to feature:booking's reducer tests. commonTest sourceSets aren't
@@ -91,7 +94,7 @@ class FakeBookingRepository : BookingRepository {
 }
 
 /** The session: [signedIn] is the current user (`null` = a visitor); [stored] is read back. */
-class FakeUserAccounts : SessionRepository {
+class FakeUserAccounts : SessionRepository, UserProfileRepository {
 
     var signedIn: User? = null
 
@@ -105,6 +108,26 @@ class FakeUserAccounts : SessionRepository {
     override suspend fun signOut() = NOT_USED.asFailure()
     override suspend fun confirmEmail() = NOT_USED.asFailure()
     override suspend fun resendVerificationEmail() = NOT_USED.asFailure()
+    override suspend fun getUser(userId: String) = NOT_USED.asFailure()
+    override suspend fun updateProfile(displayName: String, photoUrl: String?) = NOT_USED.asFailure()
+    override suspend fun saveAddress(address: Address): DomainResult<User> {
+        val user = signedIn ?: return DomainError.Unauthorized.asFailure()
+        return user.copy(address = address).also { signedIn = it }.asSuccess()
+    }
+
+    override suspend fun deleteAccount() = NOT_USED.asFailure()
+}
+
+/** Answers every query with [results] (or [failure]) and records the queries it was asked. */
+class FakeAddressSearchRepository : AddressSearchRepository {
+    var results: List<Address> = emptyList()
+    var failure: DomainError? = null
+    val queries = mutableListOf<String>()
+
+    override suspend fun search(query: String): DomainResult<List<Address>> {
+        queries += query
+        return failure?.asFailure() ?: results.asSuccess()
+    }
 }
 
 class FakeAvailabilityRepository : AvailabilityRepository {

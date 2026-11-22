@@ -28,7 +28,8 @@ sealed interface BookingFlowAction {
     /** "Enviar solicitud". */
     data object Submit : BookingFlowAction
 
-    /** C7's "Agregar dirección" (address screen is #23, outside this module). */
+    /** C7's "Agregar dirección": hands off to the address picker ([AddressViewModel]); coming back
+     * resumes the flow and re-reads the saved address. */
     data object AddAddressClicked : BookingFlowAction
     data object RetryAddress : BookingFlowAction
 
