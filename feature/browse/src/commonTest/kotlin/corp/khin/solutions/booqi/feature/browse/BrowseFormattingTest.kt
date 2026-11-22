@@ -62,7 +62,7 @@ class BrowseFormattingTest {
 
     @Test
     fun `review maps to a rating review dated by its completion`() {
-        val review = ProviderReview("b1", 4, "Muy bueno", Instant.parse("2026-09-20T10:00:00Z"))
+        val review = ProviderReview("b1", "c1", 4, "Muy bueno", Instant.parse("2026-09-20T10:00:00Z"))
 
         assertEquals(
             RatingReview("b1", 4, "Cliente", "Muy bueno", "20 de septiembre de 2026"),
@@ -72,7 +72,7 @@ class BrowseFormattingTest {
 
     @Test
     fun `review without comment or date maps to nulls`() {
-        val review = ProviderReview("b2", 5, "  ", null)
+        val review = ProviderReview("b2", "c1", 5, "  ", null)
 
         val mapped = review.toRatingReview(TimeZone.UTC)
 

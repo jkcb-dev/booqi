@@ -269,7 +269,7 @@ class BookingFlowViewModel(
                 is DomainResult.Failure -> refuseAccess(guard.error)
                 is DomainResult.Success -> {
                     val address = state.savedAddress.takeIf { state.wantsDelivery }
-                    val result = solicitarReserva(guard.value.id, serviceId, slot, address, state.note)
+                    val result = solicitarReserva(serviceId, slot, address, state.note)
                     when (result) {
                         is DomainResult.Success -> {
                             awaitingReturn = false

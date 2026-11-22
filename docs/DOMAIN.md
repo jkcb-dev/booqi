@@ -48,7 +48,7 @@ verification notice with resend, user profile (name, photo, sign out, delete acc
 blocking Bookings) and the "Convertirme en Proveedor" entry. The guard runs in front of
 `ActivarModoProveedor` (Provider mode) and on "Reservar" in `feature:browse` (the booking itself is
 #26); Provider screens read the current Provider's ProviderProfile id and show Customers' real names.
-**Not built:** reviewer names on the *public* C4 page (`ProviderReview` carries no reviewer id yet). **Account deletion** never removes the `User`: it is kept as an anonymized
+Reviewer names on the *public* C4 page come from `ProviderReview.customerId` + `ObtenerUsuarioPublico` (#67). **Account deletion** never removes the `User`: it is kept as an anonymized
 tombstone (`User.anonymized()` — name, photo and email erased, `isDeleted = true`), and
 `User.publicName` is the one place that renders it as "Usuario eliminado". Completed Bookings and
 their ratings stay (so a Provider's rating aggregate never changes), the personal data on the
@@ -100,8 +100,10 @@ inbox/agenda with accept, reject, complete and cancel, and the received ratings 
 CancelledByCustomer` through `Booking.cancelByCustomer`, own bookings only, up to 3h before the
 start inclusive, with a `CustomerReasonCode`), `VerHistorialReservas` (the signed-in Customer's
 Bookings grouped by status in a fixed, documented order) and `Booking.customerNameSnapshot`, set by
-`SolicitarReserva`, which now resolves the user itself through `RequerirCuentaVerificada` and
-requires `customerId` to be that user. **Not built:** any notification and the Customer's UI.
+`SolicitarReserva`, which resolves the user itself through `RequerirCuentaVerificada` (no
+`customerId` parameter, #67), rejects slots that are not after "now" (injected clock, device timezone —
+no per-Provider timezone yet; `ObtenerTimeSlotsDisponibles` drops them too) and copies
+`serviceTitleSnapshot`/`providerNameSnapshot` (#67). **Not built:** any notification and the Customer's UI.
 
 ## Aggregate boundaries — the rule that matters
 
@@ -117,6 +119,7 @@ Booking (aggregate root)
 ├─ serviceId: String       ← reference
 ├─ customerId: String      ← reference
 ├─ customerNameSnapshot: String?  ← copied from User.displayName at request time (#25); erased on account deletion
+├─ serviceTitleSnapshot / providerNameSnapshot: String?  ← copied from Service.title / ProviderProfile.name at request time (#67); null on older rows
 ├─ scheduledAt: LocalDateTime  ← provider-local date + start time (= timeSlot), no timezone yet
 ├─ durationMinutesSnapshot / priceCentsSnapshot: Int  ← copied from Service at request time
 ├─ deliveryAddress: Address?  ← snapshot copied at request time, only if Service modality = Domicilio; never a live reference to User.direccion

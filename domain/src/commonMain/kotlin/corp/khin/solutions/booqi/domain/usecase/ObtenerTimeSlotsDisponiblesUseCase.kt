@@ -9,7 +9,10 @@ import corp.khin.solutions.booqi.domain.model.TimeSlot
 import corp.khin.solutions.booqi.domain.repository.AvailabilityRepository
 import corp.khin.solutions.booqi.domain.repository.BookingRepository
 import corp.khin.solutions.booqi.domain.repository.ProviderProfileRepository
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 /**
  * Escenarios (docs/domain/provider-flow.md § Grupo 4): "Un Cliente solicita una reserva" — "el
@@ -29,14 +32,18 @@ import kotlinx.datetime.LocalDateTime
  * subtraction only ever removes slots. Result order is [GenerarTimeSlotsUseCase]'s (date, then
  * start). A missing profile is `NotFound`; `durationMinutes <= 0` is `InvalidInput`.
  *
- * Not handled: slots already in the past — without a timezone feature a wall-clock slot can't be
- * compared to "now".
+ * **Past slots (#67):** a slot whose start is not strictly after "now" is dropped. "Now" is the
+ * injected [clock] and the wall-clock slot is read in [timeZone] (default: the device's current zone,
+ * as the booking screens do) — there is no per-Provider timezone feature yet, so a Provider in
+ * another zone is compared in the device's zone.
  */
 class ObtenerTimeSlotsDisponiblesUseCase(
     private val availability: AvailabilityRepository,
     private val profiles: ProviderProfileRepository,
     private val bookings: BookingRepository,
     private val generateTimeSlots: GenerarTimeSlotsUseCase,
+    private val clock: Clock = Clock.System,
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) {
     suspend operator fun invoke(
         providerId: String,
@@ -51,10 +58,14 @@ class ObtenerTimeSlotsDisponiblesUseCase(
             bookings.getBookingsByProvider(providerId, ACTIVE_STATUSES).map { active ->
                 slots.filter { slot ->
                     val start = LocalDateTime(slot.date, slot.start)
-                    active.none { it.occupies(start, durationMinutes) }
+                    !hasStarted(slot) && active.none { it.occupies(start, durationMinutes) }
                 }
             }
         }
+
+    /** True when [slot] starts at or before "now" (same clock and zone [invoke] filters with). */
+    fun hasStarted(slot: TimeSlot): Boolean =
+        LocalDateTime(slot.date, slot.start).toInstant(timeZone) <= clock.now()
 
     private companion object {
         val ACTIVE_STATUSES = BookingStatus.entries.filterTo(mutableSetOf()) { it.occupiesSlot }

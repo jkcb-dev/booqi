@@ -113,10 +113,12 @@ class FakeBookingRepository(private val rated: List<Booking> = emptyList()) : Bo
  */
 class FakeUserRepository(
     var current: User? = User(id = "user-1", displayName = "Ana Pérez", email = "ana@booqi.test", isEmailVerified = true),
+    private val others: Map<String, User> = emptyMap(),
 ) : UserRepository {
 
     override suspend fun getCurrentUser(): DomainResult<User?> = current.asSuccess()
-    override suspend fun getUser(userId: String) = NOT_USED.asFailure()
+    override suspend fun getUser(userId: String): DomainResult<User> =
+        others[userId]?.asSuccess() ?: DomainError.NotFound.asFailure()
     override suspend fun registerWithEmail(name: String, email: String, password: String) = NOT_USED.asFailure()
     override suspend fun signInWithSocial(provider: SocialProvider) = NOT_USED.asFailure()
     override suspend fun signInWithEmail(email: String, password: String) = NOT_USED.asFailure()

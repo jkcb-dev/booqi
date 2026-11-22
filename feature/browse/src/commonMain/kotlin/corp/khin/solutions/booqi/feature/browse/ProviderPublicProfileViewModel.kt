@@ -3,6 +3,7 @@ package corp.khin.solutions.booqi.feature.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import corp.khin.solutions.booqi.core.common.DomainResult
+import corp.khin.solutions.booqi.domain.usecase.ObtenerUsuarioPublicoUseCase
 import corp.khin.solutions.booqi.domain.usecase.RequerirCuentaVerificadaUseCase
 import corp.khin.solutions.booqi.domain.usecase.VerPerfilProveedorUseCase
 import kotlinx.coroutines.Job
@@ -18,7 +19,9 @@ import kotlinx.coroutines.launch
  * C4 — a Provider's public page (`Destination.ProviderProfileView`). Talks to the domain only
  * through [VerPerfilProveedorUseCase] (escenario "El Cliente ve el perfil completo de un
  * Proveedor": bio, location, all active Services, overall rating and individual reviews). A
- * missing or incomplete profile is `NotFound`.
+ * missing or incomplete profile is `NotFound`. Each review's author is resolved with
+ * [ObtenerUsuarioPublicoUseCase] ("Usuario eliminado" for a deleted account, "Cliente" if the lookup
+ * fails — see [ProviderPublicProfileUiState.reviewerNames]).
  *
  * Not named `ProviderProfileViewModel` on purpose: `feature:provider` already has one (the
  * Provider editing their *own* profile) and both end up imported side by side in `App.kt`.
@@ -28,6 +31,7 @@ import kotlinx.coroutines.launch
 class ProviderPublicProfileViewModel(
     private val verPerfilProveedor: VerPerfilProveedorUseCase,
     private val requerirCuentaVerificada: RequerirCuentaVerificadaUseCase,
+    private val obtenerUsuarioPublico: ObtenerUsuarioPublicoUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProviderPublicProfileUiState())
@@ -76,7 +80,10 @@ class ProviderPublicProfileViewModel(
         _state.value = ProviderPublicProfileUiState(providerId = providerId, isLoading = true)
         loadJob = viewModelScope.launch {
             when (val result = verPerfilProveedor(providerId)) {
-                is DomainResult.Success -> _state.update { it.copy(isLoading = false, profile = result.value) }
+                is DomainResult.Success -> {
+                    val names = obtenerUsuarioPublico.namesOf(result.value.reviews.map { it.customerId }.toSet())
+                    _state.update { it.copy(isLoading = false, profile = result.value, reviewerNames = names) }
+                }
                 is DomainResult.Failure -> _state.update { it.copy(isLoading = false, error = result.error) }
             }
         }

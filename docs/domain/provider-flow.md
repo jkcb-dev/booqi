@@ -316,8 +316,9 @@ Notas de modelado (#18):
   promedio y el conteo del Proveedor se recalculan desde *todas* sus `Booking` calificadas y se
   guardan en `ProviderProfile` (calculado, no incremental).
 - **Diferido (no hay sistema de notificaciones):** todo "el Cliente/Proveedor es notificado" y el
-  mensaje fijo de expiración quedan fuera de #18. Tampoco se valida que el TimeSlot solicitado no
-  esté en el pasado (sin zona horaria no se puede comparar con "ahora"), ni que "Completar" solo
+  mensaje fijo de expiración quedan fuera de #18. Que el TimeSlot solicitado no esté en el
+  pasado se valida desde #67 (reloj inyectado, zona horaria del dispositivo; ver `customer-flow.md`
+  § Grupo 3). Tampoco se valida que "Completar" solo
   esté disponible tras la hora de la cita (afordancia de UI, Figma P10).
   Esa afordancia ya está implementada en la UI (#19): el botón de completar queda deshabilitado, con el
   texto "Disponible al finalizar la cita", hasta que `scheduledAt` + `durationMinutesSnapshot` (leído en
@@ -332,6 +333,17 @@ Escenario: Un Cliente solicita una reserva
   Entonces se crea una Booking con estado "Requested"
   Y el TimeSlot deja de estar disponible para otros Clientes mientras la solicitud está pendiente
   Y el Proveedor tiene 24 horas para responder
+
+Escenario: Un Cliente no puede solicitar un TimeSlot que ya pasó
+  Dado que un TimeSlot del Proveedor cuyo inicio no es posterior a "ahora"
+  Cuando el Cliente solicita reservar ese TimeSlot
+  Entonces no se crea ninguna Booking y el sistema responde con un error de validación
+  Y el TimeSlot no aparece entre los disponibles
+
+Escenario: La Booking guarda copias del Servicio y del Proveedor
+  Dado que un Servicio tiene un TimeSlot disponible
+  Cuando el Cliente solicita reservar ese TimeSlot
+  Entonces la Booking guarda el título del Servicio y el nombre del Proveedor al momento de la solicitud
 
 Escenario: El Proveedor acepta una solicitud
   Dado que existe una Booking en estado "Requested"

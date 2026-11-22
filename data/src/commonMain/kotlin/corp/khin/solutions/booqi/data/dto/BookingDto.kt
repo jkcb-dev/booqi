@@ -12,7 +12,9 @@ package corp.khin.solutions.booqi.data.dto
  * Expired | CancelledByProvider | CancelledByCustomer`; [reasonCode] is the stored code of a
  * predefined reason. The delivery-address snapshot is three nullable columns (all set, or all
  * `null`). [customerNameSnapshot] (`customer_name_snapshot`, #25) is the Customer's display name
- * at request time; `null` for rows that predate it, hence the default.
+ * at request time; `null` for rows that predate it, hence the default; [serviceTitleSnapshot] (`service_title_snapshot`) and [providerNameSnapshot]
+ * (`provider_name_snapshot`) (#67) are the Service's title and Provider's name at request time,
+ * `null` for older rows.
  */
 data class BookingDto(
     val id: String,
@@ -35,6 +37,8 @@ data class BookingDto(
     val respondedAt: String?,
     val completedAt: String?,
     val customerNameSnapshot: String? = null,
+    val serviceTitleSnapshot: String? = null,
+    val providerNameSnapshot: String? = null,
 )
 
 /**
@@ -55,4 +59,6 @@ data class BookingDraftDto(
     val customerNote: String?,
     val requestedAt: String,
     val customerNameSnapshot: String? = null,
+    val serviceTitleSnapshot: String? = null,
+    val providerNameSnapshot: String? = null,
 )
