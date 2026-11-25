@@ -23,9 +23,10 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 
 /**
  * C6 — add or edit the Customer's single saved address (docs/domain/customer-flow.md § Grupo 2):
- * search ([BuscarDireccionUseCase]), pick a result, save. The saved address is read on entry
- * ([ObtenerMiDireccionUseCase]); with one the save is `ActualizarDireccion`, without it
- * `AgregarDireccion`. Picking a point on a map is #24 — only the search path exists here.
+ * search ([BuscarDireccionUseCase]), pick a result or a map pin ([AddressAction.ResultSelected]
+ * from either path — the map actual reverse-geocodes, #24), save. The saved address is read on
+ * entry ([ObtenerMiDireccionUseCase]); with one the save is `ActualizarDireccion`, without it
+ * `AgregarDireccion`.
  *
  * **Re-entry.** [AddressAction.Start] on every entry resets the picker and reloads (the instance is
  * not destination-scoped, docs/DEVELOPMENT.md), so "add -> back -> open again" never shows the

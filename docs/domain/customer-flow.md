@@ -213,7 +213,11 @@ Escenario: El Cliente elimina su cuenta con una dirección guardada
   la dirección siempre sale de una búsqueda de Google Maps o de un pin en el mapa, y ambos traen
   posición. El texto en blanco o una posición fuera de rango / no numérica es `InvalidInput`.
   La búsqueda de dirección (`BuscarDireccion`, #23) pasa por el puerto `AddressSearchRepository`
-  (hoy una lista de demostración TEMPORAL en `data`); el pin en el mapa y Google Places son #24.
+  (hoy una lista de demostración TEMPORAL en `data`). El pin en el mapa es #24: Google Maps SDK
+  (Android) / MapKit (iOS) detrás de `AddressMapPicker` (`expect`/`actual` en `feature:booking`),
+  con reverse geocode de plataforma (`Geocoder` / `CLGeocoder`) al confirmar el pin. Google Places
+  para el texto de búsqueda sigue siendo un follow-up (reemplazar el fake en `data` cuando haya
+  claves Places).
 - Se mantienen **dos comandos** porque son dos eventos distintos del dominio (6 y 13) y tienen
   precondiciones opuestas: `AgregarDireccion` falla con `InvalidInput` si ya hay una (solo hay
   una); `ActualizarDireccion` falla con `NotFound` si no hay ninguna. `ObtenerMiDireccion`

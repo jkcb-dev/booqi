@@ -18,7 +18,9 @@ kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
 kotlinx-serialization = "1.8.0"
 ktor = "3.5.2"
+maps-compose = "6.6.0"
 material3 = "1.11.0-alpha07"
+play-services-maps = "19.2.0"
 sqldelight = "2.2.1"
 
 [libraries]
@@ -62,6 +64,10 @@ sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sq
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+
+# Android-only map SDK for C6 AddressPicker (#24). iOS uses system MapKit (no catalog entry).
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

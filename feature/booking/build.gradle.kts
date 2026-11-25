@@ -45,6 +45,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
         }
+        androidMain.dependencies {
+            // Google Maps SDK + Compose bindings for the C6 AddressMapPicker actual (#24).
+            // iOS actual uses system MapKit / CLGeocoder (no catalog deps).
+            implementation(libs.play.services.maps)
+            implementation(libs.maps.compose)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.core)

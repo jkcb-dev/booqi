@@ -22,3 +22,8 @@ object BooqiCornerRadius {
     val large: Dp = 24.dp
     val pill: Dp = 999.dp
 }
+
+/** Non-spacing layout sizes that still belong in the token layer (C6 map picker height, #24). */
+object BooqiSizing {
+    val mapPickerHeight: Dp = 220.dp
+}
