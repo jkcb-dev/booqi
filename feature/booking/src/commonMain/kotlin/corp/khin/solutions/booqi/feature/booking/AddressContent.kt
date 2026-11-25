@@ -17,8 +17,11 @@ import androidx.compose.ui.Modifier
 import corp.khin.solutions.booqi.core.common.DomainError
 import corp.khin.solutions.booqi.core.designsystem.theme.BooqiSpacing
 import corp.khin.solutions.booqi.core.designsystem.theme.LocalBooqiExtendedColors
+import corp.khin.solutions.booqi.feature.booking.map.AddressMapPicker
 
 private const val LOAD_ERROR = "No pudimos cargar tu dirección"
+private const val DOMICILIO_HINT =
+    "Necesitamos tu dirección para servicios a domicilio. Buscá por texto o mové el pin en el mapa."
 
 /** C6: the "Mi dirección" heading and "Volver" (always visible) over a body that is a spinner, a
  * load failure with retry, or the search form. */
@@ -56,6 +59,7 @@ private fun AddressForm(state: AddressUiState, onAction: (AddressAction) -> Unit
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(BooqiSpacing.md),
     ) {
+        AddressHint(DOMICILIO_HINT)
         state.savedAddress?.let {
             LabeledValue(label = "Dirección guardada", value = it.line)
         }
@@ -68,6 +72,12 @@ private fun AddressForm(state: AddressUiState, onAction: (AddressAction) -> Unit
             modifier = Modifier.fillMaxWidth(),
         )
         AddressResults(state = state, onSelect = { onAction(AddressAction.ResultSelected(it)) })
+        AddressMapPicker(
+            cameraAddress = state.selected ?: state.savedAddress,
+            enabled = !state.isSaving,
+            onAddressPicked = { onAction(AddressAction.ResultSelected(it)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
         state.saveError?.let {
             Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
         }

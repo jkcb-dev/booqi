@@ -9,6 +9,8 @@ sealed interface AddressAction {
 
     data object Retry : AddressAction
     data class QueryChanged(val value: String) : AddressAction
+
+    /** Candidate from text search *or* from the map pin (platform reverse-geocode, #24). */
     data class ResultSelected(val address: Address) : AddressAction
 
     /** "Guardar dirección": adds the selected address, or updates the saved one. */

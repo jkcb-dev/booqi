@@ -106,6 +106,22 @@ cd iosApp && xcodebuild -project iosApp.xcodeproj -scheme iosApp -configuration 
 ```
 `DerivedData/` is gitignored; delete it after verifying.
 
+## Maps API key (C6 AddressPicker, #24)
+
+Android Google Maps tiles need a key; iOS MapKit does not.
+
+1. Create a Google Cloud key with **Maps SDK for Android** enabled (restrict by package
+   `corp.khin.solutions.booqi` + your debug/release SHA-1 when shipping).
+2. Put it in the worktree's gitignored `local.properties` (never commit it):
+
+```properties
+MAPS_API_KEY=your_key_here
+```
+
+`androidApp/build.gradle.kts` injects it into the manifest as `com.google.android.geo.API_KEY`.
+An empty / missing key still assembles; the map view renders blank until a valid key is present.
+iOS uses Apple MapKit + `CLGeocoder` — no Info.plist / xcconfig key.
+
 ## Environment gotchas
 
 - **Sandbox blocks Maven Central.** If Gradle fails resolving an already-declared dependency, retry
